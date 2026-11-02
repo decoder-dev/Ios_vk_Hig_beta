@@ -114,7 +114,7 @@ final class VKIDAuthCoordinator: NSObject, ASWebAuthenticationPresentationContex
     }
     static func validateCallback(_ url: URL, redirectURI: String, state: String) throws -> [String: String] {
         guard let expected = URL(string: redirectURI), url.scheme == expected.scheme, url.host == expected.host,
-              url.path == expected.path, let components = URLComponents(url: url, resolvingAgainstBaseURL: false) else {
+              url.path == expected.path, url.port == expected.port, url.user == nil, url.password == nil, url.fragment == nil, let components = URLComponents(url: url, resolvingAgainstBaseURL: false) else {
             throw VKIDAuthError.failed("Неверный адрес возврата VK ID.")
         }
         var values: [String: String] = [:]
