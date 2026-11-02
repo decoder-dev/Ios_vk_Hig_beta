@@ -45,6 +45,22 @@ enum VKJSON: Decodable, Sendable {
     var int: Int64 { if case .number(let v) = self { return Int64(v) }; return Int64(string) ?? 0 }
     var flag: Bool { if case .bool(let v) = self { return v }; return int == 1 }
     var url: URL? { URL(string: string).flatMap { $0.scheme == "https" ? $0 : nil } }
+    var chatAttachments: [ChatAttachment] {
+        items.compactMap { item in
+            let type = item["type"].string
+            let value = item[type]
+            let url: URL?
+            let kind: ChatAttachment.Kind
+            switch type {
+            case "photo": kind = .photo; url = value["sizes"].items.max { $0["width"].int < $1["width"].int }?["url"].url
+            case "doc": kind = .document; url = value["url"].url
+            case "video": kind = .video; url = value["player"].url
+            default: return nil
+            }
+            guard let url else { return nil }
+            return ChatAttachment(id:"\(type)_\(value["owner_id"].int)_\(value["id"].int)",kind:kind,title:value["title"].string.isEmpty ? "Вложение" : value["title"].string,url:url)
+        }
+    }
     var list: [VKJSON] { if case .array = self { return items }; return self["items"].items }
 }
 
@@ -135,8 +151,9 @@ final class VKCatalogService {
             let response = try await request("messages.search", ["q":query,"peer_id":"\(resourceID ?? 0)","count":"100"])
             result = response.list.map { j in ChatMessage(id:UUID(),serverID:j["id"].int,peerID:PeerID(raw:resourceID ?? 0),text:j["text"].string,timestamp:Date(timeIntervalSince1970:Double(j["date"].int)),isOutgoing:j["out"].flag,state:.received,randomID:nil) }
         case "S11":
-            _ = try await request("messages.getConversationsById",["peer_ids":"\(resourceID ?? 0)"])
-            result = resourceID ?? 0
+            let response = try await request("messages.getConversationsById",["peer_ids":"\(resourceID ?? 0)"])
+            let members = try await request("messages.getConversationMembers",["peer_id":"\(resourceID ?? 0)","extended":"1","fields":"online,city","count":"200"])
+            result = ChatDetails(peerID:resourceID ?? 0,title:response.list.first?["chat_settings"]["title"].string ?? "Диалог",members:members["profiles"].items.map(Self.friend))
         case "S15":
             let response = try await request("users.get", ["user_ids":"\(resourceID ?? 0)", "fields":"city,online,status"])
             guard let j = response.items.first else { throw AppError.network("Пользователь не найден.") }
@@ -145,8 +162,19 @@ final class VKCatalogService {
             let response = try await request(screen == "S18" ? "friends.get" : "groups.getMembers", screen == "S18" ? ["fields":"city,online", "count":"5000"] : ["group_id":"\(resourceID ?? 0)", "fields":"city,online", "count":"1000"])
             let list = response.list.map(Self.friend); for person in list { people[person.id] = person }; result = list
         case "S19":
-            let response = try await request("friends.getRequests", ["extended":"1", "count":"1000"])
-            result = response.list.map { j in FriendRequest(id:j["user_id"].int, user:Friend(id:j["user_id"].int, displayName:"VK \(j["user_id"].int)", initials:"VK", isOnline:false, city:nil), direction:.incoming, subtitle:"Входящая заявка") }
+            async let incoming = request("friends.getRequests", ["extended":"1", "count":"1000"])
+            async let outgoing = request("friends.getRequests", ["out":"1", "count":"1000"])
+            let (ins,outs) = try await (incoming,outgoing)
+            let incomingIDs = ins.list.map { $0["user_id"].int == 0 ? $0.int : $0["user_id"].int }
+            let outgoingIDs = outs.list.map { $0["user_id"].int == 0 ? $0.int : $0["user_id"].int }
+            var people: [Int64:Friend] = [:]
+            let allIDs = Array(Set(incomingIDs + outgoingIDs))
+            if !allIDs.isEmpty {
+                let users = try await request("users.get",["user_ids":allIDs.prefix(1000).map(String.init).joined(separator:",")])
+                for user in users.items { let friend = Self.friend(user); people[friend.id] = friend }
+            }
+            result = incomingIDs.map { id in FriendRequest(id:id,user:people[id] ?? Friend(id:id,displayName:"VK \(id)",initials:"VK",isOnline:false,city:nil),direction:.incoming,subtitle:"Входящая заявка") }
+                + outgoingIDs.map { id in FriendRequest(id:id,user:people[id] ?? Friend(id:id,displayName:"VK \(id)",initials:"VK",isOnline:false,city:nil),direction:.outgoing,subtitle:"Исходящая заявка") }
         case "S20", "S21":
             let response = try await request(screen == "S20" ? "groups.getById" : "groups.get", screen == "S20" ? ["group_ids":"\(resourceID ?? 0)", "fields":"description,members_count,is_member"] : ["extended":"1", "fields":"description,members_count,is_member", "count":"1000"])
             let list = (screen == "S20" && !response["groups"].items.isEmpty ? response["groups"].items : response.list).map { j in Community(id:j["id"].int, name:j["name"].string, initials:Self.initials(j["name"].string), membersCount:Int(j["members_count"].int), description:j["description"].string, isMember:j["is_member"].flag) }
