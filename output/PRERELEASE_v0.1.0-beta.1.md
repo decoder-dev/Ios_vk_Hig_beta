@@ -14,7 +14,7 @@ First public source pre-release of the native SwiftUI VK client.
 
 ## Verification
 
-The source commit immediately before this release passed the Xcode 27 / iOS 27 simulator CI job. This release increments the app build number; push to `main` triggers the repository's iOS 18 and iOS 27 build/test matrix. Record its result in `output/TEST_RESULTS.md` before calling the release validated.
+This exact source tag passed the Xcode 27 / iOS 27 simulator build-and-test job in [CI run 41541746765](https://github.com/decoder-dev/Ios_vk_Hig_beta/actions/runs/41541746765). The iOS 18 matrix job was still running when the release was published; its final result will be recorded separately. No test count is claimed before the full run logs are available.
 
 ## Known limits
 

@@ -47,3 +47,12 @@ local playlists, persistent paused queue, global mini-player, account-isolated d
 LRC/LRCLIB lyrics and a real local ten-band equalizer. See docs/MUSIC_ADAPTATION.md for precise scope.
 New simulator build/unit/UI checks: NOT RUN yet. Live VK music approval and device audio checks:
 NOT RUN. Calls deferred; push remains disabled.
+
+## First public source pre-release: 0.1.0-beta.1 (build 2)
+
+Release tag `v0.1.0-beta.1` points to source `35689e48c6b92daad30b70c0df556385e5036cf4`.
+Run: https://github.com/decoder-dev/Ios_vk_Hig_beta/actions/runs/41541746765
+- Xcode 27 / iOS 27 simulator job `125607375292`: **PASS**, including the configured `xcodebuild ... test` step and result artifact upload.
+- Xcode 16.4 / iOS 18 simulator job `125607374988`: still running at the time of this entry; do not infer a result.
+- No exact test count is claimed here until the completed run logs are available.
+- No signed IPA/TestFlight package is attached because this repository has no Apple signing/provisioning secrets. This is a source prerelease with a CI-verified iOS 27 build, not a device-installable beta.
