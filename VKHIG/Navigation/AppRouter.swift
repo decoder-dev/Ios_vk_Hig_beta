@@ -3,84 +3,84 @@ import SwiftUI
 struct AppRouteDestination: View {
     let route: AppRoute
 
-    var body: some View {
+    var body: AnyView {
         switch route {
         case .conversation(let id):
-            ConversationView(conversation: Conversation(peerID:PeerID(raw:id),displayName:"VK \(id)",initials:"VK",lastMessagePreview:"",lastUpdatedLabel:"",unreadCount:0,isOnline:false))
+            return AnyView(ConversationView(conversation: Conversation(peerID:PeerID(raw:id),displayName:"VK \(id)",initials:"VK",lastMessagePreview:"",lastUpdatedLabel:"",unreadCount:0,isOnline:false)))
         case .albumPhotos(let id):
-            PhotosGridView(albumID:id)
+            return AnyView(PhotosGridView(albumID:id))
         case .onboarding:
-            OnboardingView()
+            return AnyView(OnboardingView())
         case .postDetail(let id):
-            PostDetailView(postID: id)
+            return AnyView(PostDetailView(postID: id))
         case .comments(let id):
-            CommentsView(postID: id)
+            return AnyView(CommentsView(postID: id))
         case .composePost:
-            ComposePostView()
+            return AnyView(ComposePostView())
         case .groupChat(let id):
-            GroupChatView(chatID: id)
+            return AnyView(GroupChatView(chatID: id))
         case .chatInfo(let id):
-            ChatInfoView(peerID: id)
+            return AnyView(ChatInfoView(peerID: id))
         case .chatAttachments(let id):
-            ChatAttachmentsView(peerID: id)
+            return AnyView(ChatAttachmentsView(peerID: id))
         case .chatSearch(let id):
-            ChatSearchView(peerID: id)
+            return AnyView(ChatSearchView(peerID: id))
         case .userProfile(let id):
-            UserProfileView(userID: id)
+            return AnyView(UserProfileView(userID: id))
         case .editProfile:
-            EditProfileView()
+            return AnyView(EditProfileView())
         case .friends:
-            FriendsView()
+            return AnyView(FriendsView())
         case .friendRequests:
-            FriendRequestsView()
+            return AnyView(FriendRequestsView())
         case .community(let id):
-            CommunityView(communityID: id)
+            return AnyView(CommunityView(communityID: id))
         case .communities:
-            CommunitiesListView()
+            return AnyView(CommunitiesListView())
         case .communityMembers(let id):
-            CommunityMembersView(communityID: id)
+            return AnyView(CommunityMembersView(communityID: id))
         case .globalSearch:
-            GlobalSearchView()
+            return AnyView(GlobalSearchView())
         case .notifications:
-            NotificationsView()
+            return AnyView(NotificationsView())
         case .photoAlbums:
-            PhotoAlbumsView()
+            return AnyView(PhotoAlbumsView())
         case .photos:
-            PhotosGridView()
+            return AnyView(PhotosGridView())
         case .photoViewer(let id):
-            PhotoViewerView(photoID: id)
+            return AnyView(PhotoViewerView(photoID: id))
         case .videoList:
-            VideoListView()
+            return AnyView(VideoListView())
         case .videoPlayer(let id):
-            VideoPlayerView(videoID: id)
+            return AnyView(VideoPlayerView(videoID: id))
         case .musicLibrary:
-            MusicLibraryView()
+            return AnyView(MusicLibraryView())
         case .audioPlayer:
-            AudioPlayerView()
+            return AnyView(AudioPlayerView())
         case .playlist(let id):
-            PlaylistView(playlistID: id)
+            return AnyView(PlaylistView(playlistID: id))
         case .settings:
-            SettingsHubView()
+            return AnyView(SettingsHubView())
         case .notificationSettings:
-            NotificationSettingsView()
+            return AnyView(NotificationSettingsView())
         case .privacySettings:
-            PrivacySettingsView()
+            return AnyView(PrivacySettingsView())
         case .appearanceSettings:
-            AppearanceSettingsView()
+            return AnyView(AppearanceSettingsView())
         case .storageSettings:
-            StorageSettingsView()
+            return AnyView(StorageSettingsView())
         case .accountSettings:
-            AccountSettingsView()
+            return AnyView(AccountSettingsView())
         case .bookmarks:
-            BookmarksView()
+            return AnyView(BookmarksView())
         case .story(let id):
-            StoryViewerView(storyID: id)
+            return AnyView(StoryViewerView(storyID: id))
         case .incomingCall:
-            IncomingCallView()
+            return AnyView(IncomingCallView())
         case .errorDemo:
-            ErrorDemoView()
+            return AnyView(ErrorDemoView())
         case .actionsDemo:
-            ActionsDemoView()
+            return AnyView(ActionsDemoView())
         }
     }
 }
