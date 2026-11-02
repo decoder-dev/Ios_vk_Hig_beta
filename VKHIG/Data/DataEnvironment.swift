@@ -30,11 +30,12 @@ final class AppEnvironment {
     let liveAPIGate: LiveAPIGate
 
     init(
-        session: SessionStore = SessionStore(),
+        session: SessionStore? = nil,
         capabilities: CapabilityRegistry = CapabilityRegistry(),
         dataMode: DataMode = .fixtures,
         isNetworkReachable: Bool = true
     ) {
+        let session = session ?? SessionStore()
         self.session = session
         var caps = capabilities
         caps.hasVKIDCredentials = AppSecrets.hasVKIDCredentials
