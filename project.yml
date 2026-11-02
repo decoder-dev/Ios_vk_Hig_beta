@@ -30,6 +30,7 @@ targets:
       Release: VKHIG/Config/Shared.xcconfig
     settings:
       PRODUCT_BUNDLE_IDENTIFIER: com.decoderdev.vkhig
+      CODE_SIGN_ENTITLEMENTS: VKHIG/Resources/VKHIG.entitlements
       PRODUCT_NAME: VK HIG
       PRODUCT_MODULE_NAME: VKHIG
       INFOPLIST_FILE: VKHIG/Resources/Info.plist
