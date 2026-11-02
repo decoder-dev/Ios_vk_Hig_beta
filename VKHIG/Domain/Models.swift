@@ -45,6 +45,9 @@ struct FeedPost: Identifiable, Hashable, Sendable {
     let hasMedia: Bool
     let reactionCount: Int
     let commentCount: Int
+    var ownerID: Int64 = 0
+    var nativeID: Int64? = nil
+    var mediaURL: URL? = nil
 }
 
 struct UserProfile: Identifiable, Hashable, Sendable {
@@ -66,15 +69,15 @@ enum AppError: Error, LocalizedError, Equatable, Sendable {
     var errorDescription: String? {
         switch self {
         case .notAuthenticated:
-            return "Sign in required"
+            return "Войдите в аккаунт VK ID."
         case .capabilityUnavailable(let feature):
             return "\(feature) is unavailable for this app configuration"
         case .offline:
-            return "No network connection"
+            return "Нет подключения к сети."
         case .network(let message):
             return message
         case .decoding:
-            return "Could not read server response"
+            return "Не удалось прочитать ответ сервера."
         case .fixtureOnly(let detail):
             return detail
         }
