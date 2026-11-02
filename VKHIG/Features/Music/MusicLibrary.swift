@@ -96,7 +96,8 @@ final class AudioLibrary {
     private var queueFile:String {"queue-\(activeAccountID.map(String.init) ?? "local").json"}
     private func saveQueue() {
         let localIDs=activeQueue.filter(\.url.isFileURL).map(\.id)
-        write(MusicQueueSnapshot(ids:localIDs,currentID:currentID,position:elapsed.isFinite ? max(0,elapsed) : 0),name:queueFile)
+        let localSelection=current?.url.isFileURL == true
+        write(MusicQueueSnapshot(ids:localIDs,currentID:localSelection ? currentID : nil,position:localSelection && elapsed.isFinite ? max(0,elapsed) : 0),name:queueFile)
     }
     private func restoreQueue() {
         guard current==nil,let snapshot=read(MusicQueueSnapshot.self,name:queueFile) else {return}
