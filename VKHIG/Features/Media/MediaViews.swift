@@ -168,6 +168,8 @@ struct LocalAudioTrack: Identifiable, Codable, Equatable {
 final class AudioLibrary {
     static let shared = AudioLibrary()
     var tracks: [LocalAudioTrack] = []
+    var remoteQueue:[LocalAudioTrack]=[]
+    var remoteTrack:LocalAudioTrack?
     var currentID: String?
     var playing = false
     var elapsed = 0.0
@@ -183,7 +185,7 @@ final class AudioLibrary {
     @ObservationIgnored private var ended: NSObjectProtocol?
     @ObservationIgnored private var failed: NSObjectProtocol?
     private var directory: URL { FileManager.default.urls(for:.applicationSupportDirectory,in:.userDomainMask)[0].appendingPathComponent("AudioLibrary",isDirectory:true) }
-    var current: LocalAudioTrack? { tracks.first {$0.id == currentID} }
+    var current: LocalAudioTrack? {if remoteTrack?.id == currentID {return remoteTrack};return tracks.first {$0.id == currentID}}
     private init() {
         tracks = (try? JSONDecoder().decode([LocalAudioTrack].self,from:Data(contentsOf:directory.appendingPathComponent("index.json")))) ?? []
         timer = player.addPeriodicTimeObserver(forInterval:CMTime(seconds:0.5,preferredTimescale:600),queue:.main) { [weak self] time in
@@ -240,7 +242,16 @@ final class AudioLibrary {
         tracks.remove(atOffsets:offsets)
         do {try JSONEncoder().encode(tracks).write(to:directory.appendingPathComponent("index.json"),options:.atomic)} catch {self.error=error.localizedDescription}
     }
+    func resetRemoteSession() {
+        if remoteTrack != nil {pause();player.replaceCurrentItem(with:nil);currentID=nil;elapsed=0;duration=0;MPNowPlayingInfoCenter.default().nowPlayingInfo=nil}
+        remoteTrack=nil;remoteQueue=[]
+    }
+    func playRemote(_ track:LocalAudioTrack,queue:[LocalAudioTrack]) {
+        guard track.url.scheme=="https" else {error="VK не предоставил безопасный поток.";return}
+        remoteTrack=track;remoteQueue=queue;play(track)
+    }
     func play(_ track:LocalAudioTrack) {
+        if track.url.isFileURL {remoteTrack=nil;remoteQueue=[]}
         do {
             try AVAudioSession.sharedInstance().setCategory(.playback,mode:.default)
             try AVAudioSession.sharedInstance().setActive(true)
@@ -260,13 +271,19 @@ final class AudioLibrary {
     }
     func pause() {player.pause();playing=false;updateNowPlaying()}
     func seek(_ value:Double) {player.seek(to:CMTime(seconds:max(0,value),preferredTimescale:600));elapsed=max(0,value)}
+    private var queue:[LocalAudioTrack] {remoteTrack==nil ? tracks : remoteQueue}
+    private func select(_ track:LocalAudioTrack) {if track.url.isFileURL {play(track)} else {playRemote(track,queue:remoteQueue)}}
     func next() {
-        guard !tracks.isEmpty else {return}
-        if shuffle {play(tracks.filter {$0.id != currentID}.randomElement() ?? tracks[0]);return}
-        let index=tracks.firstIndex {$0.id == currentID} ?? -1
-        if index+1 < tracks.count {play(tracks[index+1])} else {pause();seek(0)}
+        let items=queue;guard !items.isEmpty else {return}
+        if shuffle {select(items.filter {$0.id != currentID}.randomElement() ?? items[0]);return}
+        let index=items.firstIndex {$0.id==currentID} ?? -1
+        if index+1<items.count {select(items[index+1])} else {pause();seek(0)}
     }
-    func previous() {guard !tracks.isEmpty else {return};if elapsed > 3 {seek(0);return};play(tracks[max(0,(tracks.firstIndex {$0.id == currentID} ?? 0)-1)])}
+    func previous() {
+        let items=queue;guard !items.isEmpty else {return}
+        if elapsed>3 {seek(0);return}
+        select(items[max(0,(items.firstIndex {$0.id==currentID} ?? 0)-1)])
+    }
     private func updateNowPlaying() {
         guard let current else {return}
         MPNowPlayingInfoCenter.default().nowPlayingInfo=[MPMediaItemPropertyTitle:current.title,MPMediaItemPropertyPlaybackDuration:duration,MPNowPlayingInfoPropertyElapsedPlaybackTime:elapsed,MPNowPlayingInfoPropertyPlaybackRate:playing ? 1.0 : 0.0]
@@ -274,6 +291,7 @@ final class AudioLibrary {
 }
 
 struct MusicLibraryView: View {
+    @Environment(AppEnvironment.self) private var env
     @State private var library=AudioLibrary.shared
     @State private var importing=false
     var body: some View {
@@ -286,6 +304,7 @@ struct MusicLibraryView: View {
                 if library.tracks.isEmpty {Text("Добавьте аудиофайлы для воспроизведения в приложении.").foregroundStyle(.secondary)}
                 NavigationLink("Открыть плеер",value:AppRoute.audioPlayer)
             }
+            if env.capabilities.canUseLiveAPI(.music) {VKMusicCatalogSection()}
             Section("VK Музыка") {
                 Link("Открыть каталог VK",destination:URL(string:"https://vk.com/music")!)
                 Text("Каталог и потоки VK подключаются после предоставления музыкального API приложению.").font(.footnote).foregroundStyle(.secondary)
@@ -327,4 +346,108 @@ struct AudioRoutePicker:UIViewRepresentable {
 struct PlaylistView: View {
     let playlistID:Int64
     var body:some View {MusicLibraryView()}
+}
+
+struct AttachmentPreview:View {
+    let attachment:ChatAttachment
+    @State private var showing=false
+    var body:some View {
+        Group {
+            switch attachment.kind {
+            case .photo,.sticker,.graffiti:
+                Button {showing=true} label: {
+                    AsyncImage(url:attachment.url) {phase in
+                        if let image=phase.image {image.resizable().scaledToFit()}
+                        else if phase.error != nil {Label("Не удалось загрузить",systemImage:"photo")}
+                        else {ProgressView()}
+                    }.frame(maxWidth:280,maxHeight:240)
+                }.buttonStyle(.plain).accessibilityLabel(attachment.title)
+            case .audio,.voice,.video:
+                Button {showing=true} label:{Label(attachment.title,systemImage:attachment.symbol)}.frame(minHeight:44)
+            case .unsupported:
+                Text(attachment.title).font(.caption).foregroundStyle(.secondary)
+            default:
+                Link(destination:attachment.url) {Label(attachment.title,systemImage:attachment.symbol)}.frame(minHeight:44)
+            }
+        }.sheet(isPresented:$showing) {
+            NavigationStack {
+                AttachmentViewer(attachment:attachment)
+                    .navigationTitle(attachment.title).navigationBarTitleDisplayMode(.inline)
+                    .toolbar {ToolbarItem(placement:.cancellationAction) {Button("Закрыть") {showing=false}}}
+            }
+        }
+    }
+}
+private struct AttachmentViewer:View {
+    let attachment:ChatAttachment
+    @State private var player:AVPlayer?
+    @State private var scale:CGFloat=1
+    var body:some View {
+        Group {
+            if let stream=attachment.playbackURL {
+                VideoPlayer(player:player).task {player=AVPlayer(url:stream);player?.play()}.onDisappear {player?.pause()}
+            } else if attachment.kind == .video {OfficialWebPlayer(url:attachment.url)}
+            else {
+                AsyncImage(url:attachment.url) {image in image.resizable().scaledToFit().scaleEffect(scale)} placeholder:{ProgressView()}
+                    .gesture(MagnifyGesture().onChanged {scale=min(4,max(1,$0.magnification))})
+                    .frame(maxWidth:.infinity,maxHeight:.infinity).background(.black)
+            }
+        }
+    }
+}
+
+struct VKAudioTrack:Identifiable,Equatable {
+    let id:String
+    let title:String
+    let artist:String
+    let duration:Int
+    let url:URL?
+    var local:LocalAudioTrack? {url.map {LocalAudioTrack(id:id,title:artist.isEmpty ? title : artist+" — "+title,url:$0)}}
+}
+@MainActor
+@Observable
+final class VKMusicCatalogModel {
+    var tracks:[VKAudioTrack]=[]
+    var loading=false
+    var more=true
+    var error:String?
+    private var offset=0
+    private let request:(String,[String:String]) async throws -> VKJSON
+    init(request:((String,[String:String]) async throws -> VKJSON)?=nil) {self.request=request ?? {try await VKCatalogService.shared.request($0,$1)}}
+    func load(reset:Bool=true,grants:Set<String>) async {
+        guard grants.contains("audio") else {error="VK не выдал музыкальные права этому приложению.";return}
+        guard !loading else {return};loading=true;error=nil;defer {loading=false}
+        do {
+            let start=reset ? 0 : offset
+            let response=try await request("audio.get",["count":"100","offset":String(start)])
+            let page=Self.map(response)
+            var next=reset ? [] : tracks;var ids=Set(next.map(\.id));next+=page.filter {ids.insert($0.id).inserted}
+            tracks=next;offset=start+page.count;more=page.count==100
+        } catch {self.error=error.localizedDescription}
+    }
+    static func map(_ response:VKJSON) -> [VKAudioTrack] {
+        response.list.compactMap {j in
+            guard j["id"].int>0 else {return nil}
+            return VKAudioTrack(id:"audio\(j["owner_id"].int)_\(j["id"].int)",title:j["title"].string,artist:j["artist"].string,duration:Int(j["duration"].int),url:j["url"].url)
+        }
+    }
+}
+struct VKMusicCatalogSection:View {
+    @Environment(AppEnvironment.self) private var env
+    @State private var model=VKMusicCatalogModel()
+    @State private var library=AudioLibrary.shared
+    @State private var query=""
+    var body:some View {
+        Section("Моя музыка VK") {
+            TextField("Фильтр загруженных треков",text:$query)
+            ForEach(model.tracks.filter {query.isEmpty || ($0.title+" "+$0.artist).localizedCaseInsensitiveContains(query)}) {track in
+                Button {
+                    if let local=track.local {library.playRemote(local,queue:model.tracks.compactMap(\.local))}
+                } label:{VStack(alignment:.leading) {Text(track.title);Text(track.artist).font(.caption).foregroundStyle(.secondary);if track.url==nil {Text("VK не предоставил поток").font(.caption)}}}.disabled(track.url==nil)
+            }
+            if model.loading {ProgressView()}
+            if let error=model.error {Text(error).foregroundStyle(.red);Button("Повторить каталог") {Task {await model.load(grants:env.capabilities.grantedScopes)}}}
+            if model.more && !model.loading {Button("Загрузить ещё треки") {Task {await model.load(reset:false,grants:env.capabilities.grantedScopes)}}}
+        }.task {await model.load(grants:env.capabilities.grantedScopes)}
+    }
 }
