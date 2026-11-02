@@ -32,6 +32,7 @@ struct VKHIGApp: App {
             .onChange(of:PushRegistration.shared.pendingRoute) {_,route in
                 if let route {environment.pendingRoute=route;PushRegistration.shared.pendingRoute=nil}
             }
+            .modifier(UITestingTextSize())
             .tint(VKStyle.accent)
             .preferredColorScheme(colorScheme)
         }
@@ -135,5 +136,15 @@ final class PushAppDelegate:NSObject,UIApplicationDelegate,UNUserNotificationCen
     func userNotificationCenter(_ center:UNUserNotificationCenter,didReceive response:UNNotificationResponse,withCompletionHandler completionHandler:@escaping ()->Void) {
         let payload=response.notification.request.content.userInfo
         Task {@MainActor in PushRegistration.shared.route(payload);completionHandler()}
+    }
+}
+
+private struct UITestingTextSize:ViewModifier {
+    @ViewBuilder func body(content:Content) -> some View {
+        #if DEBUG
+        if ProcessInfo.processInfo.arguments.contains("--uitesting") && ProcessInfo.processInfo.arguments.contains("--large-type") {content.dynamicTypeSize(.accessibility3)} else {content}
+        #else
+        content
+        #endif
     }
 }
