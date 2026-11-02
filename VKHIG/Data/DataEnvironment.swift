@@ -72,8 +72,15 @@ final class AppEnvironment {
     }
 
     func signOut() {
+        Task {
+            await PushRegistration.shared.disable()
+            finishSignOut()
+        }
+    }
+
+    private func finishSignOut() {
         let owner = String(VKIDAuthCoordinator.shared.userID ?? 0)
-        for key in UserDefaults.standard.dictionaryRepresentation().keys where key.hasPrefix("vkhig.draft.\(owner).") { UserDefaults.standard.removeObject(forKey:key) }
+        for key in UserDefaults.standard.dictionaryRepresentation().keys where (key.hasPrefix("vkhig.draft.\(owner).") || key.hasPrefix("vkhig.comment.draft.\(owner).")) { UserDefaults.standard.removeObject(forKey:key) }
         UserDefaults.standard.removeObject(forKey:"vkhig.post.draft")
         let directory = FileManager.default.urls(for:.applicationSupportDirectory,in:.userDomainMask)[0].appendingPathComponent("VKOutbox")
         for file in (try? FileManager.default.contentsOfDirectory(at:directory,includingPropertiesForKeys:nil)) ?? [] where file.lastPathComponent.hasPrefix("\(owner)_") { try? FileManager.default.removeItem(at:file) }
@@ -91,6 +98,7 @@ final class AppEnvironment {
         if capabilities.hasAccessToken {
             // Rights come from the actual OAuth response, never from a guessed allow-list.
             dataMode = .live
+            await PushRegistration.shared.registerIfNeeded()
         } else if session.isLiveVKSession {
             session.signOut()
             dataMode = .fixtures
