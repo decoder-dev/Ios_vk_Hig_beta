@@ -49,20 +49,23 @@ struct RootTabView: View {
             .tag(AppTab.profile)
         }
         .tint(VKStyle.accent)
-        .onAppear { if env.isLiveVKSession,!env.capabilities.canUseLiveAPI(.inbox) { selected = .profile } }
+        .onAppear { if env.isLiveVKSession,!env.capabilities.canUseLiveAPI(.inbox) { selected = .profile };openPendingRoute() }
         .alert("VK HIG",isPresented:Binding(get:{env.catalog.notice != nil},set:{if !$0 {env.catalog.notice = nil}})) {
             Button("ОК") { env.catalog.notice = nil }
         } message: { Text(env.catalog.notice ?? "") }
-        .onChange(of:env.pendingRoute) { _,route in
-            guard let route else { return }
-            switch route {
-            case .conversation, .groupChat, .chatInfo, .chatSearch: selected = .messages; messagesPath.append(route)
-            case .postDetail, .comments: selected = .feed; feedPath.append(route)
-            default: selected = .services; servicesPath.append(route)
-            }
-            env.pendingRoute = nil
-        }
+        .onChange(of:env.pendingRoute) { _,_ in openPendingRoute() }
     }
+    private func openPendingRoute() {
+        if env.pendingRoute == nil {env.pendingRoute=PushRegistration.shared.pendingRoute;PushRegistration.shared.pendingRoute=nil}
+        guard let route=env.pendingRoute else {return}
+        switch route {
+        case .conversation,.groupChat,.chatInfo,.chatSearch:selected = .messages;messagesPath.append(route)
+        case .postDetail,.comments:selected = .feed;feedPath.append(route)
+        default:selected = .services;servicesPath.append(route)
+        }
+        env.pendingRoute=nil
+    }
+
 }
 
 #Preview {
