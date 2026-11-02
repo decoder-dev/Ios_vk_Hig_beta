@@ -61,7 +61,7 @@
 			</array>
 		</dict>
 	</array>
-	<!-- Redirect URI to register in VK ID cabinet: vkhig://vkid -->
-	<!-- Client id via Shared.xcconfig + gitignored Secrets.xcconfig or CI env; never commit secrets. -->
+	<key>VK_REQUESTED_SCOPES</key>
+	<string>$(VK_REQUESTED_SCOPES)</string>
 </dict>
 </plist>
