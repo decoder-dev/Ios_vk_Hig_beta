@@ -11,3 +11,6 @@ First live-success verification: NOT RUN. No user access token available. VK mus
 Additional adapters: wall.deleteComment/editComment; newsfeed.search; notifications.markAsViewed; calls.start/forceFinish; account.registerDevice/unregisterDevice. Offset/cursor pagination covers friends, groups, members, albums, photos, videos, notifications and bookmarks.
 
 Server-side friends.search and paged peer-specific messages.search are implemented; message search pages deduplicate by server ID. Simulator build, 17 unit and 3 UI tests PASS at main 774b58e; real API acceptance is still NOT RUN.
+
+## Remaining-feature implementation
+Added official adapters for rich attachments and quotes; chat metadata/ACL, members, rename/invite/remove/leave and pin/unpin; profile fields with database country/city IDs; community membership/settings/moderation; paginated recipient selection; typed fave add/remove; live stories.get/getById; audio.get only with an actual audio grant. Camera, location, video and OGG voice-file uploads are supported. No native voice encoder or private API is used. Settings includes a user-initiated read-only account diagnostics screen. These additions await the new CI run and real-account acceptance.

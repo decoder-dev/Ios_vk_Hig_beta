@@ -31,3 +31,15 @@ A macOS CI workflow now generates the project, builds/tests it and retains only 
 ## Verified simulator result
 
 Source main @ 774b58efd6505eac280c44e5a98e13972ded349d: macOS CI build + 17 unit tests + 3 UI tests PASS (0 failures). Run 41496009543. This confirms simulator compilation and fixture regression paths; real API grants, APNs delivery and physical-device acceptance remain open.
+
+## Remaining-feature revision (awaiting CI)
+- S04–S09: shared photo/document/video/audio/voice/sticker/link/graffiti rendering; bounded reply/forward quotes.
+- S10–S14: ACL-aware chat rename, invite/remove/leave, pin/unpin; paged recipient picker; camera, coordinate, video and OGG voice-file sending.
+- S15–S22: profile country/city/partner and personal fields; community membership, settings, paged members and manager roles.
+- S31–S33: grant-gated VK audio.get catalog with transient playback queue. Actual licensed stream access still requires VK approval.
+- S40: paged typed saved items, add links/posts/pages and supported removal operations with confirmed server results.
+- S41: live Stories list/viewer, expiry, image/video and safe links; demo remains explicitly labeled.
+- CI now targets iOS 18 and iOS 27, with 33 unit tests and 5 UI tests per SDK, including large text and screenshot export. No new CI result is claimed yet.
+- Physical-device/archive script and account diagnostics are provided; external acceptance is recorded in docs/DEVICE_AND_VK_ACCEPTANCE.md.
+
+The remaining-acceptance column above describes the previous verified baseline. The source additions in this section replace its feature gaps; validation and external service requirements remain open.

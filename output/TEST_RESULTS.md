@@ -23,3 +23,6 @@ Regression coverage includes OAuth callback validation, form encoding, scope gat
 Real VK OAuth/API acceptance with approved application scopes; physical-device APNs delivery and provisioning; licensed VK music streams; native incoming VK calls; audio interruption/AirPlay device QA; full accessibility and performance matrix. CI uses demo fixtures and does not prove availability of VK rights.
 
 Earlier main runs failed due to fixture closures without return and an unsupported multi-variable Observable declaration. These were fixed. Router destination types were simplified; CI now compiles files separately with timing diagnostics.
+
+## New remaining-feature revision: PENDING
+The PASS above applies only to commit 774b58e. The new source revision adds 33 unit tests total, 5 UI tests total, and an iOS 18/iOS 27 CI matrix with screenshot export. New regression cases cover ACL enforcement, recipient pagination, bookmark mutation failure, profile payloads, media and quote mapping, Story expiry, safe uploads and music scope gating. Local syntax/resource checks pass; compilation and simulator tests must be reported after CI finishes. Device/account/APNs/native incoming-call acceptance remains NOT RUN.
