@@ -176,6 +176,9 @@ final class AudioLibrary {
     var repeatOne = false
     var error: String?
     @ObservationIgnored private let player = AVPlayer()
+    @ObservationIgnored private var itemStatus:NSKeyValueObservation?
+    @ObservationIgnored private var interruption:NSObjectProtocol?
+    @ObservationIgnored private var routeChange:NSObjectProtocol?
     @ObservationIgnored private var timer: Any?
     @ObservationIgnored private var ended: NSObjectProtocol?
     @ObservationIgnored private var failed: NSObjectProtocol?
@@ -199,6 +202,13 @@ final class AudioLibrary {
         failed = NotificationCenter.default.addObserver(forName:.AVPlayerItemFailedToPlayToEndTime,object:nil,queue:.main) { [weak self] note in
             Task { @MainActor in guard let self,let item=note.object as? AVPlayerItem,item === self.player.currentItem else {return};self.error="Не удалось воспроизвести аудиофайл.";self.playing=false }
         }
+        interruption=NotificationCenter.default.addObserver(forName:AVAudioSession.interruptionNotification,object:nil,queue:.main) { [weak self] _ in
+            Task {@MainActor in self?.pause()}
+        }
+        routeChange=NotificationCenter.default.addObserver(forName:AVAudioSession.routeChangeNotification,object:nil,queue:.main) { [weak self] note in
+            let reason=note.userInfo?[AVAudioSessionRouteChangeReasonKey] as? UInt
+            if reason==AVAudioSession.RouteChangeReason.oldDeviceUnavailable.rawValue {Task {@MainActor in self?.pause()}}
+        }
         let commands=MPRemoteCommandCenter.shared()
         commands.playCommand.addTarget { [weak self] _ in Task {@MainActor in self?.resume()};return .success }
         commands.pauseCommand.addTarget { [weak self] _ in Task {@MainActor in self?.pause()};return .success }
@@ -221,15 +231,33 @@ final class AudioLibrary {
             try JSONEncoder().encode(tracks).write(to:directory.appendingPathComponent("index.json"),options:.atomic)
         } catch {self.error=error.localizedDescription}
     }
+    func remove(at offsets:IndexSet) {
+        for index in offsets {
+            let track=tracks[index]
+            if track.id == currentID {pause();player.replaceCurrentItem(with:nil);currentID=nil;elapsed=0;duration=0;MPNowPlayingInfoCenter.default().nowPlayingInfo=nil}
+            try? FileManager.default.removeItem(at:track.url)
+        }
+        tracks.remove(atOffsets:offsets)
+        do {try JSONEncoder().encode(tracks).write(to:directory.appendingPathComponent("index.json"),options:.atomic)} catch {self.error=error.localizedDescription}
+    }
     func play(_ track:LocalAudioTrack) {
         do {
             try AVAudioSession.sharedInstance().setCategory(.playback,mode:.default)
             try AVAudioSession.sharedInstance().setActive(true)
             currentID=track.id;elapsed=0;duration=0;error=nil
-            player.replaceCurrentItem(with:AVPlayerItem(url:track.url));resume()
+            let item=AVPlayerItem(url:track.url)
+            itemStatus=item.observe(\.status,options:[.new]) { [weak self] observed,_ in
+                guard observed.status == .failed else {return}
+                Task {@MainActor in self?.error="Аудиофайл недоступен или его формат не поддерживается";self?.pause()}
+            }
+            player.replaceCurrentItem(with:item);resume()
         } catch {self.error=error.localizedDescription}
     }
-    func resume() {guard current != nil else {return};player.play();playing=true;updateNowPlaying()}
+    func resume() {
+        guard current != nil else {return}
+        do {try AVAudioSession.sharedInstance().setActive(true);player.play();playing=true;updateNowPlaying()}
+        catch {self.error=error.localizedDescription}
+    }
     func pause() {player.pause();playing=false;updateNowPlaying()}
     func seek(_ value:Double) {player.seek(to:CMTime(seconds:max(0,value),preferredTimescale:600));elapsed=max(0,value)}
     func next() {
@@ -254,7 +282,7 @@ struct MusicLibraryView: View {
                 Button("Добавить из Файлов",systemImage:"plus") {importing=true}
                 ForEach(library.tracks) {track in
                     Button {library.play(track)} label:{Label(track.title,systemImage:library.currentID == track.id ? "speaker.wave.2" : "music.note")}
-                }
+                }.onDelete {library.remove(at:$0)}
                 if library.tracks.isEmpty {Text("Добавьте аудиофайлы для воспроизведения в приложении.").foregroundStyle(.secondary)}
                 NavigationLink("Открыть плеер",value:AppRoute.audioPlayer)
             }
