@@ -7,13 +7,18 @@ struct ConversationView: View {
     @Environment(AppEnvironment.self) private var env
     @State private var model: ConversationViewModel?
     @FocusState private var composerFocused: Bool
+    @Environment(\.accessibilityReduceMotion) private var reduceMotion
+    @Environment(\.scenePhase) private var scenePhase
+    @State private var deleting: ChatMessage?
+    @State private var forwarding: ChatMessage?
+    @State private var forwardPeers: [Conversation] = []
 
     var body: some View {
         Group {
             if let model {
                 conversationBody(model)
             } else {
-                VKLoadingState(title: "Loading…")
+                VKLoadingState(title: "Загрузка…")
             }
         }
         .navigationTitle(conversation.displayName)
@@ -30,7 +35,29 @@ struct ConversationView: View {
                 }
             }
         }
+        .toolbar(.hidden, for:.tabBar)
+        .confirmationDialog("Удалить сообщение у себя?",isPresented:Binding(get:{deleting != nil},set:{if !$0 {deleting = nil}})) {
+            Button("Удалить",role:.destructive) { if let message = deleting { Task { await model?.delete(message) } }; deleting = nil }
+        }
+        .sheet(item:$forwarding) { message in
+            NavigationStack {
+                List(forwardPeers) { peer in Button(peer.displayName) { Task { await model?.forward(message,to:peer.id); forwarding = nil } } }
+                    .navigationTitle("Переслать в диалог")
+                    .toolbar { ToolbarItem(placement:.cancellationAction) { Button("Отмена") { forwarding = nil } } }
+                    .task {
+                        let token = await env.liveAPIGate.accessTokenIfLiveReady()
+                        if case .success(let peers) = await env.conversationRepository.fetchInbox(dataMode:env.dataMode,capabilities:env.capabilities,isNetworkReachable:env.isNetworkReachable,accessToken:token) { forwardPeers = peers }
+                    }
+            }
+        }
         .withAppRoutes()
+        .task(id:scenePhase) {
+            guard scenePhase == .active else { return }
+            while !Task.isCancelled {
+                do { try await Task.sleep(for:.seconds(20)) } catch { return }
+                if env.isLiveVKSession { await model?.load(quiet:true) }
+            }
+        }
         .task {
             if model == nil {
                 let vm = ConversationViewModel(conversation: conversation, environment: env)
@@ -58,31 +85,35 @@ struct ConversationView: View {
 
             LoadableContainer(
                 state: model.state,
-                titleForEmpty: "No messages",
+                titleForEmpty: "Нет сообщений",
                 emptySymbol: "text.bubble",
-                emptyDetails: "History appears after messages.getHistory is available.",
+                emptyDetails: "Здесь появятся сообщения этого диалога.",
                 onRetry: { Task { await model.load() } }
             ) { messages in
                 ScrollViewReader { proxy in
                     ScrollView {
                         LazyVStack(spacing: 9) {
+                            if !model.reachedStart { Button("Загрузить предыдущие") { Task { await model.loadOlder() } }.disabled(model.loadingOlder).frame(minHeight:44) }
                             ForEach(messages) { message in
-                                MessageBubble(message: message)
+                                MessageBubble(message: message, onReply:{model.replyingTo = message; composerFocused = true}, onForward:{forwarding = message}, onDelete:{deleting = message}, onRetry:{Task { await model.retry(message) }})
                                     .id(message.id)
                             }
                         }
                         .padding(.horizontal, 12)
                         .padding(.bottom, 14)
                     }
-                    .onChange(of: messages.count) { _, _ in
-                        guard let id = messages.last?.id else { return }
-                        withAnimation(.easeOut(duration: 0.2)) {
-                            proxy.scrollTo(id, anchor: .bottom)
-                        }
+                    .onAppear { if let id = messages.last?.id { proxy.scrollTo(id,anchor:.bottom) } }
+                    .onChange(of:model.scrollToMessage) { _, id in
+                        guard let id else { return }
+                        if reduceMotion { proxy.scrollTo(id,anchor:.bottom) }
+                        else { withAnimation(.easeOut(duration:0.2)) { proxy.scrollTo(id,anchor:.bottom) } }
                     }
                 }
             }
 
+            if let reply = model.replyingTo {
+                HStack { Text("Ответ: \(reply.text)").font(.caption).lineLimit(2); Spacer(); Button("Отмена") { model.replyingTo = nil } }.padding(.horizontal)
+            }
             composer(model)
         }
         .background(VKStyle.canvas)
@@ -96,12 +127,13 @@ struct ConversationView: View {
                     .font(.system(size: 28))
                     .frame(minWidth: 44, minHeight: 44)
             }
-            .accessibilityLabel("Add attachment")
+            .accessibilityLabel("Добавить вложение")
 
-            TextField("Message", text: $model.draft, axis: .vertical)
+            TextField("Сообщение", text: $model.draft, axis: .vertical)
                 .lineLimit(1...5)
                 .textFieldStyle(.roundedBorder)
                 .focused($composerFocused)
+                .onChange(of:model.draft) { _,_ in model.persistDraft() }
 
             Button {
                 Task { await model.send() }
@@ -110,8 +142,8 @@ struct ConversationView: View {
                     .font(.system(size: 28))
                     .frame(minWidth: 44, minHeight: 44)
             }
-            .disabled(model.draft.trimmingCharacters(in: .whitespacesAndNewlines).isEmpty)
-            .accessibilityLabel("Send message")
+            .disabled(model.isSending || model.draft.trimmingCharacters(in: .whitespacesAndNewlines).isEmpty)
+            .accessibilityLabel("Отправить сообщение")
         }
         .tint(VKStyle.accent)
         .padding(.horizontal, 10)
@@ -122,6 +154,10 @@ struct ConversationView: View {
 
 private struct MessageBubble: View {
     let message: ChatMessage
+    let onReply: () -> Void
+    let onForward: () -> Void
+    let onDelete: () -> Void
+    let onRetry: () -> Void
 
     private var timeLabel: String {
         message.timestamp.formatted(date: .omitted, time: .shortened)
@@ -159,10 +195,12 @@ private struct MessageBubble: View {
         .contextMenu {
             // S13 — message actions; destructive paths need confirmation when live.
             Button("Copy") { UIPasteboard.general.string = message.text }
-            Button("Reply") {}
-            Button("Forward") {}
+            Button("Ответить",action:onReply)
+            Button("Переслать",action:onForward)
+                .disabled(message.serverID == nil)
             Divider()
-            Button("Delete", role: .destructive) {}
+            Button("Удалить",role:.destructive,action:onDelete)
+            if message.state == .failed { Button("Повторить",action:onRetry) }
         }
     }
 }
