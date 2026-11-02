@@ -102,6 +102,7 @@ final class AppEnvironment {
         if capabilities.hasAccessToken {
             // Rights come from the actual OAuth response, never from a guessed allow-list.
             dataMode = .live
+            AudioLibrary.shared.setAccount(VKIDAuthCoordinator.shared.userID)
         } else if session.isLiveVKSession {
             session.signOut()
             dataMode = .fixtures
