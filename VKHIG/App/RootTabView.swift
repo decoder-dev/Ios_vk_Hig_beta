@@ -49,6 +49,7 @@ struct RootTabView: View {
             .tag(AppTab.profile)
         }
         .tint(VKStyle.accent)
+        .onAppear { if env.isLiveVKSession,!env.capabilities.canUseLiveAPI(.inbox) { selected = .profile } }
         .alert("VK HIG",isPresented:Binding(get:{env.catalog.notice != nil},set:{if !$0 {env.catalog.notice = nil}})) {
             Button("ОК") { env.catalog.notice = nil }
         } message: { Text(env.catalog.notice ?? "") }
