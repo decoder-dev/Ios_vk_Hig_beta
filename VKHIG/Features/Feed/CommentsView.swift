@@ -35,7 +35,7 @@ final class CommentsViewModel {
     private func item(_ j:VKJSON,names:[Int64:String]) -> CommentItem {
         let author = names[j["from_id"].int] ?? "VK \(j["from_id"].int)"
         return CommentItem(id:j["id"].int,postID:postID,author:author,initials:VKCatalogService.initials(author),text:j["text"].string,
-            dateLabel:VKCatalogService.date(j["date"]),replyToID:j["reply_to_comment"].int == 0 ? nil : j["reply_to_comment"].int,authorID:j["from_id"].int)
+            dateLabel:VKCatalogService.date(j["date"]),replyToID:j["reply_to_comment"].int == 0 ? nil : j["reply_to_comment"].int,authorID:j["from_id"].int,attachments:j["attachments"].chatAttachments)
     }
     private func names(_ response:VKJSON) -> [Int64:String] {
         var names=Dictionary(response["profiles"].items.map { ($0["id"].int,VKCatalogService.name($0)) },uniquingKeysWith:{a,_ in a})
@@ -112,7 +112,7 @@ final class CommentsViewModel {
                 let response=try await environment.catalog.request("wall.editComment",["owner_id":"\(post.ownerID)","comment_id":"\(comment.id)","message":text])
                 guard response.int == 1 else {throw AppError.decoding}
             }
-            let updated=CommentItem(id:comment.id,postID:comment.postID,author:comment.author,initials:comment.initials,text:text,dateLabel:comment.dateLabel,replyToID:comment.replyToID,authorID:comment.authorID)
+            let updated=CommentItem(id:comment.id,postID:comment.postID,author:comment.author,initials:comment.initials,text:text,dateLabel:comment.dateLabel,replyToID:comment.replyToID,authorID:comment.authorID,attachments:comment.attachments)
             if case .loaded(var threads)=state {
                 for i in threads.indices {
                     if threads[i].root.id == comment.id {threads[i].root=updated}
@@ -208,6 +208,7 @@ struct CommentsView:View {
             VStack(alignment:.leading,spacing:5) {
                 Text(comment.author).font(.headline)
                 Text(comment.text)
+                ForEach(comment.attachments) {AttachmentPreview(attachment:$0)}
                 HStack {Text(comment.dateLabel).foregroundStyle(.secondary);Button("Ответить") {model.replyTo=comment}.frame(minHeight:44)}.font(.caption)
             }
         }.padding(.vertical,4).contextMenu {

@@ -45,7 +45,7 @@ struct FeedView: View {
                             .padding(.horizontal, 16)
                     }
 
-                    if model.usesFixtures { storiesRow }
+                    if model.usesFixtures { storiesRow } else {LiveStoriesStrip()}
 
                     ForEach(posts) { post in
                         NavigationLink(value: AppRoute.postDetail(post.id)) {
@@ -122,7 +122,8 @@ private struct PostCard: View {
             }
             Text(post.text).font(.body)
                 .foregroundStyle(.primary)
-            if post.hasMedia {
+            if !post.attachments.isEmpty {ForEach(post.attachments) {AttachmentPreview(attachment:$0)}}
+            else if post.hasMedia {
                 if let url = post.mediaURL {
                     AsyncImage(url:url) { image in image.resizable().scaledToFit() } placeholder: { ProgressView().frame(height:160) }
                         .clipShape(RoundedRectangle(cornerRadius:VKStyle.Radius.medium))

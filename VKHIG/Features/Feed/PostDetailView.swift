@@ -43,7 +43,8 @@ struct PostDetailView: View {
                         }
                     }
                     Text(post.text).font(.body)
-                    if post.hasMedia {
+                    if !post.attachments.isEmpty {ForEach(post.attachments) {AttachmentPreview(attachment:$0)}}
+                    else if post.hasMedia {
                         AsyncImage(url:post.mediaURL) { image in image.resizable().scaledToFit() } placeholder: { ProgressView().frame(height:220) }
                     }
                     HStack(spacing: 20) {
@@ -54,6 +55,10 @@ struct PostDetailView: View {
                         NavigationLink(value: AppRoute.comments(post.id)) {
                             Label(post.commentCount.formatted(), systemImage: "bubble.right")
                         }
+                        Button {Task {
+                            if env.isLiveVKSession {_ = await env.catalog.perform("fave.addPost",["owner_id":String(post.ownerID),"id":String(post.nativeID ?? post.id)])}
+                            else {env.catalog.notice="Деморежим: запись не добавлена в VK."}
+                        }} label:{Image(systemName:"bookmark").frame(width:44,height:44)}.accessibilityLabel("Сохранить запись")
                         Button { showShare = true } label: {
                             Label("Share", systemImage: "square.and.arrow.up")
                         }
