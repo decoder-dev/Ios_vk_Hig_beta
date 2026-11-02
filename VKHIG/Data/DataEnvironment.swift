@@ -13,6 +13,7 @@ enum DataMode: String, Sendable {
 final class AppEnvironment {
     private(set) var isAuthenticated = false
     private(set) var isLiveVKSession = false
+    private(set) var isSigningOut = false
 
     var capabilities: CapabilityRegistry
     var dataMode: DataMode
@@ -72,9 +73,12 @@ final class AppEnvironment {
     }
 
     func signOut() {
+        guard !isSigningOut else {return}
+        isSigningOut=true
         Task {
             await PushRegistration.shared.disable()
             finishSignOut()
+            isSigningOut=false
         }
     }
 
