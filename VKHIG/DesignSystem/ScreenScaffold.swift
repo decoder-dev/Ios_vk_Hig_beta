@@ -1,4 +1,5 @@
 import SwiftUI
+import Observation
 
 /// Shared async fixture loader with loading/empty/error/offline surfaces.
 @MainActor
@@ -20,11 +21,14 @@ final class FixtureScreenModel<Value: Equatable> {
         do {
             try await Task.sleep(for: .milliseconds(350))
             let value = try await work()
+            try Task.checkCancellation()
             if let emptyIf, emptyIf(value) {
                 state = .empty
             } else {
                 state = .loaded(value)
             }
+        } catch is CancellationError {
+            return
         } catch let error as AppError {
             state = .failed(error)
         } catch {
@@ -37,6 +41,8 @@ struct FixtureScreen<Value: Equatable, Content: View>: View {
     @Environment(AppEnvironment.self) private var env
     @State private var model = FixtureScreenModel<Value>()
     let title: String
+    let resourceID: Int64?
+    let query: String
     let screenID: String
     let emptyTitle: String
     let emptySymbol: String
@@ -48,6 +54,8 @@ struct FixtureScreen<Value: Equatable, Content: View>: View {
     init(
         title: String,
         screenID: String,
+        resourceID: Int64? = nil,
+        query: String = "",
         emptyTitle: String,
         emptySymbol: String,
         emptyDetails: String,
@@ -55,6 +63,8 @@ struct FixtureScreen<Value: Equatable, Content: View>: View {
         loadValue: @escaping () async throws -> Value,
         @ViewBuilder content: @escaping (Value) -> Content
     ) {
+        self.resourceID = resourceID
+        self.query = query
         self.title = title
         self.screenID = screenID
         self.emptyTitle = emptyTitle
@@ -90,11 +100,19 @@ struct FixtureScreen<Value: Equatable, Content: View>: View {
             }
         }
         .navigationTitle(title)
-        .task { await reload() }
+        .task(id: query) {
+            if !query.isEmpty { try? await Task.sleep(for: .milliseconds(300)) }
+            guard !Task.isCancelled else { return }
+            await reload()
+        }
         .refreshable { await reload() }
     }
 
     private func reload() async {
-        await model.load(offline: !env.isNetworkReachable, emptyIf: isEmpty, work: loadValue)
+        model.usesFixtures = !env.isLiveVKSession
+        await model.load(offline: !env.isNetworkReachable, emptyIf: isEmpty) {
+            if env.isLiveVKSession { return try await env.catalog.load(screenID, resourceID: resourceID, query: query) }
+            return try await loadValue()
+        }
     }
 }
