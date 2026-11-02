@@ -20,11 +20,13 @@ final class ConversationViewModel {
         state = .loading
         usesFixtures = environment.dataMode == .fixtures && !environment.isLiveVKSession
 
+        let token = await environment.liveAPIGate.accessTokenIfLiveReady()
         let result = await environment.conversationRepository.fetchHistory(
             peerID: conversation.peerID,
             dataMode: environment.dataMode,
             capabilities: environment.capabilities,
-            isNetworkReachable: environment.isNetworkReachable
+            isNetworkReachable: environment.isNetworkReachable,
+            accessToken: token
         )
         switch result {
         case .success(let items):
@@ -41,11 +43,13 @@ final class ConversationViewModel {
         draft = ""
         sendNotice = nil
 
+        let token = await environment.liveAPIGate.accessTokenIfLiveReady()
         let result = await environment.conversationRepository.enqueueOutgoing(
             peerID: conversation.peerID,
             text: text,
             dataMode: environment.dataMode,
-            capabilities: environment.capabilities
+            capabilities: environment.capabilities,
+            accessToken: token
         )
         switch result {
         case .success(let message):

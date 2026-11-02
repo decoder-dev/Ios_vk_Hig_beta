@@ -141,10 +141,14 @@ struct AccountSettingsView: View {
                     Text(env.isLiveVKSession ? "VK ID" : "Fixture shell")
                 }
                 LabeledContent("VK ID client") {
-                    Text(AppSecrets.hasVKIDCredentials ? AppSecrets.vkClientID : "YOUR_VK_ID_CLIENT_ID")
-                        .lineLimit(1)
+                    Text(AppSecrets.hasVKIDCredentials ? "Configured (from build/env)" : "Missing")
+                        .foregroundStyle(.secondary)
                 }
-                LabeledContent("Redirect scheme", value: AppSecrets.vkRedirectScheme)
+                LabeledContent("Redirect URI", value: AppSecrets.vkRedirectURI)
+                LabeledContent("Client secret in app") {
+                    Text("No (PKCE / backend only)")
+                        .foregroundStyle(.secondary)
+                }
             }
             Section {
                 Button("Выйти", role: .destructive) {

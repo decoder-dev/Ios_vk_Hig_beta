@@ -1,23 +1,25 @@
 import Foundation
 
-/// Official VK ID wiring sketch (S01/S02).
+/// Official VK ID wiring (S01/S02). Prefer OAuth 2.1 + PKCE public client.
 /// Docs: https://github.com/VKCOM/vkid-ios-sdk
 ///
-/// Required from Jessica before live auth works:
-/// 1. Own VK ID application (client/app id)
-/// 2. Redirect URI / custom URL scheme registered in Info.plist + VK ID console
-/// 3. SPM/CocoaPods dependency on VKID iOS SDK
+/// Register in VK ID cabinet:
+/// - Client id: from gitignored Secrets / GitHub secret `VK_ID_CLIENT_ID`
+/// - Redirect URI: `vkhig://vkid` (scheme `vkhig` in Info.plist)
 ///
-/// Forbidden: password fields, scraped cookies, Fenrir/Phoenix keys, private APIs.
+/// Do **not** ship `VK_ID_CLIENT_SECRET` inside the iOS binary.
 struct VKIDConfiguration: Sendable {
-    /// Placeholder — replace with Jessica's app id; never commit secrets.
     var clientID: String?
     var redirectURLScheme: String?
 
     var isConfigured: Bool {
-        guard let clientID, !clientID.isEmpty,
+        guard let clientID, !clientID.isEmpty, clientID != "YOUR_VK_ID_CLIENT_ID",
               let redirectURLScheme, !redirectURLScheme.isEmpty else { return false }
         return true
+    }
+
+    var redirectURI: String {
+        "\(redirectURLScheme ?? "vkhig")://vkid"
     }
 }
 
@@ -30,7 +32,7 @@ enum VKIDAuthError: Error, LocalizedError, Equatable {
     var errorDescription: String? {
         switch self {
         case .missingCredentials:
-            return "VK ID client id / redirect URI not configured"
+            return "VK ID client id not configured"
         case .sdkNotLinked:
             return "VKID iOS SDK is not linked yet"
         case .cancelled:
@@ -58,24 +60,19 @@ final class VKIDAuthCoordinator {
     }
 
     var isConfigured: Bool { configuration.isConfigured }
+    var redirectURI: String { configuration.redirectURI }
 
-    /// Starts official VK ID authorize flow once SDK + credentials exist.
     func authorize() async -> Result<Void, VKIDAuthError> {
         guard configuration.isConfigured else {
             return .failure(.missingCredentials)
         }
-        // TODO(Stage 2 live):
-        // 1. Add VKID package product to the Xcode target.
-        // 2. Create VKID configuration with clientID + redirect.
-        // 3. Present authorize UI from the SDK (OAuth 2.1 + PKCE).
-        // 4. On success, store access/refresh tokens via `tokenStore` (never UserDefaults).
-        // 5. Handle URL callbacks in the app delegate / onOpenURL.
+        // TODO(Mac): Add VKID SPM package; present authorize UI (PKCE).
+        // On success, store access token via `tokenStore` — never log it.
+        // Client secret must not be used in-app if the app is a public PKCE client.
         return .failure(.sdkNotLinked)
     }
 
     func restoreSessionIfPossible() -> Bool {
-        // Presence of a Keychain token is not enough for messages scopes —
-        // CapabilityRegistry still gates each feature.
         tokenStore.load() != nil
     }
 

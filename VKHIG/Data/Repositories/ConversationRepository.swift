@@ -1,34 +1,53 @@
 import Foundation
 
-/// Inbox + conversation history. Live `messages.*` stays gated until scopes verified.
+/// Inbox + conversation history.
 actor ConversationRepository {
     private let fixtures: FixtureStore
     private var reconciler = MessageReconciler()
-    /// Local-only pending queue when fixtures mode simulates composer.
     private var localOutgoing: [Int64: [ChatMessage]] = [:]
+    private let apiClient: VKAPIClient
 
-    init(fixtures: FixtureStore) {
+    init(fixtures: FixtureStore, apiClient: VKAPIClient = VKAPIClient()) {
         self.fixtures = fixtures
+        self.apiClient = apiClient
     }
 
     func fetchInbox(
         dataMode: DataMode,
         capabilities: CapabilityRegistry,
-        isNetworkReachable: Bool
+        isNetworkReachable: Bool,
+        accessToken: String? = nil
     ) async -> Result<[Conversation], AppError> {
         if !isNetworkReachable { return .failure(.offline) }
 
         if capabilities.canUseLiveAPI(.inbox) {
-            // TODO(live): messages.getConversations via VKAPIClient + token provider.
-            return .failure(.capabilityUnavailable("messages.getConversations"))
+            guard let accessToken, !accessToken.isEmpty else {
+                return .failure(.notAuthenticated)
+            }
+            do {
+                let response: VKCountItemsDTO<VKConversationItemDTO> = try await apiClient.call(
+                    method: "messages.getConversations",
+                    parameters: ["count": "20", "extended": "1"],
+                    accessToken: accessToken,
+                    apiVersion: AppSecrets.vkAPIVersion
+                )
+                let mapped = (response.items ?? []).compactMap { Self.mapConversation($0) }
+                return mapped.isEmpty ? .success([]) : .success(mapped)
+            } catch let error as VKAPITransportError {
+                return .failure(.network(error.localizedDescription))
+            } catch {
+                return .failure(.decoding)
+            }
         }
 
         switch dataMode {
         case .fixtures:
-            let items = fixtures.conversations
-            return .success(items)
+            return .success(fixtures.conversations)
         case .live:
-            return .failure(.capabilityUnavailable("Inbox requires verified messages scope"))
+            if accessToken == nil || accessToken?.isEmpty == true {
+                return .failure(.notAuthenticated)
+            }
+            return .failure(.capabilityUnavailable("Inbox requires verified messages scope in CapabilityRegistry"))
         }
     }
 
@@ -36,12 +55,16 @@ actor ConversationRepository {
         peerID: PeerID,
         dataMode: DataMode,
         capabilities: CapabilityRegistry,
-        isNetworkReachable: Bool
+        isNetworkReachable: Bool,
+        accessToken: String? = nil
     ) async -> Result<[ChatMessage], AppError> {
         if !isNetworkReachable { return .failure(.offline) }
 
         if capabilities.canUseLiveAPI(.conversation) {
-            return .failure(.capabilityUnavailable("messages.getHistory"))
+            guard let accessToken, !accessToken.isEmpty else {
+                return .failure(.notAuthenticated)
+            }
+            return .failure(.capabilityUnavailable("messages.getHistory mapping pending verification"))
         }
 
         switch dataMode {
@@ -50,16 +73,19 @@ actor ConversationRepository {
             let pending = localOutgoing[peerID.raw] ?? []
             return .success(base + pending)
         case .live:
+            if accessToken == nil || accessToken?.isEmpty == true {
+                return .failure(.notAuthenticated)
+            }
             return .failure(.capabilityUnavailable("Conversation history requires verified messages scope"))
         }
     }
 
-    /// Enqueues outgoing text. Fixture mode keeps `.pending` (never fake live ACK).
     func enqueueOutgoing(
         peerID: PeerID,
         text: String,
         dataMode: DataMode,
-        capabilities: CapabilityRegistry
+        capabilities: CapabilityRegistry,
+        accessToken: String? = nil
     ) async -> Result<ChatMessage, AppError> {
         let trimmed = text.trimmingCharacters(in: .whitespacesAndNewlines)
         guard !trimmed.isEmpty else {
@@ -80,8 +106,12 @@ actor ConversationRepository {
         )
 
         if capabilities.canUseLiveAPI(.sendMessage) {
+            guard let accessToken, !accessToken.isEmpty else {
+                await reconciler.markFailed(localID: pending.id)
+                return .failure(.notAuthenticated)
+            }
             await reconciler.markFailed(localID: pending.id)
-            return .failure(.capabilityUnavailable("messages.send"))
+            return .failure(.capabilityUnavailable("messages.send mapping pending verification"))
         }
 
         switch dataMode {
@@ -92,7 +122,30 @@ actor ConversationRepository {
             return .success(message)
         case .live:
             await reconciler.markFailed(localID: pending.id)
+            if accessToken == nil || accessToken?.isEmpty == true {
+                return .failure(.notAuthenticated)
+            }
             return .failure(.capabilityUnavailable("Send requires verified messages scope"))
         }
+    }
+
+    private static func mapConversation(_ dto: VKConversationItemDTO) -> Conversation? {
+        guard let peerID = dto.conversation?.peer?.id else { return nil }
+        let name: String
+        if peerID >= 2_000_000_000 {
+            name = "Chat \(peerID)"
+        } else {
+            name = "User \(peerID)"
+        }
+        let initials = String(name.suffix(2)).uppercased()
+        return Conversation(
+            peerID: PeerID(raw: peerID),
+            displayName: name,
+            initials: initials,
+            lastMessagePreview: dto.last_message?.text ?? "",
+            lastUpdatedLabel: "—",
+            unreadCount: dto.conversation?.unread_count ?? 0,
+            isOnline: false
+        )
     }
 }

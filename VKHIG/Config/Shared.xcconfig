@@ -1,0 +1,10 @@
+// Committed defaults. Local overrides via optional Secrets.xcconfig (gitignored).
+// GitHub Actions secret names (repo Settings → Secrets):
+//   VK_ID_CLIENT_ID
+//   VK_ID_CLIENT_SECRET   ← CI/backend only; never inject into the iOS binary
+
+VK_CLIENT_ID = YOUR_VK_ID_CLIENT_ID
+VK_REDIRECT_SCHEME = vkhig
+VK_API_VERSION = 5.199
+
+#include? "Secrets.xcconfig"

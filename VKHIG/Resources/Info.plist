@@ -43,11 +43,13 @@
 		<string>UIInterfaceOrientationLandscapeRight</string>
 	</array>
 	<key>VK_CLIENT_ID</key>
-	<string>YOUR_VK_ID_CLIENT_ID</string>
+	<string>$(VK_CLIENT_ID)</string>
+	<key>VK_ID_CLIENT_ID</key>
+	<string>$(VK_CLIENT_ID)</string>
 	<key>VK_REDIRECT_SCHEME</key>
-	<string>vkhig</string>
+	<string>$(VK_REDIRECT_SCHEME)</string>
 	<key>VK_API_VERSION</key>
-	<string>5.199</string>
+	<string>$(VK_API_VERSION)</string>
 	<key>CFBundleURLTypes</key>
 	<array>
 		<dict>
@@ -59,6 +61,7 @@
 			</array>
 		</dict>
 	</array>
-	<!-- Jessica: replace YOUR_VK_ID_CLIENT_ID and align URL scheme with VK ID console. See Config/Secrets.example.xcconfig. -->
+	<!-- Redirect URI to register in VK ID cabinet: vkhig://vkid -->
+	<!-- Client id via Shared.xcconfig + gitignored Secrets.xcconfig or CI env; never commit secrets. -->
 </dict>
 </plist>

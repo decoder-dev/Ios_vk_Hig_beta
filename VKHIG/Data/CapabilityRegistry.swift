@@ -20,33 +20,41 @@ enum CapabilityStatus: String, Sendable {
     case enabled
     case needsConfig
     case needsScopeCheck
+    case needsToken
     case unavailable
     case blocked
 }
 
 struct CapabilityRegistry: Sendable {
-    /// Until Jessica supplies VK ID credentials + verified scopes, live calls stay gated.
-    var hasVKIDCredentials: Bool = AppSecrets.hasVKIDCredentials
-    var hasAccessToken: Bool = false
+    var hasVKIDCredentials: Bool
+    var hasAccessToken: Bool
     /// Explicit allow-list after docs/scope verification. Empty = nothing live.
-    var verifiedLiveFeatures: Set<FeatureCapability> = []
+    var verifiedLiveFeatures: Set<FeatureCapability>
+
+    init(
+        hasVKIDCredentials: Bool = AppSecrets.hasVKIDCredentials,
+        hasAccessToken: Bool = false,
+        verifiedLiveFeatures: Set<FeatureCapability> = []
+    ) {
+        self.hasVKIDCredentials = hasVKIDCredentials
+        self.hasAccessToken = hasAccessToken
+        self.verifiedLiveFeatures = verifiedLiveFeatures
+    }
 
     func status(for feature: FeatureCapability) -> CapabilityStatus {
         switch feature {
         case .vkIDSignIn:
+            // SDK still must be linked on Mac; credentials alone are not enough to sign in.
             return hasVKIDCredentials ? .needsConfig : .needsConfig
         case .music:
             return .unavailable
         case .video:
             return .needsScopeCheck
         case .inbox, .conversation, .sendMessage, .feed, .profile, .friends, .communities, .photos, .notifications:
-            if verifiedLiveFeatures.contains(feature), hasAccessToken {
-                return .enabled
-            }
-            if !hasVKIDCredentials {
-                return .needsConfig
-            }
-            return .needsScopeCheck
+            guard hasVKIDCredentials else { return .needsConfig }
+            guard verifiedLiveFeatures.contains(feature) else { return .needsScopeCheck }
+            guard hasAccessToken else { return .needsToken }
+            return .enabled
         }
     }
 

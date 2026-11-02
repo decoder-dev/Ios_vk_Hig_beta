@@ -26,9 +26,17 @@ struct AuthStubView: View {
                     .padding(.horizontal, VKStyle.Spacing.xl)
 
                 VStack(alignment: .leading, spacing: VKStyle.Spacing.sm) {
-                    Label("Register your own VK ID app", systemImage: "1.circle")
-                    Label("Add client id + redirect / URL scheme", systemImage: "2.circle")
-                    Label("Link VKID iOS SDK; store tokens in Keychain", systemImage: "3.circle")
+                    Label(
+                        AppSecrets.hasVKIDCredentials
+                            ? "Client id loaded from local/CI config"
+                            : "Add VK_ID_CLIENT_ID (GitHub secret or Secrets.xcconfig)",
+                        systemImage: "1.circle"
+                    )
+                    Label("Register redirect URI \(AppSecrets.vkRedirectURI)", systemImage: "2.circle")
+                    Label("Link VKID iOS SDK (PKCE); Keychain tokens only", systemImage: "3.circle")
+                    Text("Client secret stays out of the app binary.")
+                        .font(.caption)
+                        .foregroundStyle(.secondary)
                 }
                 .font(.subheadline)
                 .frame(maxWidth: .infinity, alignment: .leading)

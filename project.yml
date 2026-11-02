@@ -13,6 +13,9 @@ settings:
   SWIFT_VERSION: "5.10"
   TARGETED_DEVICE_FAMILY: "1,2"
   IPHONEOS_DEPLOYMENT_TARGET: "17.0"
+configFiles:
+  Debug: VKHIG/Config/Shared.xcconfig
+  Release: VKHIG/Config/Shared.xcconfig
 targets:
   VKHIG:
     type: application
@@ -21,6 +24,10 @@ targets:
       - path: VKHIG
         excludes:
           - "**/*.md"
+          - "Config/Secrets.xcconfig"
+    configFiles:
+      Debug: VKHIG/Config/Shared.xcconfig
+      Release: VKHIG/Config/Shared.xcconfig
     settings:
       PRODUCT_BUNDLE_IDENTIFIER: com.decoderdev.vkhig
       PRODUCT_NAME: VK HIG
@@ -31,6 +38,8 @@ targets:
       CURRENT_PROJECT_VERSION: 1
       MARKETING_VERSION: "0.1.0"
       SUPPORTS_XR_DESIGNED_FOR_IPHONE_IPAD: false
+      INFOPLIST_EXPAND_BUILD_SETTINGS: true
+
     info:
       path: VKHIG/Resources/Info.plist
       properties:

@@ -13,7 +13,9 @@
 		98D26758F453679365716D79 /* DataEnvironment.swift in Sources */ = {isa = PBXBuildFile; fileRef = BC33F6E362F090E03FA67177 /* DataEnvironment.swift */; };
 		0993C23CD6303002E8AC5C5F /* CatalogFixtures.swift in Sources */ = {isa = PBXBuildFile; fileRef = EB3A9EF43BA2DE79DCD41065 /* CatalogFixtures.swift */; };
 		792FF1FBDD086D8905EB61B6 /* FixtureStore.swift in Sources */ = {isa = PBXBuildFile; fileRef = 37924D97DA1F1CDBDFC3F9EB /* FixtureStore.swift */; };
+		E58758AA4A563FFF69A1CAA9 /* LiveAPIGate.swift in Sources */ = {isa = PBXBuildFile; fileRef = 02F78477884BA48150126980 /* LiveAPIGate.swift */; };
 		8BB7A779D53924D85AF6DB4C /* VKAPIClient.swift in Sources */ = {isa = PBXBuildFile; fileRef = D92A35AB36CF064B5F28A408 /* VKAPIClient.swift */; };
+		071631655AB4904DE67AAC7B /* VKAPIMinimalDTO.swift in Sources */ = {isa = PBXBuildFile; fileRef = 05354D64D43B521C3D1201C0 /* VKAPIMinimalDTO.swift */; };
 		523EBDABB3856773956DB8B3 /* ConversationRepository.swift in Sources */ = {isa = PBXBuildFile; fileRef = 920CB3EE9830CBA6D9DB31AD /* ConversationRepository.swift */; };
 		AFF4E1B8A3DC0A2D3DA7F7C4 /* FeedRepository.swift in Sources */ = {isa = PBXBuildFile; fileRef = 581221B4667EB395CBFDACCF /* FeedRepository.swift */; };
 		F85D4DAB352CB8F0D723C2EE /* ProfileRepository.swift in Sources */ = {isa = PBXBuildFile; fileRef = 6F9CC52D21A5BFF774FA849E /* ProfileRepository.swift */; };
@@ -50,6 +52,7 @@
 		EDBDEE820882675B0055549F /* KeychainTokenStore.swift in Sources */ = {isa = PBXBuildFile; fileRef = C4E5C5FAD3C9F56A824047BD /* KeychainTokenStore.swift */; };
 		E6AF2CA3943B3AF60B777194 /* SessionStore.swift in Sources */ = {isa = PBXBuildFile; fileRef = BFDF9C5BE0779E2F92CA6A6B /* SessionStore.swift */; };
 		0A7009C19ED621816E4D5B36 /* VKIDAuthCoordinator.swift in Sources */ = {isa = PBXBuildFile; fileRef = 91BF5AA0707A2B450580E489 /* VKIDAuthCoordinator.swift */; };
+		7E9054F348CEB8B1401D1044 /* VKTokenProvider.swift in Sources */ = {isa = PBXBuildFile; fileRef = A9904AE8ED9874BC5301748A /* VKTokenProvider.swift */; };
 		172ED6F51C2BDD061EA017D7 /* PrivacyInfo.xcprivacy in Resources */ = {isa = PBXBuildFile; fileRef = 32DEBFEC513FC30CC7B235A8 /* PrivacyInfo.xcprivacy */; };
 		918ECD417C5A11D3677E76EB /* preview_data.json in Resources */ = {isa = PBXBuildFile; fileRef = A126A0DE6FE5715D0B29F984 /* preview_data.json */; };
 		9EAE55B157EDE6A583E6BD6A /* Assets.xcassets in Resources */ = {isa = PBXBuildFile; fileRef = CD73FA17883C14233FC5D66E /* Assets.xcassets */; };
@@ -66,7 +69,9 @@
 		BC33F6E362F090E03FA67177 /* DataEnvironment.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = DataEnvironment.swift; sourceTree = "<group>"; };
 		EB3A9EF43BA2DE79DCD41065 /* CatalogFixtures.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = CatalogFixtures.swift; sourceTree = "<group>"; };
 		37924D97DA1F1CDBDFC3F9EB /* FixtureStore.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = FixtureStore.swift; sourceTree = "<group>"; };
+		02F78477884BA48150126980 /* LiveAPIGate.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = LiveAPIGate.swift; sourceTree = "<group>"; };
 		D92A35AB36CF064B5F28A408 /* VKAPIClient.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = VKAPIClient.swift; sourceTree = "<group>"; };
+		05354D64D43B521C3D1201C0 /* VKAPIMinimalDTO.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = VKAPIMinimalDTO.swift; sourceTree = "<group>"; };
 		920CB3EE9830CBA6D9DB31AD /* ConversationRepository.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = ConversationRepository.swift; sourceTree = "<group>"; };
 		581221B4667EB395CBFDACCF /* FeedRepository.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = FeedRepository.swift; sourceTree = "<group>"; };
 		6F9CC52D21A5BFF774FA849E /* ProfileRepository.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = ProfileRepository.swift; sourceTree = "<group>"; };
@@ -103,6 +108,7 @@
 		C4E5C5FAD3C9F56A824047BD /* KeychainTokenStore.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = KeychainTokenStore.swift; sourceTree = "<group>"; };
 		BFDF9C5BE0779E2F92CA6A6B /* SessionStore.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = SessionStore.swift; sourceTree = "<group>"; };
 		91BF5AA0707A2B450580E489 /* VKIDAuthCoordinator.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = VKIDAuthCoordinator.swift; sourceTree = "<group>"; };
+		A9904AE8ED9874BC5301748A /* VKTokenProvider.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = VKTokenProvider.swift; sourceTree = "<group>"; };
 		88133A961E36795FA834DB54 /* VKHIGFoundationTests.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = VKHIGFoundationTests.swift; sourceTree = "<group>"; };
 		32DEBFEC513FC30CC7B235A8 /* PrivacyInfo.xcprivacy */ = {isa = PBXFileReference; lastKnownFileType = text.plist.xml; path = PrivacyInfo.xcprivacy; sourceTree = "<group>"; };
 		A126A0DE6FE5715D0B29F984 /* preview_data.json */ = {isa = PBXFileReference; lastKnownFileType = text.json; path = preview_data.json; sourceTree = "<group>"; };
@@ -187,6 +193,8 @@
 		FB316BC65EA8F3B905ABAD2E /* Network */ = {
 			isa = PBXGroup;
 			children = (
+				02F78477884BA48150126980 /* LiveAPIGate.swift */,
+				05354D64D43B521C3D1201C0 /* VKAPIMinimalDTO.swift */,
 				D92A35AB36CF064B5F28A408 /* VKAPIClient.swift */,
 			);
 			path = Network;
@@ -370,6 +378,7 @@
 			isa = PBXGroup;
 			children = (
 				91BF5AA0707A2B450580E489 /* VKIDAuthCoordinator.swift */,
+				A9904AE8ED9874BC5301748A /* VKTokenProvider.swift */,
 				BFDF9C5BE0779E2F92CA6A6B /* SessionStore.swift */,
 				C4E5C5FAD3C9F56A824047BD /* KeychainTokenStore.swift */,
 			);
@@ -415,7 +424,9 @@
 				98D26758F453679365716D79 /* DataEnvironment.swift in Sources */,
 				0993C23CD6303002E8AC5C5F /* CatalogFixtures.swift in Sources */,
 				792FF1FBDD086D8905EB61B6 /* FixtureStore.swift in Sources */,
+				E58758AA4A563FFF69A1CAA9 /* LiveAPIGate.swift in Sources */,
 				8BB7A779D53924D85AF6DB4C /* VKAPIClient.swift in Sources */,
+				071631655AB4904DE67AAC7B /* VKAPIMinimalDTO.swift in Sources */,
 				523EBDABB3856773956DB8B3 /* ConversationRepository.swift in Sources */,
 				AFF4E1B8A3DC0A2D3DA7F7C4 /* FeedRepository.swift in Sources */,
 				F85D4DAB352CB8F0D723C2EE /* ProfileRepository.swift in Sources */,
@@ -452,6 +463,7 @@
 				EDBDEE820882675B0055549F /* KeychainTokenStore.swift in Sources */,
 				E6AF2CA3943B3AF60B777194 /* SessionStore.swift in Sources */,
 				0A7009C19ED621816E4D5B36 /* VKIDAuthCoordinator.swift in Sources */,
+				7E9054F348CEB8B1401D1044 /* VKTokenProvider.swift in Sources */,
 			);
 			runOnlyForDeploymentPostprocessing = 0;
 		};
@@ -621,6 +633,7 @@
 				CODE_SIGN_STYLE = Automatic;
 				CURRENT_PROJECT_VERSION = 1;
 				GENERATE_INFOPLIST_FILE = NO;
+				INFOPLIST_EXPAND_BUILD_SETTINGS = YES;
 				INFOPLIST_FILE = VKHIG/Resources/Info.plist;
 				LD_RUNPATH_SEARCH_PATHS = (
 					"$(inherited)",
@@ -633,6 +646,9 @@
 				SUPPORTS_MACCATALYST = NO;
 				SWIFT_EMIT_LOC_STRINGS = YES;
 				TARGETED_DEVICE_FAMILY = "1,2";
+				VK_CLIENT_ID = YOUR_VK_ID_CLIENT_ID;
+				VK_REDIRECT_SCHEME = vkhig;
+				VK_API_VERSION = 5.199;
 			};
 			name = Debug;
 		};
@@ -644,6 +660,7 @@
 				CODE_SIGN_STYLE = Automatic;
 				CURRENT_PROJECT_VERSION = 1;
 				GENERATE_INFOPLIST_FILE = NO;
+				INFOPLIST_EXPAND_BUILD_SETTINGS = YES;
 				INFOPLIST_FILE = VKHIG/Resources/Info.plist;
 				LD_RUNPATH_SEARCH_PATHS = (
 					"$(inherited)",
@@ -656,6 +673,9 @@
 				SUPPORTS_MACCATALYST = NO;
 				SWIFT_EMIT_LOC_STRINGS = YES;
 				TARGETED_DEVICE_FAMILY = "1,2";
+				VK_CLIENT_ID = YOUR_VK_ID_CLIENT_ID;
+				VK_REDIRECT_SCHEME = vkhig;
+				VK_API_VERSION = 5.199;
 			};
 			name = Release;
 		};

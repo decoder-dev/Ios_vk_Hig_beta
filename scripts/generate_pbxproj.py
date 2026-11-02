@@ -431,6 +431,7 @@ app_settings = [
     'CODE_SIGN_STYLE = Automatic;',
     'CURRENT_PROJECT_VERSION = 1;',
     'GENERATE_INFOPLIST_FILE = NO;',
+    'INFOPLIST_EXPAND_BUILD_SETTINGS = YES;',
     'INFOPLIST_FILE = VKHIG/Resources/Info.plist;',
     'LD_RUNPATH_SEARCH_PATHS = (',
     '\t"$(inherited)",',
@@ -443,6 +444,9 @@ app_settings = [
     'SUPPORTS_MACCATALYST = NO;',
     'SWIFT_EMIT_LOC_STRINGS = YES;',
     'TARGETED_DEVICE_FAMILY = "1,2";',
+    'VK_CLIENT_ID = YOUR_VK_ID_CLIENT_ID;',
+    'VK_REDIRECT_SCHEME = vkhig;',
+    'VK_API_VERSION = 5.199;',
 ]
 config_block(debug_app, "Debug", app_settings)
 config_block(release_app, "Release", app_settings)
