@@ -96,14 +96,21 @@ final class PushRegistration {
         } catch {if ticket==revision {status="Регистрация VK: "+error.localizedDescription}}
     }
     func disable() async {
+        UserDefaults.standard.set(false,forKey:"vkhig.notifications.enabled")
         revision=UUID()
-        if registeredUser != nil {
+        UIApplication.shared.unregisterForRemoteNotifications()
+        UNUserNotificationCenter.current().removeAllDeliveredNotifications()
+        pendingRoute=nil
+        // Finish any in-flight registration before unregistering this installation.
+        while registering {try? await Task.sleep(for:.milliseconds(50))}
+        var failure:String?
+        if token != nil,VKIDAuthCoordinator.shared.userID != nil {
             do {
                 let response=try await VKCatalogService.shared.request("account.unregisterDevice",["device_id":deviceID,"sandbox":sandbox])
                 guard response.int==1 else {throw AppError.decoding}
-            } catch {status="Не удалось отключить устройство в VK: "+error.localizedDescription;return}
+            } catch {failure="Push отключён на устройстве. VK: "+error.localizedDescription}
         }
-        registeredUser=nil;UIApplication.shared.unregisterForRemoteNotifications();status="Push отключён"
+        registeredUser=nil;status=failure ?? "Push отключён"
     }
     func route(_ payload:[AnyHashable:Any]) {
         // Never open arbitrary URLs from a notification payload.
@@ -121,7 +128,10 @@ final class PushAppDelegate:NSObject,UIApplicationDelegate,UNUserNotificationCen
     }
     func application(_ application:UIApplication,didRegisterForRemoteNotificationsWithDeviceToken deviceToken:Data) {Task {@MainActor in await PushRegistration.shared.received(deviceToken)}}
     func application(_ application:UIApplication,didFailToRegisterForRemoteNotificationsWithError error:Error) {Task {@MainActor in PushRegistration.shared.status="APNs: "+error.localizedDescription}}
-    func userNotificationCenter(_ center:UNUserNotificationCenter,willPresent notification:UNNotification,withCompletionHandler completionHandler:@escaping (UNNotificationPresentationOptions)->Void) {completionHandler([.banner,.sound,.badge])}
+    func userNotificationCenter(_ center:UNUserNotificationCenter,willPresent notification:UNNotification,withCompletionHandler completionHandler:@escaping (UNNotificationPresentationOptions)->Void) {
+        let enabled=UserDefaults.standard.bool(forKey:"vkhig.notifications.enabled")
+        completionHandler(enabled ? [.banner,.sound,.badge] : [])
+    }
     func userNotificationCenter(_ center:UNUserNotificationCenter,didReceive response:UNNotificationResponse,withCompletionHandler completionHandler:@escaping ()->Void) {
         let payload=response.notification.request.content.userInfo
         Task {@MainActor in PushRegistration.shared.route(payload);completionHandler()}
