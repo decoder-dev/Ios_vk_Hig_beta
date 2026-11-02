@@ -1,6 +1,9 @@
 import SwiftUI
 import AVKit
 import SafariServices
+import MediaPlayer
+import Observation
+import UniformTypeIdentifiers
 
 /// S26 — photo albums.
 struct PhotoAlbumsView: View {
@@ -154,97 +157,146 @@ struct OfficialWebPlayer: UIViewControllerRepresentable {
     func updateUIViewController(_ controller:SFSafariViewController,context:Context) {}
 }
 
-/// S31 — music library (honest unavailable + fixture library browse).
+struct LocalAudioTrack: Identifiable, Codable, Equatable {
+    var id: String
+    var title: String
+    var url: URL
+}
+
+@MainActor
+@Observable
+final class AudioLibrary {
+    static let shared = AudioLibrary()
+    var tracks: [LocalAudioTrack] = []
+    var currentID: String?
+    var playing = false
+    var elapsed = 0.0
+    var duration = 0.0
+    var shuffle = false
+    var repeatOne = false
+    var error: String?
+    @ObservationIgnored private let player = AVPlayer()
+    @ObservationIgnored private var timer: Any?
+    @ObservationIgnored private var ended: NSObjectProtocol?
+    @ObservationIgnored private var failed: NSObjectProtocol?
+    private var directory: URL { FileManager.default.urls(for:.applicationSupportDirectory,in:.userDomainMask)[0].appendingPathComponent("AudioLibrary",isDirectory:true) }
+    var current: LocalAudioTrack? { tracks.first {$0.id == currentID} }
+    private init() {
+        tracks = (try? JSONDecoder().decode([LocalAudioTrack].self,from:Data(contentsOf:directory.appendingPathComponent("index.json")))) ?? []
+        timer = player.addPeriodicTimeObserver(forInterval:CMTime(seconds:0.5,preferredTimescale:600),queue:.main) { [weak self] time in
+            Task { @MainActor in
+                guard let self else {return}
+                self.elapsed = max(0,time.seconds.isFinite ? time.seconds : 0)
+                let length = self.player.currentItem?.duration.seconds ?? 0
+                self.duration = length.isFinite ? max(0,length) : 0
+                self.playing = self.player.rate > 0
+                self.updateNowPlaying()
+            }
+        }
+        ended = NotificationCenter.default.addObserver(forName:.AVPlayerItemDidPlayToEndTime,object:nil,queue:.main) { [weak self] note in
+            Task { @MainActor in guard let self,let item=note.object as? AVPlayerItem,item === self.player.currentItem else {return};if self.repeatOne {self.seek(0);self.player.play()} else {self.next()} }
+        }
+        failed = NotificationCenter.default.addObserver(forName:.AVPlayerItemFailedToPlayToEndTime,object:nil,queue:.main) { [weak self] note in
+            Task { @MainActor in guard let self,let item=note.object as? AVPlayerItem,item === self.player.currentItem else {return};self.error="Не удалось воспроизвести аудиофайл.";self.playing=false }
+        }
+        let commands=MPRemoteCommandCenter.shared()
+        commands.playCommand.addTarget { [weak self] _ in Task {@MainActor in self?.resume()};return .success }
+        commands.pauseCommand.addTarget { [weak self] _ in Task {@MainActor in self?.pause()};return .success }
+        commands.nextTrackCommand.addTarget { [weak self] _ in Task {@MainActor in self?.next()};return .success }
+        commands.previousTrackCommand.addTarget { [weak self] _ in Task {@MainActor in self?.previous()};return .success }
+        commands.changePlaybackPositionCommand.addTarget { [weak self] event in
+            guard let event=event as? MPChangePlaybackPositionCommandEvent else {return .commandFailed}
+            let position=event.positionTime;Task {@MainActor in self?.seek(position)};return .success
+        }
+    }
+    func importFiles(_ urls:[URL]) {
+        do {
+            try FileManager.default.createDirectory(at:directory,withIntermediateDirectories:true)
+            for url in urls {
+                let access=url.startAccessingSecurityScopedResource();defer {if access {url.stopAccessingSecurityScopedResource()}}
+                let id=UUID().uuidString,destination=directory.appendingPathComponent(id).appendingPathExtension(url.pathExtension)
+                try FileManager.default.copyItem(at:url,to:destination)
+                tracks.append(LocalAudioTrack(id:id,title:url.deletingPathExtension().lastPathComponent,url:destination))
+            }
+            try JSONEncoder().encode(tracks).write(to:directory.appendingPathComponent("index.json"),options:.atomic)
+        } catch {self.error=error.localizedDescription}
+    }
+    func play(_ track:LocalAudioTrack) {
+        do {
+            try AVAudioSession.sharedInstance().setCategory(.playback,mode:.default)
+            try AVAudioSession.sharedInstance().setActive(true)
+            currentID=track.id;elapsed=0;duration=0;error=nil
+            player.replaceCurrentItem(with:AVPlayerItem(url:track.url));resume()
+        } catch {self.error=error.localizedDescription}
+    }
+    func resume() {guard current != nil else {return};player.play();playing=true;updateNowPlaying()}
+    func pause() {player.pause();playing=false;updateNowPlaying()}
+    func seek(_ value:Double) {player.seek(to:CMTime(seconds:max(0,value),preferredTimescale:600));elapsed=max(0,value)}
+    func next() {
+        guard !tracks.isEmpty else {return}
+        if shuffle {play(tracks.filter {$0.id != currentID}.randomElement() ?? tracks[0]);return}
+        let index=tracks.firstIndex {$0.id == currentID} ?? -1
+        if index+1 < tracks.count {play(tracks[index+1])} else {pause();seek(0)}
+    }
+    func previous() {guard !tracks.isEmpty else {return};if elapsed > 3 {seek(0);return};play(tracks[max(0,(tracks.firstIndex {$0.id == currentID} ?? 0)-1)])}
+    private func updateNowPlaying() {
+        guard let current else {return}
+        MPNowPlayingInfoCenter.default().nowPlayingInfo=[MPMediaItemPropertyTitle:current.title,MPMediaItemPropertyPlaybackDuration:duration,MPNowPlayingInfoPropertyElapsedPlaybackTime:elapsed,MPNowPlayingInfoPropertyPlaybackRate:playing ? 1.0 : 0.0]
+    }
+}
+
 struct MusicLibraryView: View {
-    @Environment(AppEnvironment.self) private var env
-
+    @State private var library=AudioLibrary.shared
+    @State private var importing=false
     var body: some View {
-        Group {
-            if env.capabilities.status(for: .music) == .unavailable {
-                List {
-                    Section {
-                        VKUnavailableState(
-                            title: "Музыка недоступна",
-                            details: "VK не предоставил этому приложению доступ к музыкальным потокам."
-                        )
-                        .listRowBackground(Color.clear)
-                    }
-                    Section("S31 · Fixture library (no playback)") {
-                        ForEach(CatalogFixtures.playlists) { playlist in
-                            NavigationLink(value: AppRoute.playlist(playlist.id)) {
-                                Label("\(playlist.title) · \(playlist.trackCount)", systemImage: "music.note.list")
-                            }
-                        }
-                        NavigationLink(value: AppRoute.audioPlayer) {
-                            Label("Просмотр плеера", systemImage: "play.circle")
-                        }
-                    }
+        List {
+            Section("Мои аудиофайлы") {
+                Button("Добавить из Файлов",systemImage:"plus") {importing=true}
+                ForEach(library.tracks) {track in
+                    Button {library.play(track)} label:{Label(track.title,systemImage:library.currentID == track.id ? "speaker.wave.2" : "music.note")}
                 }
-                .navigationTitle("Музыка")
-                .withAppRoutes()
-            } else {
-                Text("Unexpected music capability")
+                if library.tracks.isEmpty {Text("Добавьте аудиофайлы для воспроизведения в приложении.").foregroundStyle(.secondary)}
+                NavigationLink("Открыть плеер",value:AppRoute.audioPlayer)
             }
+            Section("VK Музыка") {
+                Link("Открыть каталог VK",destination:URL(string:"https://vk.com/music")!)
+                Text("Каталог и потоки VK подключаются после предоставления музыкального API приложению.").font(.footnote).foregroundStyle(.secondary)
+            }
+            if let error=library.error {Text(error).foregroundStyle(.red)}
+        }.navigationTitle("Музыка").withAppRoutes()
+        .fileImporter(isPresented:$importing,allowedContentTypes:[.audio],allowsMultipleSelection:true) {result in
+            switch result {case .success(let urls):library.importFiles(urls);case .failure(let error):library.error=error.localizedDescription}
         }
     }
 }
 
-/// S32 — audio player shell.
 struct AudioPlayerView: View {
+    @State private var library=AudioLibrary.shared
     var body: some View {
-        VStack(spacing: 24) {
-            RoundedRectangle(cornerRadius: 16)
-                .fill(VKStyle.cell)
-                .frame(width: 220, height: 220)
-                .overlay { Image(systemName: "music.note").font(.system(size: 48)) }
-            Text("Демонстрационная композиция").font(.title2.bold())
-            Text("S32 · Seek/AirPlay only with licensed streams").font(.footnote).foregroundStyle(.secondary)
-            HStack(spacing: 32) {
-                Button {} label: { Image(systemName: "backward.fill").frame(width: 44, height: 44) }
-                    .disabled(true)
-                Button {} label: { Image(systemName: "play.fill").font(.title).frame(width: 56, height: 56) }
-                    .disabled(true)
-                    .accessibilityLabel("Play disabled — no licensed stream")
-                Button {} label: { Image(systemName: "forward.fill").frame(width: 44, height: 44) }
-                    .disabled(true)
-            }
+        VStack(spacing:24) {
+            Image(systemName:"music.note").font(.system(size:80)).frame(height:160)
+            Text(library.current?.title ?? "Выберите аудиофайл").font(.title2.bold()).multilineTextAlignment(.center)
+            Slider(value:Binding(get:{library.elapsed},set:{library.seek($0)}),in:0...max(1,library.duration)).disabled(library.current == nil).accessibilityLabel("Позиция воспроизведения")
+            HStack {Text(time(library.elapsed));Spacer();Text(time(library.duration))}.font(.caption.monospacedDigit())
+            HStack(spacing:32) {
+                Button {library.previous()} label:{Image(systemName:"backward.fill").frame(width:44,height:44)}.accessibilityLabel("Предыдущий трек")
+                Button {if library.playing {library.pause()} else {library.resume()}} label:{Image(systemName:library.playing ? "pause.fill" : "play.fill").font(.title).frame(width:56,height:56)}.accessibilityLabel(library.playing ? "Пауза" : "Воспроизвести")
+                Button {library.next()} label:{Image(systemName:"forward.fill").frame(width:44,height:44)}.accessibilityLabel("Следующий трек")
+            }.disabled(library.current == nil)
+            Toggle("Перемешивать",isOn:$library.shuffle)
+            Toggle("Повторять трек",isOn:$library.repeatOne)
+            AudioRoutePicker().frame(width:44,height:44).accessibilityLabel("AirPlay")
+            if let error=library.error {Text(error).font(.footnote).foregroundStyle(.red)}
             Spacer()
-        }
-        .padding()
-        .navigationTitle("Плеер")
-        .navigationBarTitleDisplayMode(.inline)
+        }.padding().navigationTitle("Плеер").navigationBarTitleDisplayMode(.inline)
     }
+    private func time(_ seconds:Double) -> String {let value=Int(seconds);return String(format:"%d:%02d",value/60,value%60)}
 }
-
-/// S33 — playlist.
+struct AudioRoutePicker:UIViewRepresentable {
+    func makeUIView(context:Context) -> AVRoutePickerView {AVRoutePickerView()}
+    func updateUIView(_ view:AVRoutePickerView,context:Context) {}
+}
 struct PlaylistView: View {
-    let playlistID: Int64
-
-    var body: some View {
-        FixtureScreen(
-            title: "Плейлист",
-            screenID: "S33",
-            emptyTitle: "Плейлист пуст",
-            emptySymbol: "music.note.list",
-            emptyDetails: "Audio methods gated.",
-            isEmpty: { $0.isEmpty },
-            loadValue: {
-                _ = playlistID
-                CatalogFixtures.tracks
-            }
-        ) { tracks in
-            List(tracks) { track in
-                HStack {
-                    VStack(alignment: .leading) {
-                        Text(track.title)
-                        Text(track.artist).font(.caption).foregroundStyle(.secondary)
-                    }
-                    Spacer()
-                    Text(track.durationLabel).font(.caption).foregroundStyle(.secondary)
-                    Image(systemName: "play.slash").foregroundStyle(.tertiary)
-                }
-                .accessibilityLabel("\(track.title), playback disabled")
-            }
-        }
-    }
+    let playlistID:Int64
+    var body:some View {MusicLibraryView()}
 }
