@@ -304,8 +304,7 @@ struct CommunityMembersView: View {
             emptyDetails: "groups.getMembers when scoped.",
             isEmpty: { $0.isEmpty },
             loadValue: {
-                _ = communityID
-                CatalogFixtures.friends
+                return CatalogFixtures.friends
             }
         ) { members in
             List(members.filter { query.isEmpty || $0.displayName.localizedCaseInsensitiveContains(query) }) { friend in
