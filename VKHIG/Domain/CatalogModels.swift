@@ -33,6 +33,7 @@ struct CommentItem: Identifiable, Hashable, Sendable {
     let text: String
     let dateLabel: String
     let replyToID: Int64?
+    var authorID: Int64 = 0
 }
 
 struct NotificationItem: Identifiable, Hashable, Sendable {
@@ -42,6 +43,7 @@ struct NotificationItem: Identifiable, Hashable, Sendable {
     let dateLabel: String
     let symbol: String
     let isUnread: Bool
+    var targetURL: URL? = nil
 }
 
 struct SearchHit: Identifiable, Hashable, Sendable {
@@ -95,6 +97,7 @@ struct BookmarkItem: Identifiable, Hashable, Sendable {
     let title: String
     let subtitle: String
     let symbol: String
+    var targetURL: URL? = nil
 }
 
 struct StoryItem: Identifiable, Hashable, Sendable {
