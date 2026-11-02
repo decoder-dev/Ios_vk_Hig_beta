@@ -1,4 +1,5 @@
 import SwiftUI
+import UserNotifications
 
 /// S34 — settings hub (replaces/extends simple settings).
 struct SettingsHubView: View {
@@ -41,6 +42,7 @@ struct SettingsHubView: View {
 /// S35
 struct NotificationSettingsView: View {
     @AppStorage("vkhig.notifications.enabled") private var enabled = false
+    @State private var permission = ""
     @AppStorage("vkhig.notifications.messages") private var messages = true
     @AppStorage("vkhig.notifications.feedback") private var feedback = true
 
@@ -54,31 +56,31 @@ struct NotificationSettingsView: View {
                     .disabled(!enabled)
             }
             Section {
-                Text("System permission via UNUserNotificationCenter is requested on Mac/device builds when enabling push.")
+                Text(permission.isEmpty ? "Разрешение iOS позволяет показывать уведомления. Доставка push от VK требует отдельно зарегистрированного сервиса." : permission)
                     .font(.footnote).foregroundStyle(.secondary)
             }
         }
         .navigationTitle("Уведомления")
+        .onChange(of:enabled) { _,value in
+            guard value else { return }
+            Task {
+                do {
+                    let granted = try await UNUserNotificationCenter.current().requestAuthorization(options:[.alert,.sound,.badge])
+                    enabled = granted
+                    permission = granted ? "Разрешение получено. Push-сервис ещё не зарегистрирован." : "Уведомления запрещены в настройках iOS."
+                } catch { enabled = false; permission = "Не удалось запросить разрешение." }
+            }
+        }
     }
 }
 
 /// S36
 struct PrivacySettingsView: View {
-    @AppStorage("vkhig.privacy.hideOnline") private var hideOnline = false
-    @AppStorage("vkhig.privacy.closedProfile") private var closedProfile = false
-
     var body: some View {
         Form {
-            Section("S36 · Local preferences") {
-                Toggle("Скрывать онлайн (local)", isOn: $hideOnline)
-                Toggle("Закрытый профиль (local)", isOn: $closedProfile)
-            }
-            Section {
-                Text("Server-side privacy account methods stay gated until verified.")
-                    .font(.footnote).foregroundStyle(.secondary)
-            }
-        }
-        .navigationTitle("Конфиденциальность")
+            Section { Text("Настройки приватности аккаунта изменяются в официальном VK. Приложение не имитирует скрытый онлайн или закрытие профиля.") }
+            Link("Открыть настройки приватности VK",destination:URL(string:"https://vk.com/settings?act=privacy")!)
+        }.navigationTitle("Конфиденциальность")
     }
 }
 
@@ -96,7 +98,7 @@ struct AppearanceSettingsView: View {
                 }
             }
             Section {
-                Text("App follows system Dynamic Type. Reduce Motion is respected by avoiding nonessential animation where possible.")
+                Text("Размер текста и уменьшение движения учитывают настройки iOS.")
                     .font(.footnote).foregroundStyle(.secondary)
             }
         }
@@ -112,15 +114,16 @@ struct StorageSettingsView: View {
     var body: some View {
         Form {
             Section("S38") {
-                LabeledContent("Кэш (оценка)", value: "12 MB fixture")
+                LabeledContent("Кэш изображений",value:ByteCountFormatter.string(fromByteCount:Int64(URLCache.shared.currentDiskUsage + URLCache.shared.currentMemoryUsage),countStyle:.file))
                 Toggle("Загрузка по сотовой сети", isOn: $cellular)
                 Button("Очистить кэш", role: .destructive) {
+                    URLCache.shared.removeAllCachedResponses()
                     cleared = true
                 }
             }
             if cleared {
                 Section {
-                    Text("Local cache clear simulated — no VK server side effect.")
+                    Text("Кэш изображений очищен. Сообщения и черновики сохранены.")
                         .font(.footnote).foregroundStyle(.secondary)
                 }
             }
@@ -141,12 +144,13 @@ struct AccountSettingsView: View {
                     Text(env.isLiveVKSession ? "VK ID" : "Fixture shell")
                 }
                 LabeledContent("VK ID client") {
-                    Text(AppSecrets.hasVKIDCredentials ? "Configured (from build/env)" : "Missing")
+                    Text(AppSecrets.hasVKIDCredentials ? "Настроен" : "Не настроен")
                         .foregroundStyle(.secondary)
                 }
                 LabeledContent("Redirect URI", value: AppSecrets.vkRedirectURI)
+                LabeledContent("Выданные права",value:env.capabilities.grantedScopes.sorted().joined(separator:", "))
                 LabeledContent("Client secret in app") {
-                    Text("No (PKCE / backend only)")
+                    Text("Не используется (PKCE)")
                         .foregroundStyle(.secondary)
                 }
             }
