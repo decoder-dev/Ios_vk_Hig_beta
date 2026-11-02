@@ -36,7 +36,7 @@ actor ConversationRepository {
                 let serverID = j["id"].int, key = "\(peerID.raw)_\(serverID)"
                 let localID = ids[key] ?? UUID(); ids[key] = localID
                 return ChatMessage(id:localID, serverID:serverID, peerID:peerID, text:j["text"].string.isEmpty && !j["attachments"].items.isEmpty ? "Вложение" : j["text"].string,
-                    timestamp:Date(timeIntervalSince1970:Double(j["date"].int)), isOutgoing:j["out"].flag, state:j["out"].flag ? .sent : .received, randomID:j["random_id"].int == 0 ? nil : j["random_id"].int, attachments:j["attachments"].chatAttachments)
+                    timestamp:Date(timeIntervalSince1970:Double(j["date"].int)), isOutgoing:j["out"].flag, state:j["out"].flag ? .sent : .received, randomID:j["random_id"].int == 0 ? nil : j["random_id"].int, attachments:j["attachments"].chatAttachments,quotes:j.messageQuotes)
             })
         } catch { return .failure(Self.map(error)) }
     }
