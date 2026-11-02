@@ -13,14 +13,15 @@ struct BookmarksView: View {
             loadValue: { CatalogFixtures.bookmarks }
         ) { items in
             List(items) { item in
-                Label {
+                if let url=item.targetURL {Link(destination:url) {Label(item.title,systemImage:item.symbol)}}
+                else {Label {
                     VStack(alignment: .leading) {
                         Text(item.title)
                         Text(item.subtitle).font(.caption).foregroundStyle(.secondary)
                     }
                 } icon: {
                     Image(systemName: item.symbol)
-                }
+                }}
             }
         }
     }
@@ -62,47 +63,54 @@ struct StoryViewerView: View {
     }
 }
 
-/// S42 — incoming call stub (no calling SDK).
 struct IncomingCallView: View {
-    var body: some View {
-        VStack(spacing: 24) {
-            Spacer()
-            VKAvatar(initials: "АС", size: 96, tint: .green)
-            Text("Анастасия").font(.largeTitle.bold())
-            Text("S42 · Incoming call UI stub")
-                .foregroundStyle(.secondary)
-            Text("Official calling SDK not linked. Actions are disabled.")
-                .font(.footnote)
-                .foregroundStyle(.secondary)
-                .multilineTextAlignment(.center)
-                .padding(.horizontal)
-            Spacer()
-            HStack(spacing: 48) {
-                Button {} label: {
-                    Image(systemName: "phone.down.fill")
-                        .font(.title)
-                        .foregroundStyle(.white)
-                        .frame(width: 64, height: 64)
-                        .background(Circle().fill(.red))
+    @Environment(AppEnvironment.self) private var env
+    @Environment(\.openURL) private var openURL
+    @State private var link=""
+    @State private var callID:String?
+    @State private var busy=false
+    @State private var error:String?
+    @State private var confirmFinish=false
+    private var joinURL:URL? {
+        guard let url=URL(string:link.trimmingCharacters(in:.whitespacesAndNewlines)),url.scheme=="https",let host=url.host?.lowercased(),["vk.com","vk.ru","vk.me","calls.vk.com"].contains(host) else {return nil}
+        return url
+    }
+    var body:some View {
+        Form {
+            Section("Конференция VK") {
+                Button("Создать звонок",systemImage:"video.badge.plus") {Task {await create()}}.disabled(busy || !env.isLiveVKSession || callID != nil)
+                TextField("Ссылка на звонок VK",text:$link).textInputAutocapitalization(.never).autocorrectionDisabled().keyboardType(.URL)
+                if let joinURL {
+                    Button("Присоединиться",systemImage:"phone.fill") {openURL(joinURL)}
+                    ShareLink(item:joinURL) {Label("Поделиться приглашением",systemImage:"square.and.arrow.up")}
                 }
-                .disabled(true)
-                .accessibilityLabel("Decline disabled")
-                Button {} label: {
-                    Image(systemName: "phone.fill")
-                        .font(.title)
-                        .foregroundStyle(.white)
-                        .frame(width: 64, height: 64)
-                        .background(Circle().fill(.green))
-                }
-                .disabled(true)
-                .accessibilityLabel("Accept disabled")
+                if callID != nil {Button("Завершить для всех",role:.destructive) {confirmFinish=true}.disabled(busy)}
+                if busy {ProgressView()}
+                if let error {Text(error).foregroundStyle(.red)}
             }
-            .padding(.bottom, 40)
-        }
-        .frame(maxWidth: .infinity, maxHeight: .infinity)
-        .background(VKStyle.groupedCanvas)
-        .navigationTitle("Звонок")
-        .navigationBarTitleDisplayMode(.inline)
+            Section {
+                Text("Создание и завершение конференции выполняет VK API. Аудио и видео открываются в официальном клиенте VK или браузере. Приём входящих звонков внутри приложения требует отдельного SDK и доступа VK.").font(.footnote).foregroundStyle(.secondary)
+            }
+        }.navigationTitle("Звонки")
+        .confirmationDialog("Завершить звонок для всех участников?",isPresented:$confirmFinish) {Button("Завершить",role:.destructive) {Task {await finish()}}}
+    }
+    private func create() async {
+        guard !busy else {return};busy=true;error=nil;defer {busy=false}
+        do {
+            let response=try await env.catalog.request("calls.start")
+            guard let url=response["join_link"].url else {throw AppError.decoding}
+            link=url.absoluteString
+            let id=response["call_id"].string;callID=id.isEmpty ? nil : id
+            guard joinURL != nil else {link="";throw AppError.decoding}
+        } catch {self.error=error.localizedDescription}
+    }
+    private func finish() async {
+        guard let callID,!busy else {return};busy=true;error=nil;defer {busy=false}
+        do {
+            let response=try await env.catalog.request("calls.forceFinish",["call_id":callID])
+            guard response.int == 1 else {throw AppError.decoding}
+            self.callID=nil;link=""
+        } catch {self.error=error.localizedDescription}
     }
 }
 
