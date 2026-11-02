@@ -410,6 +410,11 @@ final class VKHIGFoundationTests: XCTestCase {
         let saved=try String(contentsOf:directory.appendingPathComponent("queue-local.json"),encoding:.utf8)
         XCTAssertFalse(saved.contains("https:"));XCTAssertFalse(saved.contains("signature"));XCTAssertFalse(saved.contains("stream"))
         library.clearUpcoming();XCTAssertEqual(library.activeQueue.map(\.id),["a","b"]);XCTAssertEqual(library.currentID,"b")
+        let remote=LocalAudioTrack(id:"stream",title:"Online",url:URL(string:"https://example.com/a.mp3?signature=private")!,duration:100)
+        library.playQueue([tracks[0],remote],startingAt:remote.id);library.seek(70);library.pause()
+        let afterStream=AudioLibrary(directory:directory,playbackEnabled:false)
+        XCTAssertEqual(afterStream.currentID,"a");XCTAssertEqual(afterStream.elapsed,0)
+        XCTAssertFalse(afterStream.playing)
     }
     @MainActor
     func testMusicDownloadsAreHiddenAcrossAccountsAndCancelledOnLogout() async throws {
