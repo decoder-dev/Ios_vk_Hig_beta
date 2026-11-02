@@ -42,24 +42,49 @@ enum VKJSON: Decodable, Sendable {
     subscript(_ key: String) -> VKJSON { if case .object(let v) = self { return v[key] ?? .null }; return .null }
     var items: [VKJSON] { if case .array(let v) = self { return v }; return [] }
     var string: String { if case .string(let v) = self { return v }; return "" }
-    var int: Int64 { if case .number(let v) = self { return Int64(v) }; return Int64(string) ?? 0 }
+    var int: Int64 { if case .number(let v) = self {guard v.isFinite,v>=Double(Int64.min),v<Double(Int64.max) else {return 0};return Int64(v)}; return Int64(string) ?? 0 }
     var flag: Bool { if case .bool(let v) = self { return v }; return int == 1 }
     var url: URL? { URL(string: string).flatMap { $0.scheme == "https" ? $0 : nil } }
-    var chatAttachments: [ChatAttachment] {
-        items.compactMap { item in
-            let type = item["type"].string
-            let value = item[type]
-            let url: URL?
-            let kind: ChatAttachment.Kind
+    var chatAttachments:[ChatAttachment] {
+        items.enumerated().map {index,item in
+            let type=item["type"].string,value=item[item["type"].string]
+            var url:URL?,playback:URL?,kind:ChatAttachment.Kind = .unsupported
+            var title=value["title"].string
             switch type {
-            case "photo": kind = .photo; url = value["sizes"].items.max { $0["width"].int < $1["width"].int }?["url"].url
-            case "doc": kind = .document; url = value["url"].url
-            case "video": kind = .video; url = value["player"].url
-            default: return nil
+            case "photo":kind = .photo;url=VKCatalogService.mediaPhotoURL(value)
+            case "doc":kind = .document;url=value["url"].url
+            case "video":
+                kind = .video;url=value["player"].url
+                playback=value["files"]["mp4_720"].url ?? value["files"]["mp4_480"].url
+                if url == nil,value["owner_id"].int != 0,value["id"].int != 0 {url=URL(string:"https://vk.com/video\(value["owner_id"].int)_\(value["id"].int)")}
+            case "audio":kind = .audio;url=value["url"].url;playback=url;title=[value["artist"].string,value["title"].string].filter {!$0.isEmpty}.joined(separator:" — ")
+            case "audio_message":kind = .voice;url=value["link_mp3"].url;playback=url;title="Голосовое сообщение · \(value["duration"].int) с"
+            case "sticker":kind = .sticker;url=value["images"].items.max {$0["width"].int < $1["width"].int}?["url"].url;title="Стикер"
+            case "graffiti":kind = .graffiti;url=value["url"].url;title="Граффити"
+            case "link":kind = .link;url=value["url"].url
+            default:break
             }
-            guard let url else { return nil }
-            return ChatAttachment(id:"\(type)_\(value["owner_id"].int)_\(value["id"].int)",kind:kind,title:value["title"].string.isEmpty ? "Вложение" : value["title"].string,url:url)
+            if title.isEmpty {title=kind == .photo ? "Фотография" : "Вложение VK: \(type)"}
+            if url == nil {kind = .unsupported;title += " · нет доступного файла"}
+            return ChatAttachment(id:"\(type)_\(value["owner_id"].int)_\(value["id"].int)_\(index)",kind:kind,title:title,url:url ?? URL(string:"https://vk.com/")!,playbackURL:playback)
         }
+    }
+    var messageQuotes:[ChatQuote] {
+        func read(_ message:VKJSON,depth:Int,path:String) -> [ChatQuote] {
+            guard depth<3 else {return []}
+            var result:[ChatQuote]=[]
+            if case .object=message["reply_message"] {
+                let reply=message["reply_message"]
+                result.append(ChatQuote(id:path+"reply",title:"Ответ на сообщение",text:reply["text"].string,attachments:reply["attachments"].chatAttachments))
+            }
+            for (index,forward) in message["fwd_messages"].items.prefix(10).enumerated() {
+                let key=path+"forward\(index)"
+                result.append(ChatQuote(id:key,title:"Пересланное сообщение",text:forward["text"].string,attachments:forward["attachments"].chatAttachments))
+                result+=read(forward,depth:depth+1,path:key)
+            }
+            return result
+        }
+        return read(self,depth:0,path:"")
     }
     var list: [VKJSON] { if case .array = self { return items }; return self["items"].items }
 }
@@ -99,10 +124,11 @@ final class VKCatalogService {
     private(set) var posts: [Int64: FeedPost] = [:]
     private(set) var photos: [Int64: PhotoItem] = [:]
     private(set) var videos: [Int64: VideoItem] = [:]
+    var stories:[Int64:VKStory]=[:]
     private(set) var people: [Int64: Friend] = [:]
     var notice: String?
     init(api: VKAPIClient = VKAPIClient()) { self.api = api }
-    func clear() { offsets=[:];buffers=[:];morePages=[:];pageCursors=[:];feedCursor = nil; feedFinished = false; posts = [:]; photos = [:]; videos = [:]; people = [:]; notice = nil }
+    func clear() { offsets=[:];buffers=[:];morePages=[:];pageCursors=[:];feedCursor = nil; feedFinished = false; posts = [:]; photos = [:]; videos = [:]; people = [:]; stories=[:]; notice = nil }
     func request(_ method: String, _ parameters: [String: String] = [:]) async throws -> VKJSON {
         let owner = VKIDAuthCoordinator.shared.userID
         guard let token = await VKIDAuthCoordinator.shared.freshAccessToken() else { throw AppError.notAuthenticated }
@@ -131,6 +157,7 @@ final class VKCatalogService {
         return Friend(id: j["id"].int, displayName: name, initials: initials(name), isOnline: j["online"].flag, city: j["city"]["title"].string.isEmpty ? nil : j["city"]["title"].string)
     }
     static func date(_ j: VKJSON) -> String { Date(timeIntervalSince1970: Double(j.int)).formatted(date: .abbreviated, time: .shortened) }
+    nonisolated static func mediaPhotoURL(_ j:VKJSON) -> URL? {j["sizes"].items.max {$0["width"].int < $1["width"].int}?["url"].url}
     static func photoURL(_ j: VKJSON) -> URL? { j["sizes"].items.max { $0["width"].int < $1["width"].int }?["url"].url }
     func mapPosts(_ response: VKJSON) -> [FeedPost] {
         let profiles = Dictionary(response["profiles"].items.map { ($0["id"].int, Self.name($0)) }, uniquingKeysWith: { a,_ in a })
@@ -143,7 +170,7 @@ final class VKCatalogService {
             let author = profiles[ownerID] ?? groups[ownerID] ?? "VK \(ownerID)"
             let media = j["attachments"].items.compactMap { Self.photoURL($0["photo"]) }.first
             let post = FeedPost(id:key, authorName:author, authorInitials:Self.initials(author), dateLabel:Self.date(j["date"]), text:j["text"].string,
-                hasMedia:media != nil, reactionCount:Int(j["likes"]["count"].int), commentCount:Int(j["comments"]["count"].int), ownerID:ownerID, nativeID:nativeID, mediaURL:media)
+                hasMedia:media != nil, reactionCount:Int(j["likes"]["count"].int), commentCount:Int(j["comments"]["count"].int), ownerID:ownerID, nativeID:nativeID, mediaURL:media, attachments:j["attachments"].chatAttachments)
             posts[key] = post
             return post
         }
@@ -178,7 +205,7 @@ final class VKCatalogService {
         case "S14":
             guard !query.trimmingCharacters(in:.whitespacesAndNewlines).isEmpty else { result = [ChatMessage](); break }
             let response = try await request("messages.search", ["q":query,"peer_id":"\(resourceID ?? 0)","count":"100","offset":"\(offset)"])
-            result = response.list.map { j in ChatMessage(id:UUID(),serverID:j["id"].int,peerID:PeerID(raw:resourceID ?? 0),text:j["text"].string,timestamp:Date(timeIntervalSince1970:Double(j["date"].int)),isOutgoing:j["out"].flag,state:.received,randomID:nil) }
+            result = response.list.map { j in ChatMessage(id:UUID(),serverID:j["id"].int,peerID:PeerID(raw:resourceID ?? 0),text:j["text"].string,timestamp:Date(timeIntervalSince1970:Double(j["date"].int)),isOutgoing:j["out"].flag,state:.received,randomID:nil,attachments:j["attachments"].chatAttachments,quotes:j.messageQuotes) }
         case "S11":
             let response = try await request("messages.getConversationsById",["peer_ids":"\(resourceID ?? 0)"])
             let members = try await request("messages.getConversationMembers",["peer_id":"\(resourceID ?? 0)","extended":"1","fields":"online,city","count":"200"])
@@ -246,7 +273,7 @@ final class VKCatalogService {
             for video in list { videos[video.id] = video }; result = list
         case "S40":
             let response = try await request("fave.get", ["count":"100","offset":"\(offset)"])
-            result = response.list.enumerated().map { i,j in BookmarkItem(id:Int64(offset+i), title:j["link"]["title"].string.isEmpty ? "Сохранённое: " + j["type"].string : j["link"]["title"].string, subtitle:j["link"]["url"].string, symbol:"bookmark",targetURL:j["link"]["url"].url ?? Self.bookmarkURL(j)) }
+            result = Self.mapBookmarks(response)
         default: throw AppError.capabilityUnavailable("Раздел \(screen) требует отдельного разрешения VK.")
         }
         guard let typed = result as? Value else { throw AppError.decoding }
