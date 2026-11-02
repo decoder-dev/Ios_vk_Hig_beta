@@ -24,6 +24,7 @@ final class CommentsViewModel {
     var error: String?
     private var offset = 0
     private var sendGUID = UUID().uuidString
+    private var lastSubmission = ""
     private var draftKey: String
     init(postID:Int64,environment:AppEnvironment) {
         self.postID = postID; self.environment = environment
@@ -91,6 +92,8 @@ final class CommentsViewModel {
             state = .loaded(all);draft="";replyTo=nil;saveDraft();return
         }
         do {
+            let submission="\(replyTo?.id ?? 0):\(text)"
+            if submission != lastSubmission {sendGUID=UUID().uuidString;lastSubmission=submission}
             let post=try environment.catalog.post(postID)
             var parameters=["owner_id":"\(post.ownerID)","post_id":"\(post.nativeID ?? post.id)","message":text,"guid":sendGUID]
             if let replyTo {parameters["reply_to_comment"]="\(replyTo.id)"}
@@ -108,7 +111,11 @@ final class CommentsViewModel {
             }
             if case .loaded(var all)=state {
                 all.removeAll {$0.id == comment.id}
-                for i in all.indices {all[i].replies.removeAll {$0.id == comment.id}}
+                for i in all.indices {
+                    let removed=all[i].replies.filter {$0.id == comment.id}.count
+                    all[i].replies.removeAll {$0.id == comment.id}
+                    all[i].totalReplies=max(0,all[i].totalReplies-removed)
+                }
                 state=all.isEmpty ? .empty : .loaded(all)
             }
         } catch {self.error=error.localizedDescription}
