@@ -151,11 +151,11 @@ final class ConversationViewModel {
         pending.removeAll {$0.id == message.id}; saveOutbox()
         if case .loaded(var items) = state { items.removeAll {$0.id == message.id}; state = items.isEmpty ? .empty : .loaded(items) }
     }
-    func forward(_ message: ChatMessage, to peerID: Int64) async {
-        guard let serverID = message.serverID, environment.isLiveVKSession else { sendNotice = "Пересылка доступна для сообщений VK."; return }
+    func forward(_ message: ChatMessage, to peerID: Int64) async -> Bool {
+        guard let serverID = message.serverID, environment.isLiveVKSession else { sendNotice = "Пересылка доступна для сообщений VK."; return false }
         let token = await environment.liveAPIGate.accessTokenIfLiveReady()
         let result = await environment.conversationRepository.enqueueOutgoing(peerID:PeerID(raw:peerID),text:"",dataMode:.live,
             capabilities:environment.capabilities,accessToken:token,forward:"\(serverID)")
-        switch result { case .success: sendNotice = "Сообщение переслано"; case .failure(let error): sendNotice = error.localizedDescription }
+        switch result { case .success: sendNotice = "Сообщение переслано";return true; case .failure(let error): sendNotice = error.localizedDescription;return false }
     }
 }

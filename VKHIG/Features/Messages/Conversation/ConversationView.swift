@@ -13,7 +13,8 @@ struct ConversationView: View {
     @State private var editedText = ""
     @State private var deleting: ChatMessage?
     @State private var forwarding: ChatMessage?
-    @State private var forwardPeers: [Conversation] = []
+    @State private var pinning:ChatMessage?
+    @State private var canPin=false
 
     var body: some View {
         Group {
@@ -41,6 +42,18 @@ struct ConversationView: View {
         .confirmationDialog("Удалить сообщение у себя?",isPresented:Binding(get:{deleting != nil},set:{if !$0 {deleting = nil}})) {
             Button("Удалить",role:.destructive) { if let message = deleting { Task { await model?.delete(message) } }; deleting = nil }
         }
+        .confirmationDialog("Закрепить сообщение в беседе?",isPresented:Binding(get:{pinning != nil},set:{if !$0 {pinning=nil}})) {
+            Button("Закрепить") {
+                if let id=pinning?.serverID {Task {
+                    do {
+                        let result=try await env.catalog.request("messages.pin",["peer_id":String(conversation.id),"message_id":String(id)])
+                        guard result["id"].int>0 else {throw AppError.decoding}
+                        env.catalog.notice="Сообщение закреплено"
+                    } catch {env.catalog.notice=error.localizedDescription}
+                }}
+                pinning=nil
+            }
+        }
         .sheet(item:$editing) { message in
             NavigationStack {
                 Form { TextField("Сообщение",text:$editedText,axis:.vertical).lineLimit(4...12) }
@@ -51,16 +64,8 @@ struct ConversationView: View {
                     }
             }
         }
-        .sheet(item:$forwarding) { message in
-            NavigationStack {
-                List(forwardPeers) { peer in Button(peer.displayName) { Task { await model?.forward(message,to:peer.id); forwarding = nil } } }
-                    .navigationTitle("Переслать в диалог")
-                    .toolbar { ToolbarItem(placement:.cancellationAction) { Button("Отмена") { forwarding = nil } } }
-                    .task {
-                        let token = await env.liveAPIGate.accessTokenIfLiveReady()
-                        if case .success(let peers) = await env.conversationRepository.fetchInbox(dataMode:env.dataMode,capabilities:env.capabilities,isNetworkReachable:env.isNetworkReachable,accessToken:token) { forwardPeers = peers }
-                    }
-            }
+        .sheet(item:$forwarding) {message in
+            RecipientPickerView {peer in await model?.forward(message,to:peer.id) == true}
         }
         .withAppRoutes()
         .task(id:scenePhase) {
@@ -77,6 +82,7 @@ struct ConversationView: View {
                 await vm.load()
                 if env.isLiveVKSession,scenePhase == .active {
                     _ = try? await env.catalog.request("messages.markAsRead",["peer_id":"\(conversation.id)","mark_conversation_as_read":"1"])
+                    if conversation.id>2_000_000_000,let response=try? await env.catalog.request("messages.getConversationsById",["peer_ids":String(conversation.id)]) {canPin=response.list.first?["chat_settings"]["acl"]["can_change_pin"].flag == true}
                 }
             }
         }
@@ -110,7 +116,7 @@ struct ConversationView: View {
                         LazyVStack(spacing: 9) {
                             if !model.reachedStart { Button("Загрузить предыдущие") { Task { await model.loadOlder() } }.disabled(model.loadingOlder).frame(minHeight:44) }
                             ForEach(messages) { message in
-                                MessageBubble(message: message, onReply:{model.replyingTo = message; composerFocused = true}, onForward:{forwarding = message}, onDelete:{deleting = message}, onRetry:{Task { await model.retry(message) }},onEdit:{editedText = message.text; editing = message})
+                                MessageBubble(message: message, onReply:{model.replyingTo = message; composerFocused = true}, onForward:{forwarding = message}, onDelete:{deleting = message}, onRetry:{Task { await model.retry(message) }},onEdit:{editedText = message.text; editing = message},canPin:canPin,onPin:{pinning=message})
                                     .id(message.id)
                             }
                         }
@@ -174,6 +180,8 @@ private struct MessageBubble: View {
     let onDelete: () -> Void
     let onRetry: () -> Void
     let onEdit: () -> Void
+    var canPin=false
+    let onPin:()->Void
 
     private var timeLabel: String {
         message.timestamp.formatted(date: .omitted, time: .shortened)
@@ -193,12 +201,14 @@ private struct MessageBubble: View {
                         message.isOutgoing ? VKStyle.accent : VKStyle.cell,
                         in: RoundedRectangle(cornerRadius: VKStyle.Radius.bubble)
                     )
-                ForEach(message.attachments) { attachment in
-                    if attachment.kind == .photo {
-                        AsyncImage(url:attachment.url) { image in image.resizable().scaledToFit() } placeholder: { ProgressView() }
-                            .frame(maxWidth:260,maxHeight:220).clipShape(RoundedRectangle(cornerRadius:12))
-                    } else { Link(destination:attachment.url) { Label(attachment.title,systemImage:attachment.kind == .video ? "play.rectangle" : "doc") }.frame(minHeight:44) }
+                ForEach(message.quotes) {quote in
+                    VStack(alignment:.leading,spacing:4) {
+                        Text(quote.title).font(.caption.bold()).foregroundStyle(.secondary)
+                        if !quote.text.isEmpty {Text(quote.text).font(.callout)}
+                        ForEach(quote.attachments) {AttachmentPreview(attachment:$0)}
+                    }.padding(10).frame(maxWidth:280,alignment:.leading).background(VKStyle.cell,in:RoundedRectangle(cornerRadius:10))
                 }
+                ForEach(message.attachments) {AttachmentPreview(attachment:$0)}
                 HStack(spacing: 4) {
                     Text(timeLabel)
                     if message.state == .pending { Image(systemName: "clock") }
@@ -218,6 +228,7 @@ private struct MessageBubble: View {
             // S13 — message actions; destructive paths need confirmation when live.
             Button("Copy") { UIPasteboard.general.string = message.text }
             Button("Ответить",action:onReply)
+            if canPin && message.serverID != nil {Button("Закрепить",action:onPin)}
             if message.isOutgoing,message.serverID != nil { Button("Редактировать",action:onEdit) }
             Button("Переслать",action:onForward)
                 .disabled(message.serverID == nil)
