@@ -3,6 +3,44 @@ import XCTest
 
 final class VKHIGFoundationTests: XCTestCase {
     @MainActor
+    func testCommentReplyDeletionUpdatesThreadCount() async {
+        let session=SessionStore(authCoordinator:VKIDAuthCoordinator(configuration:VKIDConfiguration(clientID:nil,redirectURLScheme:nil)))
+        session.signOut()
+        let env=AppEnvironment(session:session)
+        env.enterShellWithoutAuth()
+        let model=CommentsViewModel(postID:700,environment:env)
+        await model.load()
+        guard case .loaded(let initial)=model.state,let root=initial.first else {return XCTFail("Missing root thread")}
+        XCTAssertEqual(root.replies.count,1)
+        model.replyTo=root.root
+        model.draft="Regression reply"
+        await model.send()
+        guard case .loaded(let sent)=model.state,let reply=sent.first?.replies.last else {return XCTFail("Missing reply")}
+        XCTAssertEqual(sent.first?.totalReplies,2)
+        await model.remove(reply)
+        guard case .loaded(let remaining)=model.state else {return XCTFail("Thread disappeared")}
+        XCTAssertEqual(remaining.first?.totalReplies,1)
+        XCTAssertEqual(remaining.first?.replies.count,1)
+    }
+
+    @MainActor
+    func testEmptySearchCancelsDebouncedResults() async {
+        let session=SessionStore(authCoordinator:VKIDAuthCoordinator(configuration:VKIDConfiguration(clientID:nil,redirectURLScheme:nil)))
+        session.signOut()
+        let env=AppEnvironment(session:session)
+        env.enterShellWithoutAuth()
+        let model=GlobalSearchModel(environment:env)
+        let old=Task {await model.search("VK")}
+        for _ in 0..<1000 {if model.loading {break};await Task.yield()}
+        XCTAssertTrue(model.loading)
+        await model.search("")
+        await old.value
+        XCTAssertTrue(model.hits.isEmpty)
+        XCTAssertFalse(model.loading)
+        XCTAssertFalse(model.searched)
+    }
+
+    @MainActor
     func testSessionStartsUnauthenticatedWithoutKeychainToken() {
         // May be authenticated if a previous simulator Keychain token exists;
         // shell entry still works locally.
