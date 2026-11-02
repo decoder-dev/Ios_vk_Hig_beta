@@ -10,10 +10,11 @@ final class FixtureScreenModel<Value: Equatable> {
 
     func load(
         offline: Bool,
+        preserve:Bool = false,
         emptyIf: ((Value) -> Bool)? = nil,
         work: () async throws -> Value
     ) async {
-        state = .loading
+        if !preserve {state = .loading}
         if offline {
             state = .offline
             return
@@ -40,6 +41,7 @@ final class FixtureScreenModel<Value: Equatable> {
 struct FixtureScreen<Value: Equatable, Content: View>: View {
     @Environment(AppEnvironment.self) private var env
     @State private var model = FixtureScreenModel<Value>()
+    @State private var paginating=false
     let title: String
     let resourceID: Int64?
     let query: String
@@ -100,6 +102,11 @@ struct FixtureScreen<Value: Equatable, Content: View>: View {
             }
         }
         .navigationTitle(title)
+        .safeAreaInset(edge:.bottom) {
+            if env.isLiveVKSession,env.catalog.hasMore(screenID,resourceID:resourceID,query:query) {
+                Button(paginating ? "Загрузка…" : "Загрузить ещё") {Task {await loadMore()}}.disabled(paginating).frame(minHeight:44).frame(maxWidth:.infinity).background(.regularMaterial)
+            }
+        }
         .task(id: query) {
             if !query.isEmpty { try? await Task.sleep(for: .milliseconds(300)) }
             guard !Task.isCancelled else { return }
@@ -108,6 +115,12 @@ struct FixtureScreen<Value: Equatable, Content: View>: View {
         .refreshable { await reload() }
     }
 
+    private func loadMore() async {
+        guard !paginating else {return};paginating=true;defer {paginating=false}
+        await model.load(offline:!env.isNetworkReachable,preserve:true,emptyIf:isEmpty) {
+            try await env.catalog.load(screenID,resourceID:resourceID,query:query,append:true)
+        }
+    }
     private func reload() async {
         model.usesFixtures = !env.isLiveVKSession
         await model.load(offline: !env.isNetworkReachable, emptyIf: isEmpty) {
