@@ -17,6 +17,10 @@ final class VKHIGFoundationTests: XCTestCase {
         await model.send()
         guard case .loaded(let sent)=model.state,let reply=sent.first?.replies.last else {return XCTFail("Missing reply")}
         XCTAssertEqual(sent.first?.totalReplies,2)
+        let edited=await model.edit(reply,text:"Updated reply")
+        XCTAssertTrue(edited)
+        guard case .loaded(let changed)=model.state else {return XCTFail("Missing edited reply")}
+        XCTAssertEqual(changed.first?.replies.last?.text,"Updated reply")
         await model.remove(reply)
         guard case .loaded(let remaining)=model.state else {return XCTFail("Thread disappeared")}
         XCTAssertEqual(remaining.first?.totalReplies,1)
