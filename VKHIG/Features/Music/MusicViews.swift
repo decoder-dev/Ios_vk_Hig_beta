@@ -140,6 +140,7 @@ struct VKMusicCatalogSection:View {
     }
 }
 struct AudioPlayerView:View {
+    @Environment(\.dynamicTypeSize) private var typeSize
     @State private var library=AudioLibrary.shared
     @State private var scrub=0.0
     @State private var scrubbing=false
@@ -158,12 +159,12 @@ struct AudioPlayerView:View {
                         .font(.caption.monospacedDigit()).foregroundStyle(.secondary)
                 }
                 HStack(spacing:32) {
-                    Button {library.previous()} label:{Image(systemName:"backward.fill").font(.title2).frame(width:48,height:48)}.accessibilityLabel("Предыдущий трек")
+                    Button {library.previous()} label:{Image(systemName:"backward.fill").font(.system(size:24)).frame(width:48,height:48)}.accessibilityLabel("Предыдущий трек")
                     Button {if library.playing {library.pause()} else {library.resume()}} label:{
-                        Group {if library.buffering {ProgressView()} else {Image(systemName:library.playing ? "pause.fill" : "play.fill").font(.largeTitle)}}
+                        Group {if library.buffering {ProgressView()} else {Image(systemName:library.playing ? "pause.fill" : "play.fill").font(.system(size:34))}}
                             .frame(width:64,height:64)
                     }.accessibilityLabel(library.playing ? "Пауза" : "Воспроизвести")
-                    Button {library.next()} label:{Image(systemName:"forward.fill").font(.title2).frame(width:48,height:48)}.accessibilityLabel("Следующий трек")
+                    Button {library.next()} label:{Image(systemName:"forward.fill").font(.system(size:24)).frame(width:48,height:48)}.accessibilityLabel("Следующий трек")
                 }.disabled(library.current==nil)
                 HStack(spacing:30) {
                     Button {library.setShuffle(!library.shuffle)} label:{Image(systemName:"shuffle").foregroundStyle(library.shuffle ? Color.accentColor : Color.secondary).frame(width:44,height:44)}
@@ -172,19 +173,30 @@ struct AudioPlayerView:View {
                     Button {library.repeatOne.toggle()} label:{Image(systemName:"repeat.1").foregroundStyle(library.repeatOne ? Color.accentColor : Color.secondary).frame(width:44,height:44)}
                         .accessibilityLabel("Повтор трека").accessibilityValue(library.repeatOne ? "Включён" : "Выключен")
                 }
-                HStack {
-                    NavigationLink {MusicQueueView()} label:{Label("Очередь",systemImage:"list.bullet")}
-                    Spacer()
-                    NavigationLink {MusicLyricsView()} label:{Label("Текст",systemImage:"quote.bubble")}
-                    Spacer()
-                    NavigationLink {MusicEqualizerView()} label:{Image(systemName:"slider.horizontal.3").frame(width:44,height:44)}.accessibilityLabel("Эквалайзер")
-                }.font(.subheadline)
+                playerLinks
                 if let error=library.error {Text(error).font(.footnote).foregroundStyle(.red);Button("Повторить воспроизведение") {library.retryPlayback()}.disabled(library.current==nil)}
             }.padding(20).frame(maxWidth:560).frame(maxWidth:.infinity)
         }.navigationTitle("Плеер").navigationBarTitleDisplayMode(.inline)
         .onAppear {library.playerPresented=true;scrub=library.elapsed}
         .onDisappear {library.playerPresented=false}
         .onChange(of:library.elapsed) {_,value in if !scrubbing {scrub=min(max(1,library.duration),value)}}
+    }
+    @ViewBuilder private var playerLinks:some View {
+        if typeSize.isAccessibilitySize {
+            VStack(alignment:.leading,spacing:16) {
+                NavigationLink {MusicQueueView()} label:{Label("Очередь",systemImage:"list.bullet").frame(minHeight:44)}
+                NavigationLink {MusicLyricsView()} label:{Label("Текст",systemImage:"quote.bubble").frame(minHeight:44)}
+                NavigationLink {MusicEqualizerView()} label:{Label("Эквалайзер",systemImage:"slider.horizontal.3").frame(minHeight:44)}
+            }.frame(maxWidth:.infinity,alignment:.leading)
+        } else {
+            HStack {
+                NavigationLink {MusicQueueView()} label:{Label("Очередь",systemImage:"list.bullet")}
+                Spacer()
+                NavigationLink {MusicLyricsView()} label:{Label("Текст",systemImage:"quote.bubble")}
+                Spacer()
+                NavigationLink {MusicEqualizerView()} label:{Image(systemName:"slider.horizontal.3").frame(width:44,height:44)}.accessibilityLabel("Эквалайзер")
+            }.font(.subheadline)
+        }
     }
 }
 struct AudioRoutePicker:UIViewRepresentable {
@@ -354,6 +366,7 @@ struct MusicLyricsView:View {
     }
 }
 struct MusicMiniPlayer:View {
+    @Environment(\.dynamicTypeSize) private var typeSize
     let open:()->Void
     @State private var library=AudioLibrary.shared
     var body:some View {
@@ -361,22 +374,28 @@ struct MusicMiniPlayer:View {
             Button(action:open) {
                 HStack(spacing:10) {
                     MusicArtwork(track:library.current).frame(width:38,height:38)
-                    VStack(alignment:.leading) {Text(library.current?.title ?? "").font(.subheadline.weight(.semibold)).lineLimit(1);Text(library.current?.subtitle ?? "").font(.caption).foregroundStyle(.secondary).lineLimit(1)}
+                    VStack(alignment:.leading) {
+                        Text(library.current?.title ?? "").font(.subheadline.weight(.semibold)).lineLimit(1)
+                        if !typeSize.isAccessibilitySize {Text(library.current?.subtitle ?? "").font(.caption).foregroundStyle(.secondary).lineLimit(1)}
+                    }
                     Spacer(minLength:0)
                 }.contentShape(Rectangle())
             }.buttonStyle(.plain).accessibilityLabel("Открыть плеер").accessibilityIdentifier("music-mini-player-open")
             Button {if library.playing {library.pause()} else {library.resume()}} label:{Image(systemName:library.playing ? "pause.fill" : "play.fill").frame(width:44,height:44)}.accessibilityLabel(library.playing ? "Пауза" : "Воспроизвести")
             Button {library.next()} label:{Image(systemName:"forward.fill").frame(width:44,height:44)}.accessibilityLabel("Следующий трек")
         }.padding(.horizontal,14).padding(.vertical,5)
+        // The system accessory has a fixed height. The complete player remains unbounded.
+        .dynamicTypeSize(...DynamicTypeSize.xxxLarge)
     }
 }
 struct MusicMiniPlayerModifier:ViewModifier {
+    @Environment(\.dynamicTypeSize) private var typeSize
     @State private var library=AudioLibrary.shared
     @State private var presented=false
     private var visible:Bool {library.current != nil && !library.playerPresented}
     @ViewBuilder func body(content:Content) -> some View {
         adapted(content).sheet(isPresented:$presented) {
-            NavigationStack {AudioPlayerView().toolbar {ToolbarItem(placement:.cancellationAction) {Button("Закрыть") {presented=false}}}}
+            NavigationStack {AudioPlayerView().toolbar {ToolbarItem(placement:.cancellationAction) {Button("Закрыть") {presented=false}}}}.dynamicTypeSize(typeSize)
         }
     }
     @ViewBuilder private func adapted(_ content:Content) -> some View {
