@@ -64,15 +64,23 @@ final class PushRegistration {
     private var registering=false
     private var revision=UUID()
     private var deviceID:String {
+        if let configuredDeviceID {return configuredDeviceID}
         if let value=UserDefaults.standard.string(forKey:"vkhig.push.device") {return value}
         let value=UUID().uuidString;UserDefaults.standard.set(value,forKey:"vkhig.push.device");return value
     }
-    private var sandbox:String {
-        #if DEBUG
-        return "1"
-        #else
-        return "0"
-        #endif
+    @ObservationIgnored private let request:(String,[String:String]) async throws -> VKJSON
+    @ObservationIgnored private let currentUser:()->Int64?
+    @ObservationIgnored private let isEnabled:()->Bool
+    @ObservationIgnored private let environment:()->APNsEnvironment?
+    @ObservationIgnored private let configuredDeviceID:String?
+    init(request:((String,[String:String]) async throws -> VKJSON)?=nil,
+         userID:(()->Int64?)?=nil, enabled:(()->Bool)?=nil,
+         environment:(()->APNsEnvironment?)?=nil, deviceID:String?=nil) {
+        self.request=request ?? {try await VKCatalogService.shared.request($0,$1)}
+        self.currentUser=userID ?? {VKIDAuthCoordinator.shared.userID}
+        self.isEnabled=enabled ?? {UserDefaults.standard.bool(forKey:"vkhig.notifications.enabled")}
+        self.environment=environment ?? {AppSecrets.apnsEnvironment}
+        self.configuredDeviceID=deviceID
     }
     func enable() async {
         do {
@@ -83,14 +91,22 @@ final class PushRegistration {
         } catch {status=error.localizedDescription}
     }
     func received(_ data:Data) async {
+        guard !data.isEmpty else {status="APNs не предоставил токен устройства";return}
+        revision=UUID()
         token=data.map {String(format:"%02x",$0)}.joined();registeredUser=nil
         await registerIfNeeded()
     }
     func registerIfNeeded() async {
-        guard UserDefaults.standard.bool(forKey:"vkhig.notifications.enabled"),let token,let user=VKIDAuthCoordinator.shared.userID,registeredUser != user,!registering else {return}
-        let ticket=revision;registering=true;defer {registering=false}
+        guard isEnabled(),let token,let user=currentUser(),registeredUser != user,!registering else {return}
+        guard let environment=environment() else {status="Не настроено окружение push для этой сборки";return}
+        let sandbox=environment.vkSandbox
+        let ticket=revision;registering=true
+        defer {
+            registering=false
+            if ticket != revision {Task {await self.registerIfNeeded()}}
+        }
         do {
-            let response=try await VKCatalogService.shared.request("account.registerDevice",["token":token,"device_id":deviceID,"device_model":UIDevice.current.model,"system_version":UIDevice.current.systemVersion,"sandbox":sandbox,"pushes_granted":"1"])
+            let response=try await request("account.registerDevice",["token":token,"device_id":deviceID,"device_model":UIDevice.current.model,"system_version":UIDevice.current.systemVersion,"sandbox":sandbox,"pushes_granted":"1"])
             guard ticket==revision else {return}
             guard response.int==1 else {throw AppError.decoding}
             registeredUser=user;status="Устройство зарегистрировано в VK"
@@ -105,9 +121,10 @@ final class PushRegistration {
         // Finish any in-flight registration before unregistering this installation.
         while registering {try? await Task.sleep(for:.milliseconds(50))}
         var failure:String?
-        if token != nil,VKIDAuthCoordinator.shared.userID != nil {
+        if token != nil,currentUser() != nil {
             do {
-                let response=try await VKCatalogService.shared.request("account.unregisterDevice",["device_id":deviceID,"sandbox":sandbox])
+                guard let environment=environment() else {throw AppError.network("Не настроено окружение APNs")}
+                let response=try await request("account.unregisterDevice",["device_id":deviceID,"sandbox":environment.vkSandbox])
                 guard response.int==1 else {throw AppError.decoding}
             } catch {failure="Push отключён на устройстве. VK: "+error.localizedDescription}
         }
