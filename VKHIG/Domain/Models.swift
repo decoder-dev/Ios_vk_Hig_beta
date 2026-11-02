@@ -34,6 +34,7 @@ struct ChatMessage: Identifiable, Hashable, Sendable {
     var state: DeliveryState
     /// Used for idempotent `messages.send` once live API is enabled.
     let randomID: Int64?
+    var attachments: [ChatAttachment] = []
 }
 
 struct FeedPost: Identifiable, Hashable, Sendable {
@@ -91,4 +92,12 @@ enum LoadState<Value: Equatable>: Equatable {
     case empty
     case failed(AppError)
     case offline
+}
+
+struct ChatAttachment: Identifiable, Hashable, Sendable {
+    enum Kind: String, Hashable, Sendable { case photo, document, video }
+    let id: String
+    let kind: Kind
+    let title: String
+    let url: URL
 }

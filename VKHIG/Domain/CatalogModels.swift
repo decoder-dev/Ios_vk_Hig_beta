@@ -102,3 +102,9 @@ struct StoryItem: Identifiable, Hashable, Sendable {
     let author: String
     let initials: String
 }
+
+struct ChatDetails: Equatable, Sendable {
+    let peerID: Int64
+    let title: String
+    let members: [Friend]
+}
