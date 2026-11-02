@@ -60,6 +60,11 @@ struct InboxView: View {
                         }
                     }
                 }
+                if !model.reachedEnd {
+                    Button("Загрузить ещё") { Task { await model.loadMore() } }
+                        .disabled(model.isLoadingMore)
+                        .frame(minHeight:44)
+                }
             }
             .listStyle(.plain)
             .overlay {
@@ -86,9 +91,6 @@ struct InboxView: View {
                 .accessibilityLabel("New message")
                 .disabled(true)
             }
-        }
-        .safeAreaInset(edge:.bottom) {
-            if !model.reachedEnd { Button("Загрузить ещё") { Task { await model.loadMore() } }.disabled(model.isLoadingMore).frame(minHeight:44) }
         }
         .refreshable { await model.load() }
     }
