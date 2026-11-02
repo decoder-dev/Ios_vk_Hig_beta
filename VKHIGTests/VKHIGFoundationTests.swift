@@ -335,4 +335,119 @@ final class VKHIGFoundationTests: XCTestCase {
         XCTAssertNil(j["url"].url)
     }
 
+    func testMusicLRCMultipleTimestampsOffsetsAndActiveLine() {
+        let lyrics=MusicLyrics.parse("[offset:-500]\n[00:01.00][00:03.25]One\n[00:01.00]One\n[01:60]Invalid\n[00:05.00]Two")
+        XCTAssertEqual(lyrics.lines.map(\.time),[0.5,2.75,4.5])
+        XCTAssertEqual(lyrics.lines.map(\.text),["One","One","Two"])
+        XCTAssertNil(lyrics.activeIndex(at:0.49))
+        XCTAssertEqual(lyrics.activeIndex(at:2.75),1)
+        XCTAssertEqual(lyrics.activeIndex(at:100),2)
+        XCTAssertNil(lyrics.activeIndex(at:.nan))
+    }
+    func testMusicLyricsRejectsForeignArtistAndWrongDurationSync() {
+        let track=LocalAudioTrack(id:"a",title:"Song",url:URL(fileURLWithPath:"/song.mp3"),artist:"Artist")
+        let wrong=MusicLyricsCandidate(trackName:"Song",artistName:"Other",duration:20,plainLyrics:"wrong",syncedLyrics:nil)
+        XCTAssertNil(MusicLyricsLookup.match([wrong],track:track,duration:20))
+        let candidate=MusicLyricsCandidate(trackName:"Song",artistName:"Artist",duration:200,plainLyrics:"plain",syncedLyrics:"[00:01]sync")
+        let fallback=MusicLyricsLookup.match([candidate],track:track,duration:20)
+        XCTAssertEqual(fallback?.text,"plain");XCTAssertEqual(fallback?.lines.count,0)
+        XCTAssertEqual(MusicLyricsLookup.match([candidate],track:track,duration:201)?.lines.count,1)
+    }
+    func testMusicEQClampsNonfiniteValuesAndProvidesHeadroom() {
+        var settings=MusicEQSettings();settings.gains=[.nan,30,-30,6];settings.preamp = .infinity
+        XCTAssertEqual(settings.normalized.gains,[0,12,-12,6,0,0,0,0,0,0])
+        XCTAssertEqual(settings.normalized.preamp,0);XCTAssertEqual(settings.safePreamp,-12)
+        XCTAssertEqual(MusicPolicy.time(.infinity),"0:00")
+        XCTAssertEqual(MusicPolicy.time(125),"2:05")
+    }
+    func testMusicQueueMovePreservesHistoryAndCurrent() {
+        XCTAssertEqual(MusicPolicy.moveUpcoming(["past","current","a","b","c"],current:1,offsets:[0,2],destination:3),["past","current","b","a","c"])
+        XCTAssertEqual(MusicPolicy.moveUpcoming([0,1,2],current:1,offsets:[1],destination:0),[0,1,2])
+    }
+    func testMusicDownloadRejectsPlaylistsUnsafeURLsAndNonAudio() throws {
+        XCTAssertNil(MusicPolicy.safeRemote(URL(string:"https://user:pass@example.com/a.mp3")))
+        XCTAssertNil(MusicPolicy.safeRemote(URL(string:"http://example.com/a.mp3")))
+        XCTAssertThrowsError(try MusicPolicy.downloadExtension(URL(string:"https://example.com/a.m3u8")!,mime:"audio/mpegurl"))
+        XCTAssertThrowsError(try MusicPolicy.downloadExtension(URL(string:"https://example.com/a.mp3")!,mime:"text/html"))
+        XCTAssertEqual(try MusicPolicy.downloadExtension(URL(string:"https://example.com/a")!,mime:"audio/mpeg"),"mp3")
+    }
+    @MainActor
+    func testMusicLibraryMigratesOldIndexRebasesAndRejectsSymlinks() throws {
+        let directory=FileManager.default.temporaryDirectory.appendingPathComponent(UUID().uuidString)
+        try FileManager.default.createDirectory(at:directory,withIntermediateDirectories:true)
+        defer {try? FileManager.default.removeItem(at:directory)}
+        try Data([1]).write(to:directory.appendingPathComponent("song.mp3"))
+        try FileManager.default.createSymbolicLink(at:directory.appendingPathComponent("escape.mp3"),withDestinationURL:URL(fileURLWithPath:"/etc/hosts"))
+        let old:[LocalAudioTrack]=[
+            .init(id:"a",title:"Old",url:URL(fileURLWithPath:"/old/sandbox/song.mp3")),
+            .init(id:"b",title:"Escape",url:URL(fileURLWithPath:"/old/escape.mp3"))]
+        let data=try JSONEncoder().encode(old)
+        try data.write(to:directory.appendingPathComponent("index.json.backup"))
+        try Data("broken".utf8).write(to:directory.appendingPathComponent("index.json"))
+        let library=AudioLibrary(directory:directory,playbackEnabled:false)
+        XCTAssertEqual(library.tracks.count,1)
+        XCTAssertEqual(library.tracks.first?.url,directory.appendingPathComponent("song.mp3"))
+        XCTAssertNil(library.tracks.first?.artist)
+    }
+    @MainActor
+    func testMusicQueueRestoresPausedAndDoesNotPersistStreamURL() throws {
+        let directory=FileManager.default.temporaryDirectory.appendingPathComponent(UUID().uuidString)
+        try FileManager.default.createDirectory(at:directory,withIntermediateDirectories:true)
+        defer {try? FileManager.default.removeItem(at:directory)}
+        let tracks=try ["a","b","c","d"].map {id -> LocalAudioTrack in
+            let url=directory.appendingPathComponent(id+".mp3");try Data([1]).write(to:url)
+            return LocalAudioTrack(id:id,title:id,url:url,duration:100)
+        }
+        try JSONEncoder().encode(tracks).write(to:directory.appendingPathComponent("index.json"))
+        let library=AudioLibrary(directory:directory,playbackEnabled:false)
+        library.playQueue(tracks,startingAt:"b");library.seek(24);library.setShuffle(true)
+        XCTAssertEqual(library.currentID,"b");XCTAssertEqual(Set(library.activeQueue.map(\.id)),Set(tracks.map(\.id)))
+        library.setShuffle(false);XCTAssertEqual(library.activeQueue.map(\.id),tracks.map(\.id))
+        library.pause()
+        let restored=AudioLibrary(directory:directory,playbackEnabled:false)
+        XCTAssertEqual(restored.currentID,"b");XCTAssertEqual(restored.elapsed,24);XCTAssertFalse(restored.playing)
+        library.enqueue(LocalAudioTrack(id:"stream",title:"Online",url:URL(string:"https://example.com/a.mp3?signature=private")!))
+        let saved=try String(contentsOf:directory.appendingPathComponent("queue-local.json"),encoding:.utf8)
+        XCTAssertFalse(saved.contains("https:"));XCTAssertFalse(saved.contains("signature"));XCTAssertFalse(saved.contains("stream"))
+        library.clearUpcoming();XCTAssertEqual(library.activeQueue.map(\.id),["a","b"]);XCTAssertEqual(library.currentID,"b")
+    }
+    @MainActor
+    func testMusicDownloadsAreHiddenAcrossAccountsAndCancelledOnLogout() async throws {
+        let directory=FileManager.default.temporaryDirectory.appendingPathComponent(UUID().uuidString)
+        try FileManager.default.createDirectory(at:directory,withIntermediateDirectories:true)
+        defer {try? FileManager.default.removeItem(at:directory)}
+        let temp=directory.appendingPathComponent("download.tmp")
+        let url=URL(string:"https://example.com/song.mp3")!
+        let library=AudioLibrary(directory:directory,playbackEnabled:false,fetchDownload:{_ in
+            try Data([1,2,3]).write(to:temp)
+            return (temp,HTTPURLResponse(url:url,statusCode:200,httpVersion:nil,headerFields:["Content-Type":"audio/mpeg"])!)
+        })
+        library.setAccount(1)
+        let track=VKAudioTrack(id:"remote",title:"Test",artist:"Artist",duration:10,url:url)
+        library.download(track)
+        for _ in 0..<100 where library.downloading.contains(track.id) {await Task.yield()}
+        XCTAssertTrue(library.cached(track));XCTAssertEqual(library.visibleTracks.count,1)
+        library.createPlaylist("Account one")
+        library.resetRemoteSession();XCTAssertTrue(library.visibleTracks.isEmpty);XCTAssertTrue(library.visiblePlaylists.isEmpty)
+        library.setAccount(2);XCTAssertFalse(library.cached(track))
+        library.setAccount(1);XCTAssertTrue(library.cached(track))
+        let cancelled=AudioLibrary(directory:directory.appendingPathComponent("cancelled"),playbackEnabled:false,fetchDownload:{_ in
+            try await Task.sleep(nanoseconds:20_000_000)
+            return (temp,HTTPURLResponse(url:url,statusCode:200,httpVersion:nil,headerFields:["Content-Type":"audio/mpeg"])!)
+        })
+        cancelled.setAccount(1);cancelled.download(track);cancelled.resetRemoteSession()
+        try await Task.sleep(nanoseconds:40_000_000)
+        XCTAssertTrue(cancelled.tracks.isEmpty);XCTAssertTrue(cancelled.downloading.isEmpty)
+    }
+    @MainActor
+    func testMusicCatalogPaginationUsesRawResponseCount() async {
+        var offsets:[String]=[]
+        let model=VKMusicCatalogModel {_,parameters in
+            offsets.append(parameters["offset"] ?? "")
+            return .object(["count":.number(3),"items":.array([.object(["id":.number(0)]),.object(["id":.number(7),"owner_id":.number(1)])])])
+        }
+        await model.load(grants:["audio"]);await model.load(reset:false,grants:["audio"])
+        XCTAssertEqual(offsets,["0","2"]);XCTAssertEqual(model.tracks.count,1);XCTAssertFalse(model.more)
+    }
+
 }
