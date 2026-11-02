@@ -49,7 +49,7 @@ final class SmokeTests: XCTestCase {
         capture(app,"music-playlist",large:large)
         app.navigationBars.buttons.element(boundBy:0).tap()
         // The global mini-player has one stable accessibility label.
-        app.buttons["Открыть плеер"].lastMatch.tap()
+        app.buttons["music-mini-player-open"].tap()
         XCTAssertTrue(app.navigationBars["Плеер"].waitForExistence(timeout:5))
         capture(app,"music-player",large:large)
         app.swipeUp()
@@ -63,7 +63,10 @@ final class SmokeTests: XCTestCase {
                 XCTAssertTrue(app.buttons["Тихая тестовая запись"].waitForExistence(timeout:5))
                 app.buttons["Проверка строки и перемотки"].tap()
             } else {
-                XCTAssertTrue(app.switches["Эквалайзер"].waitForExistence(timeout:5))
+                let equalizer=app.switches["Эквалайзер"]
+                XCTAssertTrue(equalizer.waitForExistence(timeout:5))
+                equalizer.tap()
+                XCTAssertEqual(equalizer.value as? String,"1")
             }
             capture(app,"music-"+destination,large:large)
             app.navigationBars.buttons.element(boundBy:0).tap()
