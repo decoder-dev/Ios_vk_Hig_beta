@@ -458,6 +458,7 @@ struct VKUserPicker:View {
     @State private var busy=false
     @State private var offset=0
     @State private var more=true
+    @State private var requestID=UUID()
     var body:some View {
         NavigationStack {
             List {
@@ -474,18 +475,20 @@ struct VKUserPicker:View {
         }
     }
     private func load(reset:Bool) async {
-        if reset {offset=0;people=[];more=true}
-        busy=true;error=nil;defer {busy=false}
+        if !reset && busy {return}
+        if reset {requestID=UUID();offset=0;people=[];more=true}
+        let ticket=requestID
+        busy=true;error=nil;defer {if ticket==requestID {busy=false}}
         let text=query.trimmingCharacters(in:.whitespacesAndNewlines)
         do {
             try await Task.sleep(for:.milliseconds(300));try Task.checkCancellation()
             var params=["count":"30","offset":String(offset),"fields":"city,online"]
             if !text.isEmpty {params["q"]=text}
             let response=try await VKCatalogService.shared.request(text.isEmpty ? "friends.get" : "users.search",params)
-            try Task.checkCancellation()
+            try Task.checkCancellation();guard ticket==requestID else {return}
             let page=response.list.map(VKCatalogService.friend)
             var ids=Set(people.map(\.id));people+=page.filter {ids.insert($0.id).inserted};offset+=page.count;more=page.count==30
-        } catch is CancellationError {} catch {self.error=error.localizedDescription}
+        } catch is CancellationError {} catch {if ticket==requestID {self.error=error.localizedDescription}}
     }
 }
 
