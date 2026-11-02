@@ -109,6 +109,7 @@ struct FriendsView: View {
         FixtureScreen(
             title: "Друзья",
             screenID: "S18",
+            query:query,
             emptyTitle: "Нет друзей",
             emptySymbol: "person.2",
             emptyDetails: "friends.get when scoped.",
