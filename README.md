@@ -7,10 +7,10 @@ Native SwiftUI VK client (Apple HIG–oriented) for repository `Ios_vk_Hig_beta`
 
 ## Status
 
-- **Stage 0** audit docs in `output/`
-- **Stage 1** TabView foundation + design tokens
-- **P0 slices (fixture-backed):** Auth stub, Inbox, Conversation, Feed, Profile, Settings entry
-- **Xcode build / XCTest / Simulator:** not run on Linux CI agents — use a Mac
+- Development lands on **`main`** (no long-lived feature branches).
+- **S01–S44** kit screens: SwiftUI UI + fixture/demo paths + capability gates (see `output/IMPLEMENTATION_STATUS.md`).
+- **Xcode build / XCTest / Simulator:** `NOT RUN` on Linux — verify on Mac.
+- Credentials: placeholders only (`Secrets.example.md`); Jessica fills VK ID locally when testing.
 
 Live VK API success is **not** simulated. Fixture data shows an orange banner.
 

@@ -74,6 +74,11 @@ struct AuthStubView: View {
                         .padding(.horizontal, VKStyle.Spacing.md)
                 }
 
+                NavigationLink(value: AppRoute.onboarding) {
+                    Text("What is VK HIG? (onboarding)")
+                        .frame(minHeight: VKStyle.Size.tapTargetMin)
+                }
+
                 Text("Live VK API success is never simulated.")
                     .font(.caption)
                     .foregroundStyle(VKStyle.secondaryText)
@@ -83,6 +88,7 @@ struct AuthStubView: View {
             .background(VKStyle.groupedCanvas)
             .navigationTitle("Sign in")
             .navigationBarTitleDisplayMode(.inline)
+            .withAppRoutes()
         }
     }
 
