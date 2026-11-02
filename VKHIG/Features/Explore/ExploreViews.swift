@@ -137,6 +137,7 @@ struct ServicesHubView: View {
     var body: some View {
         List {
             Section("S25 · Сервисы") {
+                NavigationLink("Истории VK") {StoriesListView()}
                 NavigationLink(value:AppRoute.incomingCall) {Label("Звонки VK",systemImage:"phone")}
                 NavigationLink(value: AppRoute.videoList) {
                     Label("Видео", systemImage: "play.rectangle")
