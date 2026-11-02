@@ -31,3 +31,5 @@ Limits:
 
 Debug UI tests use an isolated, silent generated WAV library only with both --uitesting and
 --music-fixture arguments. Production libraries and accounts are untouched.
+
+The fixed-height system mini-player bounds its typography and offers the full player for unbounded Dynamic Type. Accessibility-sized full-player actions stack vertically.
