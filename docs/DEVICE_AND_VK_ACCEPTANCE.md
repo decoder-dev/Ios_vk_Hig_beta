@@ -36,3 +36,25 @@ VK_APPLE_TEAM_ID=YOURTEAMID VK_APNS_ENVIRONMENT=development bash scripts/device-
 CI отдельно использует официальный runner `xcode-27`, проверяет наличие Xcode 27 и iOS 27 simulator. Сохраняет `.xcresult` и PNG-вложения UI-тестов для светлой/тёмной темы, крупного текста и сервисных экранов. Ошибка или очередь preview runner фиксируются отдельно; результат другой версии iOS не выдаётся за результат iOS 27.
 
 На устройстве дополнительно проверить VoiceOver, Reduce Motion, клавиатуру, поворот экрана, AirPlay, прерывания звука, камеру, геопозицию и реальные API-права.
+
+## Прямая проверка APNs после подключения Apple
+
+Сборка передаёт в VK sandbox из того же APNS_ENVIRONMENT, который использует entitlement, а не из флага Debug. Пустое/неизвестное окружение блокирует регистрацию. Смена токена во время запроса вызывает регистрацию нового токена после завершения предыдущего.
+
+Для прямой диагностики нужен APNs signing key из Apple Developer (Account Holder/Admin), Key ID, Team ID и токен именно этой подписанной установки. Ключ хранится за пределами репозитория. Настройте переменные локально, не вставляя значения в чат или командную историю:
+
+- VK_APPLE_TEAM_ID, VK_APNS_KEY_ID, VK_APNS_KEY_PATH (путь к .p8).
+- VK_APNS_DEVICE_TOKEN (из делегата вашей подписанной сборки), VK_APNS_ENVIRONMENT (development либо production).
+- VK_APNS_TOPIC по умолчанию com.decoderdev.vkhig; topic, entitlement и provisioning должны совпадать.
+
+Запуск: `node scripts/apns-smoke.mjs`. Это отправит одно тестовое уведомление через Apple, без токена пользователя VK. HTTP 200 означает принятие Apple, а доставку нужно подтвердить на устройстве. Этот тест не настраивает провайдера VK и не доказывает доставку сообщений VK.
+
+Локальные проверки без ключей и сети: `node --test scripts/apns-smoke.test.mjs`.
+
+Проверенные первичные источники:
+- https://developer.apple.com/help/account/capabilities/communicate-with-apns-using-authentication-tokens/
+- https://developer.apple.com/documentation/usernotifications/registering-your-app-with-apns
+- https://st.mycdn.me/static/callssdk/latest/doc/index.html — опубликованный JavaScript SDK; не нативный iOS incoming-call SDK.
+- https://github.com/VKCOM/vkid-ios-sdk — SDK авторизации; не транспорт звонков.
+
+На 02.11.2026: в рабочем каталоге нет .p8/.p12/provisioning или пакета iOS Calls SDK. Кабинет VK ID заблокирован site-safety политикой облачного браузера; обход не выполнялся. Apple Developer показывает форму входа. Запросы на права/выдача ключа/изменение провайдера не выполнены. Для музыкальных и нативных звонковых прав требуется решение VK по этому приложению; запрос в поддержку без вашего отдельного указания не отправлялся.
