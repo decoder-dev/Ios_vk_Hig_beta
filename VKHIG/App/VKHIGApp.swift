@@ -1,10 +1,8 @@
 import SwiftUI
 import UserNotifications
-import Observation
 
 @main
 struct VKHIGApp: App {
-    @UIApplicationDelegateAdaptor(PushAppDelegate.self) private var appDelegate
     @State private var environment = AppEnvironment()
     @AppStorage("vkhig.appearance.mode") private var appearanceMode = "system"
 
@@ -29,8 +27,12 @@ struct VKHIGApp: App {
                 default: break
                 }
             }
-            .onChange(of:PushRegistration.shared.pendingRoute) {_,route in
-                if let route {environment.pendingRoute=route;PushRegistration.shared.pendingRoute=nil}
+            .task {
+                // Migration from builds that registered for remote notifications.
+                UserDefaults.standard.set(false,forKey:"vkhig.notifications.enabled")
+                UIApplication.shared.unregisterForRemoteNotifications()
+                UNUserNotificationCenter.current().removeAllPendingNotificationRequests()
+                UNUserNotificationCenter.current().removeAllDeliveredNotifications()
             }
             .modifier(UITestingTextSize())
             .tint(VKStyle.accent)
@@ -50,109 +52,6 @@ struct VKHIGApp: App {
         case "dark": return .dark
         default: return nil
         }
-    }
-}
-
-@MainActor
-@Observable
-final class PushRegistration {
-    static let shared=PushRegistration()
-    var status="Push не включён"
-    var pendingRoute:AppRoute?
-    private var token:String?
-    private var registeredUser:Int64?
-    private var registering=false
-    private var revision=UUID()
-    private var deviceID:String {
-        if let configuredDeviceID {return configuredDeviceID}
-        if let value=UserDefaults.standard.string(forKey:"vkhig.push.device") {return value}
-        let value=UUID().uuidString;UserDefaults.standard.set(value,forKey:"vkhig.push.device");return value
-    }
-    @ObservationIgnored private let request:(String,[String:String]) async throws -> VKJSON
-    @ObservationIgnored private let currentUser:()->Int64?
-    @ObservationIgnored private let isEnabled:()->Bool
-    @ObservationIgnored private let environment:()->APNsEnvironment?
-    @ObservationIgnored private let configuredDeviceID:String?
-    init(request:((String,[String:String]) async throws -> VKJSON)?=nil,
-         userID:(()->Int64?)?=nil, enabled:(()->Bool)?=nil,
-         environment:(()->APNsEnvironment?)?=nil, deviceID:String?=nil) {
-        self.request=request ?? {try await VKCatalogService.shared.request($0,$1)}
-        self.currentUser=userID ?? {VKIDAuthCoordinator.shared.userID}
-        self.isEnabled=enabled ?? {UserDefaults.standard.bool(forKey:"vkhig.notifications.enabled")}
-        self.environment=environment ?? {AppSecrets.apnsEnvironment}
-        self.configuredDeviceID=deviceID
-    }
-    func enable() async {
-        do {
-            let granted=try await UNUserNotificationCenter.current().requestAuthorization(options:[.alert,.sound,.badge])
-            UserDefaults.standard.set(granted,forKey:"vkhig.notifications.enabled")
-            guard granted else {status="Уведомления запрещены в настройках iOS";return}
-            status="Регистрация в APNs…";UIApplication.shared.registerForRemoteNotifications()
-        } catch {status=error.localizedDescription}
-    }
-    func received(_ data:Data) async {
-        guard !data.isEmpty else {status="APNs не предоставил токен устройства";return}
-        revision=UUID()
-        token=data.map {String(format:"%02x",$0)}.joined();registeredUser=nil
-        await registerIfNeeded()
-    }
-    func registerIfNeeded() async {
-        guard isEnabled(),let token,let user=currentUser(),registeredUser != user,!registering else {return}
-        guard let environment=environment() else {status="Не настроено окружение push для этой сборки";return}
-        let sandbox=environment.vkSandbox
-        let ticket=revision;registering=true
-        defer {
-            registering=false
-            if ticket != revision {Task {await self.registerIfNeeded()}}
-        }
-        do {
-            let response=try await request("account.registerDevice",["token":token,"device_id":deviceID,"device_model":UIDevice.current.model,"system_version":UIDevice.current.systemVersion,"sandbox":sandbox,"pushes_granted":"1"])
-            guard ticket==revision else {return}
-            guard response.int==1 else {throw AppError.decoding}
-            registeredUser=user;status="Устройство зарегистрировано в VK"
-        } catch {if ticket==revision {status="Регистрация VK: "+error.localizedDescription}}
-    }
-    func disable() async {
-        UserDefaults.standard.set(false,forKey:"vkhig.notifications.enabled")
-        revision=UUID()
-        UIApplication.shared.unregisterForRemoteNotifications()
-        UNUserNotificationCenter.current().removeAllDeliveredNotifications()
-        pendingRoute=nil
-        // Finish any in-flight registration before unregistering this installation.
-        while registering {try? await Task.sleep(for:.milliseconds(50))}
-        var failure:String?
-        if token != nil,currentUser() != nil {
-            do {
-                guard let environment=environment() else {throw AppError.network("Не настроено окружение APNs")}
-                let response=try await request("account.unregisterDevice",["device_id":deviceID,"sandbox":environment.vkSandbox])
-                guard response.int==1 else {throw AppError.decoding}
-            } catch {failure="Push отключён на устройстве. VK: "+error.localizedDescription}
-        }
-        registeredUser=nil;status=failure ?? "Push отключён"
-    }
-    func route(_ payload:[AnyHashable:Any]) {
-        // Never open arbitrary URLs from a notification payload.
-        let raw=payload["peer_id"] ?? (payload["data"] as? [String:Any])?["peer_id"]
-        if let raw,let peer=Int64(String(describing:raw)),peer != 0 {pendingRoute = .conversation(peer)}
-        else {pendingRoute = .notifications}
-    }
-}
-
-final class PushAppDelegate:NSObject,UIApplicationDelegate,UNUserNotificationCenterDelegate {
-    func application(_ application:UIApplication,didFinishLaunchingWithOptions launchOptions:[UIApplication.LaunchOptionsKey:Any]? = nil) -> Bool {
-        UNUserNotificationCenter.current().delegate=self
-        if UserDefaults.standard.bool(forKey:"vkhig.notifications.enabled") {application.registerForRemoteNotifications()}
-        return true
-    }
-    func application(_ application:UIApplication,didRegisterForRemoteNotificationsWithDeviceToken deviceToken:Data) {Task {@MainActor in await PushRegistration.shared.received(deviceToken)}}
-    func application(_ application:UIApplication,didFailToRegisterForRemoteNotificationsWithError error:Error) {Task {@MainActor in PushRegistration.shared.status="APNs: "+error.localizedDescription}}
-    func userNotificationCenter(_ center:UNUserNotificationCenter,willPresent notification:UNNotification,withCompletionHandler completionHandler:@escaping (UNNotificationPresentationOptions)->Void) {
-        let enabled=UserDefaults.standard.bool(forKey:"vkhig.notifications.enabled")
-        completionHandler(enabled ? [.banner,.sound,.badge] : [])
-    }
-    func userNotificationCenter(_ center:UNUserNotificationCenter,didReceive response:UNNotificationResponse,withCompletionHandler completionHandler:@escaping ()->Void) {
-        let payload=response.notification.request.content.userInfo
-        Task {@MainActor in PushRegistration.shared.route(payload);completionHandler()}
     }
 }
 

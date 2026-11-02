@@ -58,7 +58,6 @@ struct RootTabView: View {
         .onChange(of:env.pendingRoute) { _,_ in openPendingRoute() }
     }
     private func openPendingRoute() {
-        if env.pendingRoute == nil {env.pendingRoute=PushRegistration.shared.pendingRoute;PushRegistration.shared.pendingRoute=nil}
         guard let route=env.pendingRoute else {return}
         switch route {
         case .conversation,.groupChat,.chatInfo,.chatSearch:selected = .messages;messagesPath.append(route)
