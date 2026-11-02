@@ -5,37 +5,43 @@ enum AppTab: Hashable {
 }
 
 struct RootTabView: View {
+    @Environment(AppEnvironment.self) private var env
     @State private var selected: AppTab = .messages
+    @State private var feedPath: [AppRoute] = []
+    @State private var servicesPath: [AppRoute] = []
+    @State private var messagesPath: [AppRoute] = []
+    @State private var musicPath: [AppRoute] = []
+    @State private var profilePath: [AppRoute] = []
 
     var body: some View {
         TabView(selection: $selected) {
-            NavigationStack {
+            NavigationStack(path:$feedPath) {
                 FeedView()
                     .withAppRoutes()
             }
             .tabItem { Label("Лента", systemImage: "house") }
             .tag(AppTab.feed)
 
-            NavigationStack {
+            NavigationStack(path:$servicesPath) {
                 ServicesHubView()
             }
             .tabItem { Label("Сервисы", systemImage: "square.grid.2x2") }
             .tag(AppTab.services)
 
-            NavigationStack {
+            NavigationStack(path:$messagesPath) {
                 InboxView()
                     .withAppRoutes()
             }
             .tabItem { Label("Сообщения", systemImage: "bubble.left.and.bubble.right") }
             .tag(AppTab.messages)
 
-            NavigationStack {
+            NavigationStack(path:$musicPath) {
                 MusicLibraryView()
             }
             .tabItem { Label("Музыка", systemImage: "music.note") }
             .tag(AppTab.music)
 
-            NavigationStack {
+            NavigationStack(path:$profilePath) {
                 ProfileView()
                     .withAppRoutes()
             }
@@ -43,6 +49,18 @@ struct RootTabView: View {
             .tag(AppTab.profile)
         }
         .tint(VKStyle.accent)
+        .alert("VK HIG",isPresented:Binding(get:{env.catalog.notice != nil},set:{if !$0 {env.catalog.notice = nil}})) {
+            Button("ОК") { env.catalog.notice = nil }
+        } message: { Text(env.catalog.notice ?? "") }
+        .onChange(of:env.pendingRoute) { _,route in
+            guard let route else { return }
+            switch route {
+            case .conversation, .groupChat, .chatInfo, .chatSearch: selected = .messages; messagesPath.append(route)
+            case .postDetail, .comments: selected = .feed; feedPath.append(route)
+            default: selected = .services; servicesPath.append(route)
+            }
+            env.pendingRoute = nil
+        }
     }
 }
 
