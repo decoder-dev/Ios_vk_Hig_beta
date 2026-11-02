@@ -42,6 +42,23 @@
 		<string>UIInterfaceOrientationLandscapeLeft</string>
 		<string>UIInterfaceOrientationLandscapeRight</string>
 	</array>
-	<!-- TODO(Stage 2): Register VK ID URL scheme / CFBundleURLTypes once own VK ID app credentials exist. -->
+	<key>VK_CLIENT_ID</key>
+	<string>YOUR_VK_ID_CLIENT_ID</string>
+	<key>VK_REDIRECT_SCHEME</key>
+	<string>vkhig</string>
+	<key>VK_API_VERSION</key>
+	<string>5.199</string>
+	<key>CFBundleURLTypes</key>
+	<array>
+		<dict>
+			<key>CFBundleURLName</key>
+			<string>com.decoderdev.vkhig.vkid</string>
+			<key>CFBundleURLSchemes</key>
+			<array>
+				<string>vkhig</string>
+			</array>
+		</dict>
+	</array>
+	<!-- Jessica: replace YOUR_VK_ID_CLIENT_ID and align URL scheme with VK ID console. See Config/Secrets.example.xcconfig. -->
 </dict>
 </plist>

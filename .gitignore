@@ -24,5 +24,7 @@ Package.resolved
 # Secrets — never commit VK credentials
 **/Secrets.plist
 **/Secrets.swift
+**/Secrets.xcconfig
+!**/Secrets.example.xcconfig
 .env
 *.pem

@@ -1,29 +1,19 @@
 # API CAPABILITIES — VK HIG
 
-Statuses: `ENABLED`, `NEEDS_PERMISSION`, `NEEDS_CONFIG`, `UNAVAILABLE`, `BLOCKED`, `UNKNOWN`.  
-Live HTTP against VK: **NOT RUN** (no VK ID app credentials; Linux agent).
+Live HTTP against VK: **NOT RUN** (credentials deferred to Jessica; Linux agent).
 
-| Screen / Feature | Method / SDK | Permission & app type | Actual test | Status | Evidence |
-|---|---|---|---|---|---|
-| S01/S02 Sign-in | VK ID iOS SDK (OAuth 2.1 + PKCE) | Own VK ID app required | NOT RUN | NEEDS_CONFIG | `VKIDAuthCoordinator` returns `.missingCredentials` / `.sdkNotLinked`; no password UI |
-| Session storage | Keychain | N/A | NOT RUN on device | NEEDS_CONFIG | `KeychainTokenStore` implemented; empty until live auth |
-| S08 Inbox | `messages.getConversations` | Scope + app type unverified | NOT RUN | NEEDS_CONFIG | Fixture path via `ConversationRepository`; live gated |
-| S09 History | `messages.getHistory` | Scope unverified | NOT RUN | NEEDS_CONFIG | Fixture history + pending local compose |
-| S09 Send | `messages.send` + `random_id` | Scope unverified | NOT RUN | NEEDS_CONFIG | Enqueue stays `.pending` in fixtures — **no fake ACK** |
-| S04 Feed | `newsfeed.get` / `wall.get` | Scope unverified | NOT RUN | NEEDS_CONFIG | Fixture posts + orange banner |
-| S15 Profile | `users.get` | Scope unverified | NOT RUN | NEEDS_CONFIG | Fixture profile labeled |
-| Friends / Communities / Photos | `friends.get` / `groups.get` / `photos.get` | Unverified | NOT RUN | NEEDS_CONFIG | Services list placeholders only |
-| Music | Official audio / licensed streams | Likely unavailable for 3p apps | NOT RUN | UNAVAILABLE | `MusicPlaceholderView` + capability `.unavailable` |
-| Video / Calls / Stories | Official APIs TBD | Unverified | NOT RUN | UNKNOWN / UNAVAILABLE | Not implemented; no fake success |
+| Feature | Candidate | Status | UI path |
+|---|---|---|---|
+| VK ID sign-in | VKID iOS SDK | NEEDS_CONFIG | S01/S02 placeholders |
+| Inbox / chat / send | messages.* | NEEDS_CONFIG | S08–S14 fixtures; send stays pending |
+| Feed / post / comments | newsfeed/wall.* | NEEDS_CONFIG | S04–S07 fixtures |
+| Profile / friends / groups | users/friends/groups.* | NEEDS_CONFIG | S15–S22 fixtures |
+| Search / notifications | users.search / notifications.get | NEEDS_CONFIG | S23–S24 fixtures |
+| Photos | photos.* | NEEDS_CONFIG | S26–S28 placeholders |
+| Video | video.* | NEEDS_CONFIG / rights | S29–S30 no illegal stream |
+| Music | audio | UNAVAILABLE | S31–S33 play disabled |
+| Calls | official calling SDK | UNAVAILABLE | S42 disabled |
+| Stories | stories? | NEEDS_CONFIG / UNAVAIL | S41 shell |
+| Bookmarks | fave.get? | NEEDS_CONFIG | S40 fixtures |
 
-## Transport sketch
-
-- `VKAPIClient` actor: POST `https://api.vk.com/method/<method>` with token in body (never logged).
-- **Not invoked** from UI repositories until `CapabilityRegistry.verifiedLiveFeatures` is non-empty and a Keychain token exists.
-
-## Credentials required from Jessica
-
-1. VK ID **client/app id**
-2. Redirect URI / URL scheme
-3. Confirmation of granted scopes (especially `messages`, newsfeed/wall, friends)
-4. Decision to add SPM package `https://github.com/VKCOM/vkid-ios-sdk`
+Transport: `VKAPIClient` present but not invoked from repositories until `CapabilityRegistry.verifiedLiveFeatures` is non-empty.

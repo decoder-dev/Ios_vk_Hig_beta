@@ -47,7 +47,10 @@ final class VKIDAuthCoordinator {
     private let tokenStore: KeychainTokenStore
 
     init(
-        configuration: VKIDConfiguration = VKIDConfiguration(),
+        configuration: VKIDConfiguration = VKIDConfiguration(
+            clientID: AppSecrets.hasVKIDCredentials ? AppSecrets.vkClientID : nil,
+            redirectURLScheme: AppSecrets.vkRedirectScheme
+        ),
         tokenStore: KeychainTokenStore = KeychainTokenStore()
     ) {
         self.configuration = configuration

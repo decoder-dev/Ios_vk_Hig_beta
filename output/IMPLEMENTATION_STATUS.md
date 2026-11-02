@@ -1,36 +1,63 @@
 # IMPLEMENTATION STATUS — VK HIG
 
-**Updated:** 2026-11-02 · Branch `cursor/stage0-stage1-foundation-6d76`  
-Build/tests/screenshots on simulator: **NOT RUN** (Linux VM).
+**Updated:** 2026-11-02 · Branch **`main`**  
+Build/tests/screenshots: **NOT RUN** (Linux VM — Mac verification only).
 
-Status vocabulary: `NOT_STARTED`, `IN_PROGRESS`, `UI_DONE`, `INTEGRATED`, `QA_PASSED`, `BLOCKED`.
+Status: `NOT_STARTED` | `IN_PROGRESS` | `UI_DONE` | `INTEGRATED` | `QA_PASSED` | `BLOCKED`
 
-| Screen ID | Status | Files changed | API | Build | Tests | Screenshot | Blocker |
+| Screen ID | Status | Files / route | API | Build | Tests | Screenshot | Notes |
 |---|---|---|---|---|---|---|---|
-| Stage 0 audit | UI_DONE (docs) | `output/REPO_AUDIT.md`, `API_CAPABILITIES.md`, `BLOCKERS.md` | N/A | NOT RUN | NOT RUN | N/A | Mac build |
-| Stage 1 shell | UI_DONE | `RootTabView`, design tokens, light/dark via system colors | N/A | NOT RUN | NOT RUN | NOT RUN | Mac |
-| S01/S02 Auth | UI_DONE (stub) | `AuthStubView`, `VKIDAuthCoordinator`, `KeychainTokenStore`, `SessionStore` | NEEDS_CONFIG | NOT RUN | NOT RUN | NOT RUN | VK ID credentials + SDK |
-| S08 Inbox | UI_DONE (fixtures) | `InboxView`, `InboxViewModel`, `ConversationRepository` | NEEDS_CONFIG | NOT RUN | NOT RUN | NOT RUN | messages scope |
-| S09 Conversation | UI_DONE (fixtures) | `ConversationView`, `ConversationViewModel`, `MessageReconciler` | NEEDS_CONFIG | NOT RUN | NOT RUN | NOT RUN | messages.send; pending ≠ live ACK |
-| S04 Feed | UI_DONE (fixtures) | `FeedView`, `FeedViewModel`, `FeedRepository` | NEEDS_CONFIG | NOT RUN | NOT RUN | NOT RUN | newsfeed/wall scope |
-| S15 Profile | UI_DONE (fixtures) | `ProfileView`, `ProfileViewModel`, `ProfileRepository` | NEEDS_CONFIG | NOT RUN | NOT RUN | NOT RUN | users.get |
-| S23 Settings | UI_DONE (local prefs) | `SettingsView` | N/A (local) | NOT RUN | NOT RUN | NOT RUN | — |
-| Services hub | UI_DONE (nav stubs) | `ServicesPlaceholderView` | UNKNOWN | NOT RUN | NOT RUN | NOT RUN | later P0/P1 routes |
-| Music | BLOCKED / UNAVAILABLE | `MusicPlaceholderView`, capability gate | UNAVAILABLE | NOT RUN | NOT RUN | NOT RUN | official audio rights |
-| S05–S07, S10–S14, S16–S22, S24–S44 | NOT_STARTED | — | UNKNOWN | NOT RUN | NOT RUN | NOT RUN | prioritize after live auth |
+| S01 Launch | UI_DONE | `VKHIGApp` auth gate | NEEDS_CONFIG | NOT RUN | NOT RUN | NOT RUN | Session restore via Keychain presence |
+| S02 VK ID login | UI_DONE | `AuthStubView`, `VKIDAuthCoordinator` | NEEDS_CONFIG | NOT RUN | NOT RUN | NOT RUN | Placeholders in Info.plist / Secrets.example |
+| S03 Onboarding | UI_DONE | `OnboardingView` | local | NOT RUN | NOT RUN | NOT RUN | |
+| S04 Feed | UI_DONE | `FeedView` + stories entry | NEEDS_CONFIG | NOT RUN | NOT RUN | NOT RUN | Fixture banner |
+| S05 Post detail | UI_DONE | `PostDetailView` | NEEDS_CONFIG | NOT RUN | NOT RUN | NOT RUN | |
+| S06 Comments | UI_DONE | `CommentsView` | NEEDS_CONFIG | NOT RUN | NOT RUN | NOT RUN | Local composer; no fake publish |
+| S07 Compose post | UI_DONE | `ComposePostView` | NEEDS_CONFIG | NOT RUN | NOT RUN | NOT RUN | Explicit not-published notice |
+| S08 Inbox | UI_DONE | `InboxView` | NEEDS_CONFIG | NOT RUN | NOT RUN | NOT RUN | |
+| S09 Chat | UI_DONE | `ConversationView` | NEEDS_CONFIG | NOT RUN | NOT RUN | NOT RUN | Pending send; context menu S13 |
+| S10 Group chat | UI_DONE | `GroupChatView` | NEEDS_CONFIG | NOT RUN | NOT RUN | NOT RUN | peer ≥ 2e9 |
+| S11 Chat info | UI_DONE | `ChatInfoView` | NEEDS_CONFIG | NOT RUN | NOT RUN | NOT RUN | |
+| S12 Attachments | UI_DONE | `ChatAttachmentsView` | NEEDS_CONFIG | NOT RUN | NOT RUN | NOT RUN | No upload |
+| S13 Message actions | UI_DONE | contextMenu on bubbles | NEEDS_CONFIG | NOT RUN | NOT RUN | NOT RUN | |
+| S14 Chat search | UI_DONE | `ChatSearchView` | NEEDS_CONFIG | NOT RUN | NOT RUN | NOT RUN | |
+| S15 User profile | UI_DONE | `UserProfileView` | NEEDS_CONFIG | NOT RUN | NOT RUN | NOT RUN | |
+| S16 My profile | UI_DONE | `ProfileView` | NEEDS_CONFIG | NOT RUN | NOT RUN | NOT RUN | |
+| S17 Edit profile | UI_DONE | `EditProfileView` | NEEDS_CONFIG | NOT RUN | NOT RUN | NOT RUN | Local draft |
+| S18 Friends | UI_DONE | `FriendsView` | NEEDS_CONFIG | NOT RUN | NOT RUN | NOT RUN | |
+| S19 Friend requests | UI_DONE | `FriendRequestsView` | NEEDS_CONFIG | NOT RUN | NOT RUN | NOT RUN | |
+| S20 Community | UI_DONE | `CommunityView` | NEEDS_CONFIG | NOT RUN | NOT RUN | NOT RUN | |
+| S21 Communities | UI_DONE | `CommunitiesListView` | NEEDS_CONFIG | NOT RUN | NOT RUN | NOT RUN | |
+| S22 Members | UI_DONE | `CommunityMembersView` | NEEDS_CONFIG | NOT RUN | NOT RUN | NOT RUN | |
+| S23 Global search | UI_DONE | `GlobalSearchView` | NEEDS_CONFIG | NOT RUN | NOT RUN | NOT RUN | |
+| S24 Notifications | UI_DONE | `NotificationsView` | NEEDS_CONFIG | NOT RUN | NOT RUN | NOT RUN | |
+| S25 Services hub | UI_DONE | `ServicesHubView` | local | NOT RUN | NOT RUN | NOT RUN | Full route catalog |
+| S26 Albums | UI_DONE | `PhotoAlbumsView` | NEEDS_CONFIG | NOT RUN | NOT RUN | NOT RUN | |
+| S27 Photos grid | UI_DONE | `PhotosGridView` | NEEDS_CONFIG | NOT RUN | NOT RUN | NOT RUN | |
+| S28 Photo viewer | UI_DONE | `PhotoViewerView` | NEEDS_CONFIG | NOT RUN | NOT RUN | NOT RUN | Placeholder bitmap |
+| S29 Video list | UI_DONE | `VideoListView` | NEEDS_CONFIG | NOT RUN | NOT RUN | NOT RUN | |
+| S30 Video player | UI_DONE | `VideoPlayerView` | UNAVAILABLE/NEEDS | NOT RUN | NOT RUN | NOT RUN | No stream without rights |
+| S31 Music library | UI_DONE | `MusicLibraryView` | UNAVAILABLE | NOT RUN | NOT RUN | NOT RUN | Play disabled |
+| S32 Audio player | UI_DONE | `AudioPlayerView` | UNAVAILABLE | NOT RUN | NOT RUN | NOT RUN | Controls disabled |
+| S33 Playlist | UI_DONE | `PlaylistView` | UNAVAILABLE | NOT RUN | NOT RUN | NOT RUN | |
+| S34 Settings | UI_DONE | `SettingsHubView` | local | NOT RUN | NOT RUN | NOT RUN | |
+| S35 Notif settings | UI_DONE | `NotificationSettingsView` | local | NOT RUN | NOT RUN | NOT RUN | |
+| S36 Privacy | UI_DONE | `PrivacySettingsView` | local/NEEDS | NOT RUN | NOT RUN | NOT RUN | |
+| S37 Appearance | UI_DONE | `AppearanceSettingsView` | local | NOT RUN | NOT RUN | NOT RUN | |
+| S38 Storage | UI_DONE | `StorageSettingsView` | local | NOT RUN | NOT RUN | NOT RUN | |
+| S39 Account | UI_DONE | `AccountSettingsView` | NEEDS_CONFIG | NOT RUN | NOT RUN | NOT RUN | |
+| S40 Bookmarks | UI_DONE | `BookmarksView` | NEEDS_CONFIG | NOT RUN | NOT RUN | NOT RUN | |
+| S41 Stories | UI_DONE | `StoryViewerView` | NEEDS_CONFIG/UNAVAIL | NOT RUN | NOT RUN | NOT RUN | Shell only |
+| S42 Incoming call | UI_DONE | `IncomingCallView` | UNAVAILABLE | NOT RUN | NOT RUN | NOT RUN | SDK not linked; buttons disabled |
+| S43 Error states | UI_DONE | `ErrorDemoView` | local | NOT RUN | NOT RUN | NOT RUN | |
+| S44 Actions sheet | UI_DONE | `ActionsDemoView` | local | NOT RUN | NOT RUN | NOT RUN | |
 
-## Vertical slices completed this PR
+## Navigation
 
-1. **Foundation** — tokens, 5-tab shell, NavigationStack, auth gate, Dynamic Type–friendly system fonts, light/dark semantic colors.
-2. **Auth stub** — official VK ID flow notes + coordinator; fixture shell entry; no passwords.
-3. **Inbox** — models, repository, loading/empty/error/offline, search/filter, fixture banner.
-4. **Conversation** — history load states, composer, `random_id`, pending-only send in fixtures.
-5. **Feed** — load states + post cards from fixtures.
-6. **Profile + Settings** — fixture profile, local toggles, sign-out.
+- Typed `AppRoute` + `withAppRoutes()` on root stacks
+- Tabs: Feed / Services / Messages / Music / Profile
 
-## Explicitly not claimed
+## Credentials
 
-- Live VK API success
-- Xcode build PASS
-- XCTest PASS
-- Simulator screenshots
+- Placeholders: `Info.plist` `VK_CLIENT_ID=YOUR_VK_ID_CLIENT_ID`, `Config/Secrets.example.xcconfig`, `Secrets.example.md`
+- Jessica fills locally — do not wait in-repo

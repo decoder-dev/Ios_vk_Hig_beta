@@ -1,4 +1,5 @@
 import SwiftUI
+import UIKit
 
 /// S09 — history + composer. Outgoing stays `.pending` without live API ACK.
 struct ConversationView: View {
@@ -17,6 +18,19 @@ struct ConversationView: View {
         }
         .navigationTitle(conversation.displayName)
         .navigationBarTitleDisplayMode(.inline)
+        .toolbar {
+            ToolbarItemGroup(placement: .topBarTrailing) {
+                NavigationLink(value: AppRoute.chatSearch(conversation.peerID.raw)) {
+                    Image(systemName: "magnifyingglass")
+                        .frame(minWidth: 44, minHeight: 44)
+                }
+                NavigationLink(value: AppRoute.chatInfo(conversation.peerID.raw)) {
+                    Image(systemName: "info.circle")
+                        .frame(minWidth: 44, minHeight: 44)
+                }
+            }
+        }
+        .withAppRoutes()
         .task {
             if model == nil {
                 let vm = ConversationViewModel(conversation: conversation, environment: env)
@@ -77,13 +91,12 @@ struct ConversationView: View {
     private func composer(_ model: ConversationViewModel) -> some View {
         @Bindable var model = model
         return HStack(alignment: .bottom, spacing: 10) {
-            Button {} label: {
+            NavigationLink(value: AppRoute.chatAttachments(model.conversation.peerID.raw)) {
                 Image(systemName: "plus.circle.fill")
                     .font(.system(size: 28))
                     .frame(minWidth: 44, minHeight: 44)
             }
             .accessibilityLabel("Add attachment")
-            .disabled(true)
 
             TextField("Message", text: $model.draft, axis: .vertical)
                 .lineLimit(1...5)
@@ -143,5 +156,13 @@ private struct MessageBubble: View {
             if !message.isOutgoing { Spacer(minLength: 58) }
         }
         .accessibilityElement(children: .combine)
+        .contextMenu {
+            // S13 — message actions; destructive paths need confirmation when live.
+            Button("Copy") { UIPasteboard.general.string = message.text }
+            Button("Reply") {}
+            Button("Forward") {}
+            Divider()
+            Button("Delete", role: .destructive) {}
+        }
     }
 }

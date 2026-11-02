@@ -1,6 +1,6 @@
 import SwiftUI
 
-/// S15 profile + S23 settings entry.
+/// S16 — my profile + links into social/media/settings.
 struct ProfileView: View {
     @Environment(AppEnvironment.self) private var env
     @State private var model: ProfileViewModel?
@@ -57,12 +57,25 @@ struct ProfileView: View {
                 }
 
                 Section("Разделы") {
-                    Label("Фотографии", systemImage: "photo.on.rectangle.angled")
-                    Label("Друзья", systemImage: "person.2")
-                    Label("Сообщества", systemImage: "person.3")
-                    NavigationLink {
-                        SettingsView()
-                    } label: {
+                    NavigationLink(value: AppRoute.editProfile) {
+                        Label("Редактировать профиль", systemImage: "pencil")
+                    }
+                    NavigationLink(value: AppRoute.friends) {
+                        Label("Друзья", systemImage: "person.2")
+                    }
+                    NavigationLink(value: AppRoute.communities) {
+                        Label("Сообщества", systemImage: "person.3")
+                    }
+                    NavigationLink(value: AppRoute.photoAlbums) {
+                        Label("Альбомы", systemImage: "rectangle.stack")
+                    }
+                    NavigationLink(value: AppRoute.photos) {
+                        Label("Фотографии", systemImage: "photo.on.rectangle.angled")
+                    }
+                    NavigationLink(value: AppRoute.bookmarks) {
+                        Label("Сохранённое", systemImage: "bookmark")
+                    }
+                    NavigationLink(value: AppRoute.settings) {
                         Label("Настройки", systemImage: "gearshape")
                     }
                 }
@@ -77,45 +90,5 @@ struct ProfileView: View {
             }
             .refreshable { await model.load() }
         }
-    }
-}
-
-struct SettingsView: View {
-    @AppStorage("vkhig.notifications.enabled") private var notificationsEnabled = false
-    @AppStorage("vkhig.cellular.download") private var cellularDownload = false
-    @Environment(AppEnvironment.self) private var env
-
-    var body: some View {
-        Form {
-            Section("Аккаунт") {
-                Label(
-                    env.isLiveVKSession ? "VK ID session" : "Fixture shell session",
-                    systemImage: "person.crop.circle"
-                )
-                Label("Privacy", systemImage: "lock.shield")
-            }
-            Section("Уведомления") {
-                Toggle("In-app notifications (local preference)", isOn: $notificationsEnabled)
-            }
-            Section("Данные") {
-                Toggle("Cellular download (local preference)", isOn: $cellularDownload)
-                Label("Cache management (not wired)", systemImage: "externaldrive")
-            }
-            Section("Data source") {
-                Text(env.dataMode == .fixtures
-                     ? "Repositories use bundled fixtures. Live VK calls are gated."
-                     : "Live mode selected — features still require verified scopes.")
-                    .font(.footnote)
-                    .foregroundStyle(.secondary)
-            }
-        }
-        .navigationTitle("Настройки")
-    }
-}
-
-#Preview {
-    NavigationStack {
-        ProfileView()
-            .environment(AppEnvironment())
     }
 }

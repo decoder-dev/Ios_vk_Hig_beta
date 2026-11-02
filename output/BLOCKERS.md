@@ -2,17 +2,14 @@
 
 | Priority | Blocker | Required input/action | Safe fallback | Status |
 |---|---|---|---|---|
-| P0 | No macOS/Xcode on Cloud Linux VM | Build & test on Mac (local or Cursor Mac self-hosted worker) | Code + docs only; mark build/tests `NOT RUN` | OPEN |
-| P0 | VK ID app credentials missing | Jessica: register own VK ID app; provide client id + redirect/URL scheme (no Fenrir/Phoenix keys) | Auth stub + fixture UI shell | OPEN |
-| P0 | VKID iOS SDK not linked | Add official SPM dependency after credentials exist | `VKIDAuthCoordinator.authorize()` → `.sdkNotLinked` | OPEN |
-| P0 | messages / newsfeed scopes unverified | Confirm official scopes for this app type; update `CapabilityRegistry.verifiedLiveFeatures` | Fixture repositories with orange banner; pending sends never auto-ACK | OPEN |
-| P1 | Music/video legal/API rights unknown | Official VK approval + media rights | Honest unavailable screens | OPEN |
-| P1 | Fenrir/Phoenix license | Do not copy code/assets; independent Swift only | Already followed | MITIGATED |
-| P2 | App icon asset | Supply 1024×1024 marketing icon | Empty AppIcon slot | OPEN |
+| P0 | No macOS/Xcode on Cloud Linux VM | Jessica builds on Mac: `xcodebuild -scheme VKHIG -destination 'platform=iOS Simulator,name=iPhone 16' build test` | UI + fixtures shipped; build/tests marked `NOT RUN` | OPEN |
+| P1 | VK ID credentials (Jessica later) | Fill `Secrets.xcconfig` / Info.plist placeholders when testing | Fixture UI shell; `AppSecrets.hasVKIDCredentials == false` | DEFERRED (not blocking implementation) |
+| P1 | VKID SDK not linked | Add SPM `vkid-ios-sdk` on Mac when credentials exist | `authorize()` → `.sdkNotLinked` / `.missingCredentials` | DEFERRED |
+| P1 | Official scopes unverified | Confirm messages/newsfeed/users/etc. before enabling `verifiedLiveFeatures` | Capability gates + fixtures | OPEN (honest) |
+| P1 | Music / calling / stories live | Official rights/SDK | Unavailable / disabled UI shipped | MITIGATED in UI |
+| P2 | App icon 1024×1024 | Supply marketing icon | Empty AppIcon slot | OPEN |
 
-## Non-blockers (kit defaults applied)
+## Closed / mitigated
 
-- Tab set: Лента / Сервисы / Сообщения / Музыка / Профиль
-- Min iOS 17
-- App display name: **VK HIG**
-- Fixture shell entry on auth screen for UI review without credentials
+- Empty iOS repo → scaffolded on `main`
+- PR #1 landed on `main`; further work commits directly to `main`

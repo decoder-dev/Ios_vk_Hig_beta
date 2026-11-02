@@ -26,7 +26,7 @@ enum CapabilityStatus: String, Sendable {
 
 struct CapabilityRegistry: Sendable {
     /// Until Jessica supplies VK ID credentials + verified scopes, live calls stay gated.
-    var hasVKIDCredentials: Bool = false
+    var hasVKIDCredentials: Bool = AppSecrets.hasVKIDCredentials
     var hasAccessToken: Bool = false
     /// Explicit allow-list after docs/scope verification. Empty = nothing live.
     var verifiedLiveFeatures: Set<FeatureCapability> = []

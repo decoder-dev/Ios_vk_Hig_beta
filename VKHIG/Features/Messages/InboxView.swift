@@ -50,8 +50,14 @@ struct InboxView: View {
                 .listRowBackground(Color.clear)
 
                 ForEach(model.visibleConversations) { conversation in
-                    NavigationLink(value: conversation) {
-                        ConversationRow(conversation: conversation)
+                    if conversation.peerID.raw >= 2_000_000_000 {
+                        NavigationLink(value: AppRoute.groupChat(conversation.peerID.raw)) {
+                            ConversationRow(conversation: conversation)
+                        }
+                    } else {
+                        NavigationLink(value: conversation) {
+                            ConversationRow(conversation: conversation)
+                        }
                     }
                 }
             }
