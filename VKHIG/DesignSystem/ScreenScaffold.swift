@@ -7,6 +7,8 @@ import Observation
 final class FixtureScreenModel<Value: Equatable> {
     var state: LoadState<Value> = .idle
     var usesFixtures = true
+    var pageError: String?
+    private var generation=UUID()
 
     func load(
         offline: Bool,
@@ -14,8 +16,10 @@ final class FixtureScreenModel<Value: Equatable> {
         emptyIf: ((Value) -> Bool)? = nil,
         work: () async throws -> Value
     ) async {
+        generation=UUID();let ticket=generation;pageError=nil
         if !preserve {state = .loading}
         if offline {
+            if preserve {pageError="Нет подключения к сети";return}
             state = .offline
             return
         }
@@ -23,6 +27,7 @@ final class FixtureScreenModel<Value: Equatable> {
             try await Task.sleep(for: .milliseconds(350))
             let value = try await work()
             try Task.checkCancellation()
+            guard ticket==generation else {return}
             if let emptyIf, emptyIf(value) {
                 state = .empty
             } else {
@@ -31,9 +36,11 @@ final class FixtureScreenModel<Value: Equatable> {
         } catch is CancellationError {
             return
         } catch let error as AppError {
-            state = .failed(error)
+            guard ticket==generation else {return}
+            if preserve {pageError=error.localizedDescription} else {state = .failed(error)}
         } catch {
-            state = .failed(.network(error.localizedDescription))
+            guard ticket==generation else {return}
+            if preserve {pageError=error.localizedDescription} else {state = .failed(.network(error.localizedDescription))}
         }
     }
 }
@@ -103,8 +110,11 @@ struct FixtureScreen<Value: Equatable, Content: View>: View {
         }
         .navigationTitle(title)
         .safeAreaInset(edge:.bottom) {
+            VStack(spacing:4) {
+            if let error=model.pageError {Text(error).font(.caption).foregroundStyle(.red)}
             if env.isLiveVKSession,env.catalog.hasMore(screenID,resourceID:resourceID,query:query) {
                 Button(paginating ? "Загрузка…" : "Загрузить ещё") {Task {await loadMore()}}.disabled(paginating).frame(minHeight:44).frame(maxWidth:.infinity).background(.regularMaterial)
+            }
             }
         }
         .task(id: query) {
