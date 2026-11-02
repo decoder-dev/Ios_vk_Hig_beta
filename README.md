@@ -29,11 +29,11 @@ Public client ID: `54707652`. Вход использует официальны
 
 В main добавлены ветки комментариев с загрузкой ответов, поиск записей и пагинация каталогов. Аудиоплеер воспроизводит импортированные файлы, поддерживает очередь, AirPlay и управление с экрана блокировки. Звонки создаются через calls.start и открывают официальную ссылку VK; конференцию можно завершить через API. Push-клиент получает APNs token, регистрирует устройство в VK и открывает диалог по уведомлению.
 
-Для каталога VK Музыки нужны музыкальные права API; для входящих нативных звонков — SDK/доступ VK. Доставка push требует подписи Apple и настройки провайдера VK. В Xcode выберите свою команду, включите Push Notifications для App ID; development/production APNs задаются в Shared.xcconfig. Stories остаются демосценарием. Полный экранный статус: `output/IMPLEMENTATION_STATUS.md`.
+Для каталога VK Музыки нужны музыкальные права API; для входящих нативных звонков — SDK/доступ VK. Доставка push требует подписи Apple и настройки провайдера VK. В Xcode выберите свою команду, включите Push Notifications для App ID; development/production APNs задаются в Shared.xcconfig. Добавлены реальные Stories, расширенные вложения, управление беседами/сообществами, поля профиля, сохранённое и пагинация получателей; новая ревизия ожидает CI. Каталог audio.get включается только при фактическом grant audio. Полный экранный статус: `output/IMPLEMENTATION_STATUS.md`.
 
 ## Проверка
 
-GitHub Actions выполняет генерацию проекта, build, unit tests и UI smoke/screenshots на macOS. Секреты не выгружаются. Результаты сохраняются в `ios-test-results` (`.xcresult`).
+GitHub Actions выполняет генерацию проекта, build, unit tests и UI smoke/screenshots на macOS. Секреты не выгружаются. Матрица проверяет iOS 18 и 27; результаты и снимки сохраняются в `ios-18-test-results` / `ios-27-test-results`. Для устройства см. `docs/DEVICE_AND_VK_ACCEPTANCE.md`.
 
 ```sh
 xcodebuild -scheme VKHIG -destination 'platform=iOS Simulator,name=iPhone 16' CODE_SIGNING_ALLOWED=NO test
