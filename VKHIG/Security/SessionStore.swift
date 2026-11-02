@@ -19,7 +19,7 @@ final class SessionStore {
 
     var isLiveVKSession: Bool { mode == .authenticated }
 
-    init(authCoordinator: VKIDAuthCoordinator = VKIDAuthCoordinator()) {
+    init(authCoordinator: VKIDAuthCoordinator = .shared) {
         self.authCoordinator = authCoordinator
         if authCoordinator.restoreSessionIfPossible() {
             // Token present but scopes unverified — still mark authenticated for routing;
