@@ -28,3 +28,8 @@ Package.resolved
 !**/Secrets.example.xcconfig
 .env
 *.pem
+
+# Apple signing material stays outside git
+*.p8
+*.p12
+*.mobileprovision
