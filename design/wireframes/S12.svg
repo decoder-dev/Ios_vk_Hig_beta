@@ -1,0 +1,30 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 390 844" width="390" height="844" role="img" aria-label="Панель вложений">
+<defs><linearGradient id="media" x1="0" y1="0" x2="1" y2="1"><stop offset="0" stop-color="#D1B4CB"/><stop offset="0.46" stop-color="#779FC6"/><stop offset="1" stop-color="#304A70"/></linearGradient></defs>
+<rect x="0" y="0" width="390" height="844" rx="34" fill="#F2F2F7"/>
+<rect x="0" y="0" width="390" height="58" rx="0" fill="#F2F2F7"/>
+<text x="26" y="29" fill="#17191F" font-family="-apple-system,BlinkMacSystemFont,Arial,DejaVu Sans,sans-serif" font-size="14" font-weight="700" text-anchor="start">9:41</text>
+<rect x="164" y="9" width="63" height="23" rx="13" fill="#0C0D10"/>
+<text x="351" y="29" fill="#17191F" font-family="-apple-system,BlinkMacSystemFont,Arial,DejaVu Sans,sans-serif" font-size="12" font-weight="550" text-anchor="end">● ◔ ▰</text>
+<text x="22" y="88" fill="#1677F2" font-family="-apple-system,BlinkMacSystemFont,Arial,DejaVu Sans,sans-serif" font-size="35" font-weight="300" text-anchor="start">‹</text>
+<text x="195" y="86" fill="#17191F" font-family="-apple-system,BlinkMacSystemFont,Arial,DejaVu Sans,sans-serif" font-size="17" font-weight="700" text-anchor="middle">Вложения</text>
+<text x="195" y="160" fill="#17191F" font-family="-apple-system,BlinkMacSystemFont,Arial,DejaVu Sans,sans-serif" font-size="19" font-weight="750" text-anchor="middle">Добавить вложение</text>
+<rect x="29" y="240" width="102" height="100" rx="19" fill="#FFFFFF"/>
+<text x="80" y="287" fill="#1677F2" font-family="-apple-system,BlinkMacSystemFont,Arial,DejaVu Sans,sans-serif" font-size="25" font-weight="600" text-anchor="middle">▧</text>
+<text x="80" y="315" fill="#17191F" font-family="-apple-system,BlinkMacSystemFont,Arial,DejaVu Sans,sans-serif" font-size="12" font-weight="500" text-anchor="middle">Фото</text>
+<rect x="144" y="240" width="102" height="100" rx="19" fill="#FFFFFF"/>
+<text x="195" y="287" fill="#1677F2" font-family="-apple-system,BlinkMacSystemFont,Arial,DejaVu Sans,sans-serif" font-size="25" font-weight="600" text-anchor="middle">▷</text>
+<text x="195" y="315" fill="#17191F" font-family="-apple-system,BlinkMacSystemFont,Arial,DejaVu Sans,sans-serif" font-size="12" font-weight="500" text-anchor="middle">Видео</text>
+<rect x="259" y="240" width="102" height="100" rx="19" fill="#FFFFFF"/>
+<text x="310" y="287" fill="#1677F2" font-family="-apple-system,BlinkMacSystemFont,Arial,DejaVu Sans,sans-serif" font-size="25" font-weight="600" text-anchor="middle">▤</text>
+<text x="310" y="315" fill="#17191F" font-family="-apple-system,BlinkMacSystemFont,Arial,DejaVu Sans,sans-serif" font-size="12" font-weight="500" text-anchor="middle">Файл</text>
+<rect x="29" y="359" width="102" height="100" rx="19" fill="#FFFFFF"/>
+<text x="80" y="406" fill="#1677F2" font-family="-apple-system,BlinkMacSystemFont,Arial,DejaVu Sans,sans-serif" font-size="25" font-weight="600" text-anchor="middle">◇</text>
+<text x="80" y="434" fill="#17191F" font-family="-apple-system,BlinkMacSystemFont,Arial,DejaVu Sans,sans-serif" font-size="12" font-weight="500" text-anchor="middle">Геопозиция</text>
+<rect x="144" y="359" width="102" height="100" rx="19" fill="#FFFFFF"/>
+<text x="195" y="406" fill="#1677F2" font-family="-apple-system,BlinkMacSystemFont,Arial,DejaVu Sans,sans-serif" font-size="25" font-weight="600" text-anchor="middle">◉</text>
+<text x="195" y="434" fill="#17191F" font-family="-apple-system,BlinkMacSystemFont,Arial,DejaVu Sans,sans-serif" font-size="12" font-weight="500" text-anchor="middle">Контакт</text>
+<rect x="259" y="359" width="102" height="100" rx="19" fill="#FFFFFF"/>
+<text x="310" y="406" fill="#1677F2" font-family="-apple-system,BlinkMacSystemFont,Arial,DejaVu Sans,sans-serif" font-size="25" font-weight="600" text-anchor="middle">×</text>
+<text x="310" y="434" fill="#17191F" font-family="-apple-system,BlinkMacSystemFont,Arial,DejaVu Sans,sans-serif" font-size="12" font-weight="500" text-anchor="middle">Отмена</text>
+<rect x="141" y="830" width="108" height="4" rx="3" fill="#17191F"/>
+</svg>

@@ -1,0 +1,45 @@
+﻿id,priority,section,screen,type,route,main_user_job,api_candidate_unverified,states,implementation_status,api_verified,screenshot_verified
+S01,P0,Auth,Запуск / определение сессии,launch,app://launch,Правильная развилка signed-in/out,VKID session,loading|loaded|empty|error|offline|permission|light|dark|large_text,NOT_STARTED,NO,NO
+S02,P0,Auth,Вход через VK ID,login,app://login,Защищенный OAuth login / errors,VKID SDK,loading|loaded|empty|error|offline|permission|light|dark|large_text,NOT_STARTED,NO,NO
+S03,P1,Auth,Онбординг,onboarding,app://onboarding,Пояснение основных функций и данных,local,loading|loaded|empty|error|offline|permission|light|dark|large_text,NOT_STARTED,NO,NO
+S04,P0,Home,Лента,feed,tab://feed,"Посты, stories entry, ленивая загрузка",newsfeed.get?,loading|loaded|empty|error|offline|permission|light|dark|large_text,NOT_STARTED,NO,NO
+S05,P0,Home,Детали записи,detail,feed/post/:id,"Media, автор, контент, действия",wall.getById?,loading|loaded|empty|error|offline|permission|light|dark|large_text,NOT_STARTED,NO,NO
+S06,P0,Home,Комментарии,list,feed/post/:id/comments,"Древовидные комментарии, reply",wall.getComments?,loading|loaded|empty|error|offline|permission|light|dark|large_text,NOT_STARTED,NO,NO
+S07,P1,Home,Создание записи,compose,feed/new,"Composer, файлы, предпросмотр",wall.post?,loading|loaded|empty|error|offline|permission|light|dark|large_text,NOT_STARTED,NO,NO
+S08,P0,Messages,Сообщения / список диалогов,inbox,tab://messages,"Фильтры, непрочитанные, поиск, пагинация",messages.getConversations?,loading|loaded|empty|error|offline|permission|light|dark|large_text,NOT_STARTED,NO,NO
+S09,P0,Messages,Личный диалог,chat,messages/peer/:id,"Надежная переписка, composer, вложения",messages.getHistory / send?,loading|loaded|empty|error|offline|permission|light|dark|large_text,NOT_STARTED,NO,NO
+S10,P1,Messages,Групповой диалог,chat,messages/chat/:id,"Участники, группировка, права",messages.getHistory?,loading|loaded|empty|error|offline|permission|light|dark|large_text,NOT_STARTED,NO,NO
+S11,P1,Messages,Информация о диалоге,profile,messages/peer/:id/info,"Медиа, уведомления, участники",messages.getConversationsById?,loading|loaded|empty|error|offline|permission|light|dark|large_text,NOT_STARTED,NO,NO
+S12,P1,Messages,Панель вложений,attachments,messages/peer/:id/attach,Выбор фото/файлов с разрешениями,upload endpoints?,loading|loaded|empty|error|offline|permission|light|dark|large_text,NOT_STARTED,NO,NO
+S13,P1,Messages,Действия с сообщением,actions,messages/peer/:id/actions,Copy/Reply/Forward/Delete по правам,messages.edit/delete?,loading|loaded|empty|error|offline|permission|light|dark|large_text,NOT_STARTED,NO,NO
+S14,P1,Messages,Поиск по чату,search,messages/peer/:id/search,Найти по переписке,messages.search?,loading|loaded|empty|error|offline|permission|light|dark|large_text,NOT_STARTED,NO,NO
+S15,P0,Social,Профиль пользователя,profile,user/:id,"Аватар, cover, friends, actions",users.get?,loading|loaded|empty|error|offline|permission|light|dark|large_text,NOT_STARTED,NO,NO
+S16,P0,Social,Мой профиль,profile,tab://profile,"Личный контент, меню, переходы",users.get?,loading|loaded|empty|error|offline|permission|light|dark|large_text,NOT_STARTED,NO,NO
+S17,P1,Social,Редактирование профиля,form,profile/edit,Редактируемые поля при поддержке,account methods?,loading|loaded|empty|error|offline|permission|light|dark|large_text,NOT_STARTED,NO,NO
+S18,P0,Social,Друзья,friends,profile/friends,"Список, онлайн, поиск",friends.get?,loading|loaded|empty|error|offline|permission|light|dark|large_text,NOT_STARTED,NO,NO
+S19,P1,Social,Заявки в друзья,list,friends/requests,Входящие и исходящие requests,friends.getRequests?,loading|loaded|empty|error|offline|permission|light|dark|large_text,NOT_STARTED,NO,NO
+S20,P0,Social,Сообщество,community,community/:id,"Вкладки постов, фото, информация",groups.getById?,loading|loaded|empty|error|offline|permission|light|dark|large_text,NOT_STARTED,NO,NO
+S21,P1,Social,Список сообществ,list,communities,Листинг подписок/поиск,groups.get?,loading|loaded|empty|error|offline|permission|light|dark|large_text,NOT_STARTED,NO,NO
+S22,P1,Social,Участники сообщества,friends,community/:id/members,"Люди, поиск, права доступа",groups.getMembers?,loading|loaded|empty|error|offline|permission|light|dark|large_text,NOT_STARTED,NO,NO
+S23,P0,Explore,Глобальный поиск,search,app://search,Результаты людей/сообществ/контента,users.search/groups.search?,loading|loaded|empty|error|offline|permission|light|dark|large_text,NOT_STARTED,NO,NO
+S24,P0,Explore,Уведомления,notifications,app://notifications,"Время, типы, статусы, переходы",notifications.get?,loading|loaded|empty|error|offline|permission|light|dark|large_text,NOT_STARTED,NO,NO
+S25,P1,Explore,Сервисы / каталог,services,tab://services,Роутинг дополнительных разделов,local,loading|loaded|empty|error|offline|permission|light|dark|large_text,NOT_STARTED,NO,NO
+S26,P1,Media,Фотоальбомы,grid,profile/albums,Albums/grid/count,photos.getAlbums?,loading|loaded|empty|error|offline|permission|light|dark|large_text,NOT_STARTED,NO,NO
+S27,P1,Media,Фотографии,grid,profile/photos,"Thumbnail grid, pagination",photos.get?,loading|loaded|empty|error|offline|permission|light|dark|large_text,NOT_STARTED,NO,NO
+S28,P1,Media,Просмотр фотографии,photo,photos/:id,"Full-screen zoom, share",photos.getById?,loading|loaded|empty|error|offline|permission|light|dark|large_text,NOT_STARTED,NO,NO
+S29,P1,Media,Видео / лента,video,services/video,"Обложки, фильтры, загрузка",video.get?,loading|loaded|empty|error|offline|permission|light|dark|large_text,NOT_STARTED,NO,NO
+S30,P1,Media,Видеоплеер,player,video/:id,AVKit stream при доступе,video rights?,loading|loaded|empty|error|offline|permission|light|dark|large_text,NOT_STARTED,NO,NO
+S31,P1,Media,Музыка / библиотека,music,tab://music,Playlist/library + легальный доступ,audio access?,loading|loaded|empty|error|offline|permission|light|dark|large_text,NOT_STARTED,NO,NO
+S32,P2,Media,Аудиоплеер,player,music/player,Queue/seek/airplay при легальном stream,audio rights?,loading|loaded|empty|error|offline|permission|light|dark|large_text,NOT_STARTED,NO,NO
+S33,P2,Media,Плейлист,list,music/playlist/:id,"Tracklist, shuffle/add",audio methods?,loading|loaded|empty|error|offline|permission|light|dark|large_text,NOT_STARTED,NO,NO
+S34,P1,Settings,Настройки,settings,profile/settings,Grouped settings и переходы,local/VKID,loading|loaded|empty|error|offline|permission|light|dark|large_text,NOT_STARTED,NO,NO
+S35,P1,Settings,Уведомления: настройки,form,settings/notifications,Системные уведомления и preferences,UNUserNotificationCenter,loading|loaded|empty|error|offline|permission|light|dark|large_text,NOT_STARTED,NO,NO
+S36,P1,Settings,Конфиденциальность,form,settings/privacy,Privacy доступная API,account privacy?,loading|loaded|empty|error|offline|permission|light|dark|large_text,NOT_STARTED,NO,NO
+S37,P1,Settings,Оформление,form,settings/appearance,"Системная тема, контраст, размер",local,loading|loaded|empty|error|offline|permission|light|dark|large_text,NOT_STARTED,NO,NO
+S38,P1,Settings,Данные и память,form,settings/storage,"Cache size/clear, auto-download",local,loading|loaded|empty|error|offline|permission|light|dark|large_text,NOT_STARTED,NO,NO
+S39,P1,Settings,Аккаунт и безопасность,form,settings/account,Session/manage/logout,VKID SDK,loading|loaded|empty|error|offline|permission|light|dark|large_text,NOT_STARTED,NO,NO
+S40,P2,Extras,Сохранённое,list,profile/bookmarks,Saved content по правам,fave.get?,loading|loaded|empty|error|offline|permission|light|dark|large_text,NOT_STARTED,NO,NO
+S41,P2,Extras,Истории,detail,story/:id,Full-bleed stories only if API,stories?,loading|loaded|empty|error|offline|permission|light|dark|large_text,NOT_STARTED,NO,NO
+S42,P2,Extras,Входящий звонок,actions,calls/incoming,Только при доступном SDK,official calling SDK?,loading|loaded|empty|error|offline|permission|light|dark|large_text,NOT_STARTED,NO,NO
+S43,P2,Extras,Экран ошибки/нет сети,error,state/error,"Retry, offline, auth expired, scope",local,loading|loaded|empty|error|offline|permission|light|dark|large_text,NOT_STARTED,NO,NO
+S44,P2,Extras,Шторка действий,actions,state/actions,System confirmation/context menus,local,loading|loaded|empty|error|offline|permission|light|dark|large_text,NOT_STARTED,NO,NO

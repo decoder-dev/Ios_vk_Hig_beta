@@ -1,0 +1,10 @@
+---
+description: SwiftUI/UIKit, Apple HIG, дизайн-токены, доступность
+globs: "**/*.swift"
+alwaysApply: false
+---
+- Прочитай `docs/DESIGN_SYSTEM.md` и `docs/SCREEN_SPECS.md`.
+- Предпочитай TabView, NavigationStack, List, Form, .searchable, .sheet, .confirmationDialog, contextMenu, SF Symbols, семантические цвета.
+- В iOS 26+ системные navigation/toolbar/tab/sheet автоматически используют Liquid Glass; не накрывай им контент-слой.
+- Избегай абсолютной геометрии, кроме отдельного медиаплеера/чёткой визуальной задачи; проверяй dynamic type, safe area, Reduce Motion.
+- Не применяй Swift API без проверки Xcode SDK и availability. Порог hit target ~44pt.

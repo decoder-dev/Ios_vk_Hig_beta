@@ -1,0 +1,5 @@
+---
+description: Основные требования к VK Native iOS
+alwaysApply: true
+---
+Смотри `PROMPT_FOR_CURSOR.md` и `AGENTS.md`. Разрабатывай функционально, не инсценируй сборки. Не копируй Fenrir/Phoenix. Применяй TDD/vertical slices и обновляй `output/IMPLEMENTATION_STATUS.md`. Для каждого действия устанавливай реальный API support. Не храни чувствительные данные в логах/репо.

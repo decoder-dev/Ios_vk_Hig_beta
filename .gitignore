@@ -1,0 +1,28 @@
+# Xcode
+DerivedData/
+build/
+*.xcuserdata
+xcuserdata/
+*.xccheckout
+*.moved-aside
+*.hmap
+*.ipa
+*.dSYM.zip
+*.dSYM
+timeline.xctimeline
+playground.xcworkspace
+
+# Swift Package Manager
+.build/
+Packages/
+Package.resolved
+*.xcodeproj/project.xcworkspace/xcshareddata/swiftpm/
+
+# macOS
+.DS_Store
+
+# Secrets — never commit VK credentials
+**/Secrets.plist
+**/Secrets.swift
+.env
+*.pem

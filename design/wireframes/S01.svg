@@ -1,0 +1,15 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 390 844" width="390" height="844" role="img" aria-label="Запуск / определение сессии">
+<defs><linearGradient id="media" x1="0" y1="0" x2="1" y2="1"><stop offset="0" stop-color="#D1B4CB"/><stop offset="0.46" stop-color="#779FC6"/><stop offset="1" stop-color="#304A70"/></linearGradient></defs>
+<rect x="0" y="0" width="390" height="844" rx="34" fill="#F2F2F7"/>
+<rect x="0" y="0" width="390" height="58" rx="0" fill="#F2F2F7"/>
+<text x="26" y="29" fill="#17191F" font-family="-apple-system,BlinkMacSystemFont,Arial,DejaVu Sans,sans-serif" font-size="14" font-weight="700" text-anchor="start">9:41</text>
+<rect x="164" y="9" width="63" height="23" rx="13" fill="#0C0D10"/>
+<text x="351" y="29" fill="#17191F" font-family="-apple-system,BlinkMacSystemFont,Arial,DejaVu Sans,sans-serif" font-size="12" font-weight="550" text-anchor="end">● ◔ ▰</text>
+<text x="20" y="115" fill="#17191F" font-family="-apple-system,BlinkMacSystemFont,Arial,DejaVu Sans,sans-serif" font-size="28" font-weight="750" text-anchor="start">Запуск</text>
+<circle cx="195" cy="289" r="66" fill="#1677F2"/>
+<text x="195" y="311" fill="#FFFFFF" font-family="-apple-system,BlinkMacSystemFont,Arial,DejaVu Sans,sans-serif" font-size="57" font-weight="750" text-anchor="middle">VK</text>
+<text x="195" y="421" fill="#17191F" font-family="-apple-system,BlinkMacSystemFont,Arial,DejaVu Sans,sans-serif" font-size="22" font-weight="700" text-anchor="middle">Нативный VK для iOS</text>
+<text x="195" y="451" fill="#6F7481" font-family="-apple-system,BlinkMacSystemFont,Arial,DejaVu Sans,sans-serif" font-size="14" font-weight="400" text-anchor="middle">Загрузка вашей сессии…</text>
+<rect x="84" y="511" width="222" height="5" rx="3" fill="#E7E9F0"/>
+<rect x="84" y="511" width="126" height="5" rx="3" fill="#1677F2"/>
+</svg>

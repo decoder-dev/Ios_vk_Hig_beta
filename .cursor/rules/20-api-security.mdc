@@ -1,0 +1,10 @@
+---
+description: VK API, OAuth, Keychain, безопасная сеть
+globs: "**/*API*.swift,**/*Auth*.swift,**/*Network*.swift,**/*Repository*.swift"
+alwaysApply: false
+---
+- Используй только официально доступные методы и scopes VK на момент внедрения; capabilities по `docs/API_AUTH_CAPABILITIES.md`.
+- Авторизация через официальный VK ID OAuth 2.1 при поддержке приложения; редиректы/PKCE/токены только по SDK и серверной документации.
+- Access/refresh tokens в Keychain, не в UserDefaults, не в консоли, не в query-string логах.
+- Стандартная обработка API errors, pagination, refresh, rate limit, cancellation, retry/backoff, message idempotency; никакого bypass private APIs.
+- Секреты никогда не коммитить.

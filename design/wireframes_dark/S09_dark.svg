@@ -1,0 +1,32 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 390 844" width="390" height="844" role="img" aria-label="Личный диалог">
+<defs><linearGradient id="media" x1="0" y1="0" x2="1" y2="1"><stop offset="0" stop-color="#D1B4CB"/><stop offset="0.46" stop-color="#779FC6"/><stop offset="1" stop-color="#304A70"/></linearGradient></defs>
+<rect x="0" y="0" width="390" height="844" rx="34" fill="#101115"/>
+<rect x="0" y="0" width="390" height="58" rx="0" fill="#101115"/>
+<text x="26" y="29" fill="#F8F9FA" font-family="-apple-system,BlinkMacSystemFont,Arial,DejaVu Sans,sans-serif" font-size="14" font-weight="700" text-anchor="start">9:41</text>
+<rect x="164" y="9" width="63" height="23" rx="13" fill="#0C0D10"/>
+<text x="351" y="29" fill="#F8F9FA" font-family="-apple-system,BlinkMacSystemFont,Arial,DejaVu Sans,sans-serif" font-size="12" font-weight="550" text-anchor="end">● ◔ ▰</text>
+<text x="22" y="88" fill="#1677F2" font-family="-apple-system,BlinkMacSystemFont,Arial,DejaVu Sans,sans-serif" font-size="35" font-weight="300" text-anchor="start">‹</text>
+<text x="195" y="86" fill="#F8F9FA" font-family="-apple-system,BlinkMacSystemFont,Arial,DejaVu Sans,sans-serif" font-size="17" font-weight="700" text-anchor="middle">Анастасия</text>
+<text x="195" y="99" fill="#ADB3BE" font-family="-apple-system,BlinkMacSystemFont,Arial,DejaVu Sans,sans-serif" font-size="12" font-weight="400" text-anchor="middle">●  онлайн</text>
+<text x="195" y="155" fill="#ADB3BE" font-family="-apple-system,BlinkMacSystemFont,Arial,DejaVu Sans,sans-serif" font-size="12" font-weight="400" text-anchor="middle">Сегодня</text>
+<rect x="20" y="170" width="218" height="49" rx="19" fill="#292D36"/>
+<text x="33" y="195" fill="#F8F9FA" font-family="-apple-system,BlinkMacSystemFont,Arial,DejaVu Sans,sans-serif" font-size="15" font-weight="400" text-anchor="start">Привет! Как дела?</text>
+<rect x="144" y="233" width="226" height="69" rx="19" fill="#1677F2"/>
+<text x="157" y="258" fill="#FFFFFF" font-family="-apple-system,BlinkMacSystemFont,Arial,DejaVu Sans,sans-serif" font-size="15" font-weight="400" text-anchor="start">Привет! Всё отлично</text>
+<text x="157" y="277" fill="#FFFFFF" font-family="-apple-system,BlinkMacSystemFont,Arial,DejaVu Sans,sans-serif" font-size="15" font-weight="400" text-anchor="start">А у тебя?</text>
+<rect x="20" y="332" width="248" height="69" rx="19" fill="#292D36"/>
+<text x="33" y="357" fill="#F8F9FA" font-family="-apple-system,BlinkMacSystemFont,Arial,DejaVu Sans,sans-serif" font-size="15" font-weight="400" text-anchor="start">Тоже хорошо! Может,</text>
+<text x="33" y="376" fill="#F8F9FA" font-family="-apple-system,BlinkMacSystemFont,Arial,DejaVu Sans,sans-serif" font-size="15" font-weight="400" text-anchor="start">пойдём на выходных?</text>
+<rect x="145" y="421" width="225" height="49" rx="19" fill="#1677F2"/>
+<text x="158" y="446" fill="#FFFFFF" font-family="-apple-system,BlinkMacSystemFont,Arial,DejaVu Sans,sans-serif" font-size="15" font-weight="400" text-anchor="start">Давай! Встретимся</text>
+<rect x="20" y="498" width="250" height="69" rx="19" fill="#292D36"/>
+<text x="33" y="523" fill="#F8F9FA" font-family="-apple-system,BlinkMacSystemFont,Arial,DejaVu Sans,sans-serif" font-size="15" font-weight="400" text-anchor="start">Я нашла красивое</text>
+<text x="33" y="542" fill="#F8F9FA" font-family="-apple-system,BlinkMacSystemFont,Arial,DejaVu Sans,sans-serif" font-size="15" font-weight="400" text-anchor="start">место для прогулки</text>
+<text x="195" y="611" fill="#ADB3BE" font-family="-apple-system,BlinkMacSystemFont,Arial,DejaVu Sans,sans-serif" font-size="12" font-weight="400" text-anchor="middle">──  новые сообщения ──</text>
+<rect x="13" y="676" width="364" height="54" rx="26" fill="#1C1E24"/>
+<circle cx="39" cy="703" r="16" fill="#2C303A"/>
+<text x="39" y="709" fill="#1677F2" font-family="-apple-system,BlinkMacSystemFont,Arial,DejaVu Sans,sans-serif" font-size="23" font-weight="400" text-anchor="middle">+</text>
+<text x="74" y="709" fill="#ADB3BE" font-family="-apple-system,BlinkMacSystemFont,Arial,DejaVu Sans,sans-serif" font-size="15" font-weight="400" text-anchor="start">Сообщение</text>
+<text x="340" y="709" fill="#1677F2" font-family="-apple-system,BlinkMacSystemFont,Arial,DejaVu Sans,sans-serif" font-size="19" font-weight="500" text-anchor="middle">➤</text>
+<rect x="141" y="830" width="108" height="4" rx="3" fill="#F8F9FA"/>
+</svg>

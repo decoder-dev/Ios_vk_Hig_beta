@@ -1,0 +1,3 @@
+Откройте проект в Cursor и дайте Agent следующее сообщение:
+
+Прочитай @PROMPT_FOR_CURSOR.md @AGENTS.md @docs/SCREEN_SPECS.md @docs/RESEARCH_AND_SOURCES.md @docs/API_AUTH_CAPABILITIES.md. Изучи изображения в @design/boards/ и @design/preview.html. Самостоятельно проведи аудит реального Xcode workspace, заполни @output/REPO_AUDIT.md и @output/API_CAPABILITIES.md. Затем по P0 реализуй Native VK iOS с нативным iOS 27 HIG интерфейсом — не делай пустые макеты вместо реального API. Проверяй доступность API и все сборки на практике; помечай блокеры, веди @output/IMPLEMENTATION_STATUS.md. Не копируй чужой Fenrir код/ключи и не используй приватные VK API.

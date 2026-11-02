@@ -1,0 +1,9 @@
+---
+description: QA, регрессии и отчётность
+globs: "**/*Tests*/**/*.swift,**/*UITests*/**/*.swift"
+alwaysApply: false
+---
+- Прочитай `docs/QA_AND_PERFORMANCE.md`.
+- Unit tests на модели, пагинацию, статусы, отправку, ошибки и дубликаты. UI smoke на onboarding/auth/inbox/chat/feed/profile/settings.
+- На каждое исправление бага добавляй regression test, если возможно.
+- В отчёте указывай точный выполненный command, результат и evidence. Если нет macOS/Xcode — `NOT RUN`.

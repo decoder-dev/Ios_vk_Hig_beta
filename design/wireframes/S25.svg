@@ -1,0 +1,69 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 390 844" width="390" height="844" role="img" aria-label="Сервисы / каталог">
+<defs><linearGradient id="media" x1="0" y1="0" x2="1" y2="1"><stop offset="0" stop-color="#D1B4CB"/><stop offset="0.46" stop-color="#779FC6"/><stop offset="1" stop-color="#304A70"/></linearGradient></defs>
+<rect x="0" y="0" width="390" height="844" rx="34" fill="#F2F2F7"/>
+<rect x="0" y="0" width="390" height="58" rx="0" fill="#F2F2F7"/>
+<text x="26" y="29" fill="#17191F" font-family="-apple-system,BlinkMacSystemFont,Arial,DejaVu Sans,sans-serif" font-size="14" font-weight="700" text-anchor="start">9:41</text>
+<rect x="164" y="9" width="63" height="23" rx="13" fill="#0C0D10"/>
+<text x="351" y="29" fill="#17191F" font-family="-apple-system,BlinkMacSystemFont,Arial,DejaVu Sans,sans-serif" font-size="12" font-weight="550" text-anchor="end">● ◔ ▰</text>
+<text x="20" y="115" fill="#17191F" font-family="-apple-system,BlinkMacSystemFont,Arial,DejaVu Sans,sans-serif" font-size="28" font-weight="750" text-anchor="start">Сервисы</text>
+<rect x="20" y="141" width="350" height="42" rx="15" fill="#E7E9F0"/>
+<circle cx="38" cy="161" r="7" fill="#6F7481"/>
+<circle cx="38" cy="161" r="4" fill="#E7E9F0"/>
+<path d="M42 166L47 171" stroke="#6F7481" stroke-width="2"/>
+<text x="58" y="168" fill="#6F7481" font-family="-apple-system,BlinkMacSystemFont,Arial,DejaVu Sans,sans-serif" font-size="14" font-weight="400" text-anchor="start">Поиск</text>
+<rect x="20" y="196" width="63" height="32" rx="16" fill="#1677F2"/>
+<text x="51.5" y="217" fill="#FFFFFF" font-family="-apple-system,BlinkMacSystemFont,Arial,DejaVu Sans,sans-serif" font-size="12" font-weight="600" text-anchor="middle">Все</text>
+<rect x="93" y="196" width="73.8" height="32" rx="16" fill="#E7E9F0"/>
+<text x="129.9" y="217" fill="#17191F" font-family="-apple-system,BlinkMacSystemFont,Arial,DejaVu Sans,sans-serif" font-size="12" font-weight="600" text-anchor="middle">Онлайн</text>
+<rect x="203" y="196" width="89.4" height="32" rx="16" fill="#E7E9F0"/>
+<text x="247.7" y="217" fill="#17191F" font-family="-apple-system,BlinkMacSystemFont,Arial,DejaVu Sans,sans-serif" font-size="12" font-weight="600" text-anchor="middle">Подписки</text>
+<circle cx="43" cy="262" r="11" fill="#1677F2"/>
+<text x="43" y="267" fill="#FFFFFF" font-family="-apple-system,BlinkMacSystemFont,Arial,DejaVu Sans,sans-serif" font-size="15" font-weight="600" text-anchor="middle">•</text>
+<text x="64" y="265" fill="#17191F" font-family="-apple-system,BlinkMacSystemFont,Arial,DejaVu Sans,sans-serif" font-size="15" font-weight="600" text-anchor="start">Видео</text>
+<text x="64" y="285" fill="#6F7481" font-family="-apple-system,BlinkMacSystemFont,Arial,DejaVu Sans,sans-serif" font-size="12" font-weight="400" text-anchor="start">Клипы и записи</text>
+<text x="351" y="269" fill="#6F7481" font-family="-apple-system,BlinkMacSystemFont,Arial,DejaVu Sans,sans-serif" font-size="27" font-weight="300" text-anchor="middle">›</text>
+<path d="M65 298L370 298" stroke="#E0E2E8" stroke-width="1"/>
+<circle cx="43" cy="336" r="11" fill="#1677F2"/>
+<text x="43" y="341" fill="#FFFFFF" font-family="-apple-system,BlinkMacSystemFont,Arial,DejaVu Sans,sans-serif" font-size="15" font-weight="600" text-anchor="middle">•</text>
+<text x="64" y="339" fill="#17191F" font-family="-apple-system,BlinkMacSystemFont,Arial,DejaVu Sans,sans-serif" font-size="15" font-weight="600" text-anchor="start">Друзья</text>
+<text x="64" y="359" fill="#6F7481" font-family="-apple-system,BlinkMacSystemFont,Arial,DejaVu Sans,sans-serif" font-size="12" font-weight="400" text-anchor="start">Все контакты</text>
+<text x="351" y="343" fill="#6F7481" font-family="-apple-system,BlinkMacSystemFont,Arial,DejaVu Sans,sans-serif" font-size="27" font-weight="300" text-anchor="middle">›</text>
+<path d="M65 372L370 372" stroke="#E0E2E8" stroke-width="1"/>
+<circle cx="43" cy="410" r="11" fill="#1677F2"/>
+<text x="43" y="415" fill="#FFFFFF" font-family="-apple-system,BlinkMacSystemFont,Arial,DejaVu Sans,sans-serif" font-size="15" font-weight="600" text-anchor="middle">•</text>
+<text x="64" y="413" fill="#17191F" font-family="-apple-system,BlinkMacSystemFont,Arial,DejaVu Sans,sans-serif" font-size="15" font-weight="600" text-anchor="start">Сообщества</text>
+<text x="64" y="433" fill="#6F7481" font-family="-apple-system,BlinkMacSystemFont,Arial,DejaVu Sans,sans-serif" font-size="12" font-weight="400" text-anchor="start">Подписки и группы</text>
+<text x="351" y="417" fill="#6F7481" font-family="-apple-system,BlinkMacSystemFont,Arial,DejaVu Sans,sans-serif" font-size="27" font-weight="300" text-anchor="middle">›</text>
+<path d="M65 446L370 446" stroke="#E0E2E8" stroke-width="1"/>
+<circle cx="43" cy="484" r="11" fill="#1677F2"/>
+<text x="43" y="489" fill="#FFFFFF" font-family="-apple-system,BlinkMacSystemFont,Arial,DejaVu Sans,sans-serif" font-size="15" font-weight="600" text-anchor="middle">•</text>
+<text x="64" y="487" fill="#17191F" font-family="-apple-system,BlinkMacSystemFont,Arial,DejaVu Sans,sans-serif" font-size="15" font-weight="600" text-anchor="start">Фотографии</text>
+<text x="64" y="507" fill="#6F7481" font-family="-apple-system,BlinkMacSystemFont,Arial,DejaVu Sans,sans-serif" font-size="12" font-weight="400" text-anchor="start">Ваши альбомы</text>
+<text x="351" y="491" fill="#6F7481" font-family="-apple-system,BlinkMacSystemFont,Arial,DejaVu Sans,sans-serif" font-size="27" font-weight="300" text-anchor="middle">›</text>
+<path d="M65 520L370 520" stroke="#E0E2E8" stroke-width="1"/>
+<circle cx="43" cy="558" r="11" fill="#1677F2"/>
+<text x="43" y="563" fill="#FFFFFF" font-family="-apple-system,BlinkMacSystemFont,Arial,DejaVu Sans,sans-serif" font-size="15" font-weight="600" text-anchor="middle">•</text>
+<text x="64" y="561" fill="#17191F" font-family="-apple-system,BlinkMacSystemFont,Arial,DejaVu Sans,sans-serif" font-size="15" font-weight="600" text-anchor="start">Уведомления</text>
+<text x="64" y="581" fill="#6F7481" font-family="-apple-system,BlinkMacSystemFont,Arial,DejaVu Sans,sans-serif" font-size="12" font-weight="400" text-anchor="start">Лента активности</text>
+<text x="351" y="565" fill="#6F7481" font-family="-apple-system,BlinkMacSystemFont,Arial,DejaVu Sans,sans-serif" font-size="27" font-weight="300" text-anchor="middle">›</text>
+<path d="M65 594L370 594" stroke="#E0E2E8" stroke-width="1"/>
+<circle cx="43" cy="632" r="11" fill="#1677F2"/>
+<text x="43" y="637" fill="#FFFFFF" font-family="-apple-system,BlinkMacSystemFont,Arial,DejaVu Sans,sans-serif" font-size="15" font-weight="600" text-anchor="middle">•</text>
+<text x="64" y="635" fill="#17191F" font-family="-apple-system,BlinkMacSystemFont,Arial,DejaVu Sans,sans-serif" font-size="15" font-weight="600" text-anchor="start">Сохранённое</text>
+<text x="64" y="655" fill="#6F7481" font-family="-apple-system,BlinkMacSystemFont,Arial,DejaVu Sans,sans-serif" font-size="12" font-weight="400" text-anchor="start">Закладки</text>
+<text x="351" y="639" fill="#6F7481" font-family="-apple-system,BlinkMacSystemFont,Arial,DejaVu Sans,sans-serif" font-size="27" font-weight="300" text-anchor="middle">›</text>
+<path d="M65 668L370 668" stroke="#E0E2E8" stroke-width="1"/>
+<rect x="0" y="754" width="390" height="90" rx="0" fill="#FFFFFF"/>
+<path d="M0 754L390 754" stroke="#E0E2E8" stroke-width="1"/>
+<text x="39" y="792" fill="#6F7481" font-family="-apple-system,BlinkMacSystemFont,Arial,DejaVu Sans,sans-serif" font-size="25" font-weight="500" text-anchor="middle">⌂</text>
+<text x="39" y="811" fill="#6F7481" font-family="-apple-system,BlinkMacSystemFont,Arial,DejaVu Sans,sans-serif" font-size="10" font-weight="400" text-anchor="middle">Лента</text>
+<text x="116" y="792" fill="#1677F2" font-family="-apple-system,BlinkMacSystemFont,Arial,DejaVu Sans,sans-serif" font-size="25" font-weight="500" text-anchor="middle">▦</text>
+<text x="116" y="811" fill="#1677F2" font-family="-apple-system,BlinkMacSystemFont,Arial,DejaVu Sans,sans-serif" font-size="10" font-weight="600" text-anchor="middle">Сервисы</text>
+<text x="193" y="792" fill="#6F7481" font-family="-apple-system,BlinkMacSystemFont,Arial,DejaVu Sans,sans-serif" font-size="25" font-weight="500" text-anchor="middle">◉</text>
+<text x="193" y="811" fill="#6F7481" font-family="-apple-system,BlinkMacSystemFont,Arial,DejaVu Sans,sans-serif" font-size="10" font-weight="400" text-anchor="middle">Чаты</text>
+<text x="270" y="792" fill="#6F7481" font-family="-apple-system,BlinkMacSystemFont,Arial,DejaVu Sans,sans-serif" font-size="25" font-weight="500" text-anchor="middle">♫</text>
+<text x="270" y="811" fill="#6F7481" font-family="-apple-system,BlinkMacSystemFont,Arial,DejaVu Sans,sans-serif" font-size="10" font-weight="400" text-anchor="middle">Музыка</text>
+<text x="347" y="792" fill="#6F7481" font-family="-apple-system,BlinkMacSystemFont,Arial,DejaVu Sans,sans-serif" font-size="25" font-weight="500" text-anchor="middle">◎</text>
+<text x="347" y="811" fill="#6F7481" font-family="-apple-system,BlinkMacSystemFont,Arial,DejaVu Sans,sans-serif" font-size="10" font-weight="400" text-anchor="middle">Профиль</text>
+<rect x="141" y="830" width="108" height="4" rx="3" fill="#17191F"/>
+</svg>

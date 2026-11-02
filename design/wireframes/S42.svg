@@ -1,0 +1,23 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 390 844" width="390" height="844" role="img" aria-label="Входящий звонок">
+<defs><linearGradient id="media" x1="0" y1="0" x2="1" y2="1"><stop offset="0" stop-color="#D1B4CB"/><stop offset="0.46" stop-color="#779FC6"/><stop offset="1" stop-color="#304A70"/></linearGradient></defs>
+<rect x="0" y="0" width="390" height="844" rx="34" fill="#F2F2F7"/>
+<rect x="0" y="0" width="390" height="58" rx="0" fill="#F2F2F7"/>
+<text x="26" y="29" fill="#17191F" font-family="-apple-system,BlinkMacSystemFont,Arial,DejaVu Sans,sans-serif" font-size="14" font-weight="700" text-anchor="start">9:41</text>
+<rect x="164" y="9" width="63" height="23" rx="13" fill="#0C0D10"/>
+<text x="351" y="29" fill="#17191F" font-family="-apple-system,BlinkMacSystemFont,Arial,DejaVu Sans,sans-serif" font-size="12" font-weight="550" text-anchor="end">● ◔ ▰</text>
+<text x="22" y="88" fill="#1677F2" font-family="-apple-system,BlinkMacSystemFont,Arial,DejaVu Sans,sans-serif" font-size="35" font-weight="300" text-anchor="start">‹</text>
+<text x="195" y="86" fill="#17191F" font-family="-apple-system,BlinkMacSystemFont,Arial,DejaVu Sans,sans-serif" font-size="17" font-weight="700" text-anchor="middle">Звонок</text>
+<rect x="20" y="179" width="350" height="340" rx="20" fill="#FFFFFF"/>
+<text x="40" y="236" fill="#17191F" font-family="-apple-system,BlinkMacSystemFont,Arial,DejaVu Sans,sans-serif" font-size="18" font-weight="700" text-anchor="start">Доступные действия</text>
+<text x="43" y="285" fill="#17191F" font-family="-apple-system,BlinkMacSystemFont,Arial,DejaVu Sans,sans-serif" font-size="15" font-weight="400" text-anchor="start">Открыть</text>
+<path d="M38 301L354 301" stroke="#E0E2E8" stroke-width="1"/>
+<text x="43" y="332" fill="#17191F" font-family="-apple-system,BlinkMacSystemFont,Arial,DejaVu Sans,sans-serif" font-size="15" font-weight="400" text-anchor="start">Поделиться</text>
+<path d="M38 348L354 348" stroke="#E0E2E8" stroke-width="1"/>
+<text x="43" y="379" fill="#17191F" font-family="-apple-system,BlinkMacSystemFont,Arial,DejaVu Sans,sans-serif" font-size="15" font-weight="400" text-anchor="start">Сохранить</text>
+<path d="M38 395L354 395" stroke="#E0E2E8" stroke-width="1"/>
+<text x="43" y="426" fill="#DC3447" font-family="-apple-system,BlinkMacSystemFont,Arial,DejaVu Sans,sans-serif" font-size="15" font-weight="400" text-anchor="start">Удалить</text>
+<path d="M38 442L354 442" stroke="#E0E2E8" stroke-width="1"/>
+<text x="43" y="473" fill="#17191F" font-family="-apple-system,BlinkMacSystemFont,Arial,DejaVu Sans,sans-serif" font-size="15" font-weight="400" text-anchor="start">Отмена</text>
+<path d="M38 489L354 489" stroke="#E0E2E8" stroke-width="1"/>
+<rect x="141" y="830" width="108" height="4" rx="3" fill="#17191F"/>
+</svg>
