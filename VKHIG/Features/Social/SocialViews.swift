@@ -186,6 +186,7 @@ struct LocationPickerView:View {
     @State private var error:String?
     @State private var offset=0
     @State private var hasMore=false
+    @State private var requestID=UUID()
     private var visible:[VKLocationChoice] {countryID != nil || query.isEmpty ? items : items.filter {$0.title.localizedCaseInsensitiveContains(query)}}
     var body:some View {
         NavigationStack {
@@ -200,16 +201,19 @@ struct LocationPickerView:View {
         }
     }
     private func load(reset:Bool) async {
-        if reset {offset=0;items=[]};loading=true;error=nil;defer {loading=false}
+        if !reset && loading {return}
+        if reset {requestID=UUID();offset=0;items=[]}
+        let ticket=requestID
+        loading=true;error=nil;defer {if ticket==requestID {loading=false}}
         do {
             if countryID != nil {try await Task.sleep(for:.milliseconds(300))}
             var params=["count":"1000","offset":String(offset),"need_all":"1"]
             if let countryID {params=["country_id":String(countryID),"q":query,"count":"100","offset":String(offset),"need_all":"1"]}
             let response=try await VKCatalogService.shared.request(countryID==nil ? "database.getCountries" : "database.getCities",params)
-            try Task.checkCancellation()
+            try Task.checkCancellation();guard ticket==requestID else {return}
             let page=response.list.map {VKLocationChoice(id:$0["id"].int,title:$0["title"].string)}
             var ids=Set(items.map(\.id));items+=page.filter {ids.insert($0.id).inserted};offset+=page.count;hasMore=page.count==(countryID==nil ? 1000 : 100)
-        } catch is CancellationError {} catch {self.error=error.localizedDescription}
+        } catch is CancellationError {} catch {if ticket==requestID {self.error=error.localizedDescription}}
     }
 }
 
