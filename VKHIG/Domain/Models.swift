@@ -35,6 +35,7 @@ struct ChatMessage: Identifiable, Hashable, Sendable {
     /// Used for idempotent `messages.send` once live API is enabled.
     let randomID: Int64?
     var attachments: [ChatAttachment] = []
+    var quotes:[ChatQuote] = []
 }
 
 struct FeedPost: Identifiable, Hashable, Sendable {
@@ -49,6 +50,7 @@ struct FeedPost: Identifiable, Hashable, Sendable {
     var ownerID: Int64 = 0
     var nativeID: Int64? = nil
     var mediaURL: URL? = nil
+    var attachments:[ChatAttachment] = []
 }
 
 struct UserProfile: Identifiable, Hashable, Sendable {
@@ -95,9 +97,38 @@ enum LoadState<Value: Equatable>: Equatable {
 }
 
 struct ChatAttachment: Identifiable, Hashable, Sendable {
-    enum Kind: String, Hashable, Sendable { case photo, document, video }
+    enum Kind: String, Hashable, Sendable { case photo, document, video, audio, voice, sticker, link, graffiti, unsupported }
     let id: String
     let kind: Kind
     let title: String
     let url: URL
+    var playbackURL:URL? = nil
+    var symbol:String {
+        switch kind {
+        case .photo,.sticker,.graffiti:return "photo"
+        case .video:return "play.rectangle"
+        case .audio:return "music.note"
+        case .voice:return "waveform"
+        case .link:return "link"
+        case .document:return "doc"
+        case .unsupported:return "paperclip"
+        }
+    }
+}
+
+struct VKUploadFile {
+    static func safeName(_ input:String) -> String {
+        let base=(input as NSString).lastPathComponent
+        let allowed=CharacterSet.alphanumerics.union(CharacterSet(charactersIn:"._- "))
+        let cleaned=base.unicodeScalars.map {allowed.contains($0) ? String($0) : "_"}.joined()
+        let result=String(cleaned.prefix(120))
+        return result.isEmpty || result=="." || result==".." ? "document.bin" : result
+    }
+}
+
+struct ChatQuote:Identifiable,Hashable,Sendable {
+    let id:String
+    let title:String
+    let text:String
+    let attachments:[ChatAttachment]
 }
