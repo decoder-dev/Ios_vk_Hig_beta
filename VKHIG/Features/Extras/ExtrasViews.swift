@@ -1,65 +1,231 @@
 import SwiftUI
+import AVKit
+import Observation
 
-/// S40 — bookmarks / saved.
-struct BookmarksView: View {
-    var body: some View {
-        FixtureScreen(
-            title: "Сохранённое",
-            screenID: "S40",
-            emptyTitle: "Nothing saved",
-            emptySymbol: "bookmark",
-            emptyDetails: "fave.get when scoped.",
-            isEmpty: { $0.isEmpty },
-            loadValue: { CatalogFixtures.bookmarks }
-        ) { items in
-            List(items) { item in
-                if let url=item.targetURL {Link(destination:url) {Label(item.title,systemImage:item.symbol)}}
-                else {Label {
-                    VStack(alignment: .leading) {
-                        Text(item.title)
-                        Text(item.subtitle).font(.caption).foregroundStyle(.secondary)
-                    }
-                } icon: {
-                    Image(systemName: item.symbol)
-                }}
+@MainActor
+@Observable
+final class BookmarksModel {
+    var items:[BookmarkItem]=[]
+    var loading=false
+    var busy=false
+    var more=true
+    var error:String?
+    private var offset=0
+    private let request:(String,[String:String]) async throws -> VKJSON
+    init(request:((String,[String:String]) async throws -> VKJSON)?=nil) {self.request=request ?? {try await VKCatalogService.shared.request($0,$1)}}
+    func load(reset:Bool=true) async {
+        guard !loading else {return};loading=true;error=nil;defer {loading=false}
+        let start=reset ? 0 : offset
+        do {
+            let response=try await request("fave.get",["count":"100","offset":String(start)])
+            let page=VKCatalogService.mapBookmarks(response)
+            var next=reset ? [] : items
+            var ids=Set(next.map(\.id));next+=page.filter {ids.insert($0.id).inserted}
+            items=next;offset=start+response.list.count;more=response.list.count==100
+        } catch {self.error=error.localizedDescription}
+    }
+    func add(_ input:String) async -> Bool {
+        guard !busy else {return false};busy=true;error=nil;defer {busy=false}
+        do {
+            let action=try VKAction.bookmarkAddition(input)
+            let result=try await request(action.method,action.parameters)
+            guard result.int==1 else {throw AppError.decoding}
+            await load();return true
+        } catch {self.error=error.localizedDescription;return false}
+    }
+    func remove(_ item:BookmarkItem) async {
+        guard !busy else {return};busy=true;error=nil;defer {busy=false}
+        do {
+            let action=try VKAction.bookmarkRemoval(item)
+            let result=try await request(action.method,action.parameters)
+            guard result.int==1 else {throw AppError.decoding}
+            items.removeAll {$0.id==item.id};await load()
+        } catch {self.error=error.localizedDescription}
+    }
+}
+extension VKCatalogService {
+    static func mapBookmarks(_ response:VKJSON) -> [BookmarkItem] {
+        response.list.map {item in
+            let type=item["type"].string,value=item[item["type"].string]
+            var owner=value["owner_id"].int
+            if type=="page" {owner=item["user"]["id"].int != 0 ? item["user"]["id"].int : -item["group"]["id"].int}
+            let id=value["id"].int
+            let linkID=item["link"]["id"].string
+            var url=value["url"].url ?? value["view_url"].url ?? item["link"]["url"].url
+            if url==nil,owner != 0,owner != Int64.min {
+                let prefix:[String:String]=["post":"wall","video":"video","clip":"clip"]
+                if type=="product",id>0 {url=URL(string:"https://vk.com/market\(owner)?w=product\(owner)_\(id)")}
+                else if type=="page" {url=URL(string:"https://vk.com/\(owner>0 ? "id" : "club")\(abs(owner))")}
+                else if let prefix=prefix[type],id>0 {url=URL(string:"https://vk.com/\(prefix)\(owner)_\(id)")}
+            }
+            let title=value["title"].string.isEmpty ? (value["text"].string.isEmpty ? "Сохранённое VK" : String(value["text"].string.prefix(120))) : value["title"].string
+            let key="\(type):\(owner):\(id):\(linkID):\(url?.absoluteString ?? "")"
+            return BookmarkItem(id:BookmarkItem.stableID(key),title:title,subtitle:type,symbol:"bookmark",targetURL:url,kind:type,ownerID:owner,itemID:id,linkID:linkID)
+        }
+    }
+}
+struct BookmarksView:View {
+    @Environment(AppEnvironment.self) private var env
+    @State private var model=BookmarksModel()
+    @State private var adding=false
+    @State private var input=""
+    @State private var deleting:BookmarkItem?
+    var body:some View {
+        List {
+            if !env.isLiveVKSession {FixtureBanner();ForEach(CatalogFixtures.bookmarks) {Text($0.title)}}
+            ForEach(model.items) {item in
+                HStack {
+                    if let url=item.targetURL {Link(destination:url) {Label(item.title,systemImage:item.symbol)}} else {Text(item.title)}
+                    Spacer()
+                    if (try? VKAction.bookmarkRemoval(item)) != nil {Button("Удалить",role:.destructive) {deleting=item}.disabled(model.busy)}
+                }
+            }
+            if model.loading {ProgressView()}
+            if let error=model.error {Text(error).foregroundStyle(.red);Button("Повторить") {Task {await model.load()}}}
+            if env.isLiveVKSession && model.items.isEmpty && !model.loading && model.error==nil {Text("Сохранённых материалов нет")}
+            if !model.items.isEmpty && model.more {Button("Загрузить ещё") {Task {await model.load(reset:false)}}.disabled(model.loading || model.busy)}
+        }.navigationTitle("Сохранённое")
+        .toolbar {ToolbarItem(placement:.topBarTrailing) {Button("Добавить",systemImage:"plus") {adding=true}.disabled(!env.isLiveVKSession || model.busy)}}
+        .task {if env.isLiveVKSession {await model.load()}}
+        .refreshable {if env.isLiveVKSession {await model.load()}}
+        .confirmationDialog("Удалить из сохранённого?",isPresented:Binding(get:{deleting != nil},set:{if !$0 {deleting=nil}})) {Button("Удалить",role:.destructive) {if let item=deleting {Task {await model.remove(item)}};deleting=nil}}
+        .sheet(isPresented:$adding) {
+            NavigationStack {
+                Form {
+                    TextField("Ссылка https://…",text:$input).textInputAutocapitalization(.never).autocorrectionDisabled().keyboardType(.URL)
+                    if let error=model.error {Text(error).foregroundStyle(.red)}
+                    Button("Сохранить ссылку") {Task {if await model.add(input) {input="";adding=false}}}.disabled(model.busy || input.trimmingCharacters(in:.whitespacesAndNewlines).isEmpty)
+                }.navigationTitle("В сохранённое")
+                .toolbar {ToolbarItem(placement:.cancellationAction) {Button("Отмена") {adding=false}}}
             }
         }
     }
 }
 
-/// S41 — stories viewer stub.
-struct StoryViewerView: View {
-    let storyID: Int64
-    @Environment(\.dismiss) private var dismiss
-
-    var body: some View {
-        ZStack {
-            LinearGradient(colors: [.purple.opacity(0.6), .blue.opacity(0.5)], startPoint: .top, endPoint: .bottom)
-                .ignoresSafeArea()
-            VStack {
-                HStack {
-                    let story = CatalogFixtures.stories.first(where: { $0.id == storyID })
-                    VKAvatar(initials: story?.initials ?? "?", size: 36)
-                    Text(story?.author ?? "Story")
-                        .foregroundStyle(.white)
-                        .font(.headline)
-                    Spacer()
-                    Button { dismiss() } label: {
-                        Image(systemName: "xmark")
-                            .foregroundStyle(.white)
-                            .frame(width: 44, height: 44)
-                    }
-                }
-                .padding()
-                Spacer()
-                Text("S41 · Stories only when official API exists.\nFixture full-bleed shell — not a live story.")
-                    .multilineTextAlignment(.center)
-                    .foregroundStyle(.white)
-                    .padding()
-                Spacer()
+struct VKStory:Identifiable,Equatable {
+    let id:Int64
+    let ownerID:Int64
+    let nativeID:Int64
+    let author:String
+    let photoURL:URL?
+    let videoURL:URL?
+    let link:URL?
+    let expiresAt:Date?
+    var url:URL {URL(string:"https://vk.com/story\(ownerID)_\(nativeID)")!}
+    var available:Bool {expiresAt.map {$0>Date()} ?? true}
+}
+extension VKCatalogService {
+    func fetchStories() async throws -> [VKStory] {
+        let response=try await request("stories.get",["extended":"1","fields":"photo_100"])
+        let mapped=Self.mapStories(response)
+        for story in mapped {stories[story.id]=story}
+        return mapped
+    }
+    static func mapStories(_ response:VKJSON) -> [VKStory] {
+        var authors=Dictionary(response["profiles"].items.map {($0["id"].int,Self.name($0))},uniquingKeysWith:{a,_ in a})
+        for group in response["groups"].items {authors[-group["id"].int]=group["name"].string}
+        func flatten(_ items:[VKJSON],depth:Int) -> [VKJSON] {
+            guard depth<8 else {return []}
+            return items.flatMap {item -> [VKJSON] in
+                if !item["stories"].items.isEmpty {return item["stories"].items}
+                if !item["grouped"].items.isEmpty {return flatten(item["grouped"].items,depth:depth+1)}
+                return item["id"].int != 0 && item["owner_id"].int != 0 ? [item] : []
             }
         }
-        .navigationBarHidden(true)
+        var ids:Set<Int64>=[]
+        return flatten(response.list,depth:0).compactMap {j in
+            guard !j["is_deleted"].flag,!j["is_expired"].flag else {return nil}
+            if case .null=j["can_see"] {} else if !j["can_see"].flag {return nil}
+            let nativeID=j["id"].int,owner=j["owner_id"].int
+            let product=owner.multipliedReportingOverflow(by:1_000_000_000)
+            guard !product.overflow else {return nil}
+            let encoded=product.partialValue.addingReportingOverflow(nativeID)
+            guard !encoded.overflow,ids.insert(encoded.partialValue).inserted else {return nil}
+            let expiration=j["expires_at"].int>0 ? Date(timeIntervalSince1970:Double(j["expires_at"].int)) : nil
+            if let expiration,expiration<=Date() {return nil}
+            let video=j["video"]["files"]
+            return VKStory(id:encoded.partialValue,ownerID:owner,nativeID:nativeID,author:authors[owner] ?? "VK",photoURL:Self.mediaPhotoURL(j["photo"]),videoURL:video["hls"].url ?? video["mp4_720"].url ?? video["mp4_480"].url,link:j["link"]["url"].url,expiresAt:expiration)
+        }
+    }
+    func story(_ id:Int64) async throws -> VKStory {
+        guard let cached=stories[id] else {throw AppError.network("История не найдена. Обновите список историй.")}
+        let response=try await request("stories.getById",["stories":"\(cached.ownerID)_\(cached.nativeID)","extended":"1"])
+        guard let story=Self.mapStories(response).first else {throw AppError.network("История удалена, скрыта или истекла.")}
+        stories[id]=story;return story
+    }
+}
+@MainActor
+@Observable
+final class StoriesModel {
+    var items:[VKStory]=[]
+    var loading=false
+    var error:String?
+    func load() async {
+        guard !loading else {return};loading=true;error=nil;defer {loading=false}
+        do {items=try await VKCatalogService.shared.fetchStories()} catch {self.error=error.localizedDescription}
+    }
+}
+struct StoriesListView:View {
+    @Environment(AppEnvironment.self) private var env
+    @State private var model=StoriesModel()
+    var body:some View {
+        List {
+            if !env.isLiveVKSession {FixtureBanner();Text("Войдите в VK ID для просмотра историй.")}
+            ForEach(model.items) {story in NavigationLink(value:AppRoute.story(story.id)) {Label(story.author,systemImage:"person.crop.circle")}}
+            if model.loading {ProgressView()}
+            if let error=model.error {Text(error).foregroundStyle(.red);Button("Повторить") {Task {await model.load()}}}
+            if !model.loading && model.error==nil && model.items.isEmpty && env.isLiveVKSession {Text("Доступных историй нет")}
+        }.navigationTitle("Истории").withAppRoutes()
+        .task {if env.isLiveVKSession {await model.load()}}
+        .refreshable {if env.isLiveVKSession {await model.load()}}
+    }
+}
+struct LiveStoriesStrip:View {
+    @State private var model=StoriesModel()
+    var body:some View {
+        VStack(alignment:.leading) {
+            ScrollView(.horizontal) {
+                HStack {
+                    ForEach(model.items) {story in
+                        NavigationLink(value:AppRoute.story(story.id)) {
+                            VStack {VKAvatar(initials:VKCatalogService.initials(story.author),size:56,tint:.purple);Text(story.author).font(.caption).lineLimit(1).frame(width:72)}
+                        }
+                    }
+                }.padding(.horizontal)
+            }
+            if let error=model.error {Text(error).font(.caption).foregroundStyle(.secondary);Button("Повторить истории") {Task {await model.load()}}}
+        }.task {await model.load()}
+    }
+}
+struct StoryViewerView:View {
+    let storyID:Int64
+    @Environment(AppEnvironment.self) private var env
+    @State private var story:VKStory?
+    @State private var error:String?
+    @State private var loading=false
+    @State private var player:AVPlayer?
+    @State private var now=Date()
+    var body:some View {
+        VStack {
+            if loading {ProgressView()}
+            if let story,story.expiresAt.map({$0>now}) ?? true {
+                Text(story.author).font(.headline)
+                if let video=story.videoURL {
+                    VideoPlayer(player:player).task(id:video) {player=AVPlayer(url:video);player?.play()}.onDisappear {player?.pause()}
+                } else if let photo=story.photoURL {AsyncImage(url:photo) {image in image.resizable().scaledToFit()} placeholder:{ProgressView()}}
+                else {Link("Открыть историю в VK",destination:story.url)}
+                HStack {ShareLink(item:story.url);if let link=story.link {Link("Открыть ссылку",destination:link)}}
+            } else if !loading {ContentUnavailableView("История недоступна",systemImage:"clock.badge.exclamationmark",description:Text(error ?? "Срок истории истёк."));Button("Повторить") {Task {await load()}}}
+        }.padding().navigationTitle("История").navigationBarTitleDisplayMode(.inline)
+        .task {await load()}
+        .task {
+            while !Task.isCancelled {do {try await Task.sleep(for:.seconds(1))} catch {return};now=Date();if let story, !story.available {player?.pause()}}
+        }
+    }
+    private func load() async {
+        guard env.isLiveVKSession else {error="Просмотр историй требует входа в VK ID.";return}
+        loading=true;error=nil;defer {loading=false}
+        do {story=try await env.catalog.story(storyID)} catch {self.error=error.localizedDescription}
     }
 }
 
