@@ -10,7 +10,7 @@ struct ProfileView: View {
             if let model {
                 profileBody(model)
             } else {
-                VKLoadingState(title: "Loading…")
+                VKLoadingState(title: "Загрузка…")
             }
         }
         .navigationTitle("Профиль")
@@ -27,9 +27,9 @@ struct ProfileView: View {
     private func profileBody(_ model: ProfileViewModel) -> some View {
         LoadableContainer(
             state: model.state,
-            titleForEmpty: "No profile",
+            titleForEmpty: "Нет профиля",
             emptySymbol: "person.crop.circle",
-            emptyDetails: "users.get will populate this after VK ID.",
+            emptyDetails: "Войдите через VK ID для загрузки профиля.",
             onRetry: { Task { await model.load() } }
         ) { profile in
             List {
