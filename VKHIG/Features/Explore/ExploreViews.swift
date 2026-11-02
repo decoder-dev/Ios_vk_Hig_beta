@@ -175,9 +175,6 @@ struct ServicesHubView: View {
                 NavigationLink(value: AppRoute.actionsDemo) {
                     Label("Шторка действий", systemImage: "ellipsis.circle")
                 }
-                NavigationLink(value: AppRoute.incomingCall) {
-                    Label("Входящий звонок (stub)", systemImage: "phone")
-                }
                 NavigationLink(value: AppRoute.onboarding) {
                     Label("Онбординг", systemImage: "sparkles")
                 }
