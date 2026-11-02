@@ -27,6 +27,54 @@ final class SmokeTests: XCTestCase {
             app.navigationBars.buttons.element(boundBy:0).tap()
         }
     }
+
+    func testMusicPlayerQueueLyricsAndEqualizer() {
+        captureMusic(large:false)
+    }
+    func testMusicPlayerLargeText() {
+        captureMusic(large:true)
+    }
+    private func captureMusic(large:Bool) {
+        let app=XCUIApplication()
+        app.launchArguments=["--uitesting","--music-fixture","--light"]+(large ? ["--large-type"] : [])
+        app.launch()
+        app.buttons["Посмотреть демоверсию"].tap()
+        app.tabBars.buttons["Музыка"].tap()
+        let playlist=app.buttons.matching(NSPredicate(format:"label BEGINSWITH %@", "В дороге")).firstMatch
+        for _ in 0..<6 {if playlist.exists && playlist.isHittable {break};app.swipeUp()}
+        XCTAssertTrue(playlist.waitForExistence(timeout:10))
+        capture(app,"music-library",large:large)
+        playlist.tap()
+        XCTAssertTrue(app.buttons["Добавить треки"].waitForExistence(timeout:5))
+        capture(app,"music-playlist",large:large)
+        app.navigationBars.buttons.element(boundBy:0).tap()
+        // The global mini-player has one stable accessibility label.
+        app.buttons["Открыть плеер"].lastMatch.tap()
+        XCTAssertTrue(app.navigationBars["Плеер"].waitForExistence(timeout:5))
+        capture(app,"music-player",large:large)
+        app.swipeUp()
+        for destination in ["Очередь","Текст","Эквалайзер"] {
+            let link=app.buttons[destination].firstMatch
+            if !link.isHittable {app.swipeUp()}
+            XCTAssertTrue(link.waitForExistence(timeout:5));link.tap()
+            if destination=="Очередь" {
+                XCTAssertTrue(app.staticTexts["Тихая дорога"].waitForExistence(timeout:5))
+            } else if destination=="Текст" {
+                XCTAssertTrue(app.buttons["Тихая тестовая запись"].waitForExistence(timeout:5))
+                app.buttons["Проверка строки и перемотки"].tap()
+            } else {
+                XCTAssertTrue(app.switches["Эквалайзер"].waitForExistence(timeout:5))
+            }
+            capture(app,"music-"+destination,large:large)
+            app.navigationBars.buttons.element(boundBy:0).tap()
+            if !app.buttons["Очередь"].firstMatch.isHittable {app.swipeUp()}
+        }
+    }
+    private func capture(_ app:XCUIApplication,_ name:String,large:Bool) {
+        let attachment=XCTAttachment(screenshot:app.screenshot())
+        attachment.name=(large ? "large-" : "")+name
+        attachment.lifetime = .keepAlways;add(attachment)
+    }
     private func captureScreens(dark:Bool,large:Bool=false) {
         let app = XCUIApplication()
         app.launchArguments = ["--uitesting", dark ? "--dark" : "--light"]+(large ? ["--large-type"] : [])
