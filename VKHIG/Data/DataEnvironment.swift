@@ -104,6 +104,7 @@ final class AppEnvironment {
             dataMode = .live
             AudioLibrary.shared.setAccount(VKIDAuthCoordinator.shared.userID)
         } else if session.isLiveVKSession {
+            AudioLibrary.shared.resetRemoteSession()
             session.signOut()
             dataMode = .fixtures
             syncAuthFromSession()
