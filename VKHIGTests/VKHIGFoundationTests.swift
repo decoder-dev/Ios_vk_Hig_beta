@@ -73,6 +73,7 @@ final class VKHIGFoundationTests: XCTestCase {
         XCTAssertNotNil(message.randomID)
     }
 
+    @MainActor
     func testVKIDAuthorizeFailsWithoutCredentials() async {
         let coordinator = VKIDAuthCoordinator(
             configuration: VKIDConfiguration(clientID: nil, redirectURLScheme: nil)
