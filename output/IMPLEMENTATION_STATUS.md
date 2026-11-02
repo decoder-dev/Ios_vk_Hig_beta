@@ -12,7 +12,7 @@ Branch: main. New commits: decoder-dev. Source implementation does not imply VK 
 | S23–S25 | Debounced/cancellable people/community/post search; paged friend and peer-message search; notifications with targets/read marking | Real search and notification payloads |
 | S26–S30 | Paged albums/photos/videos; full-size photo viewer; AVKit approved stream or official VK player | Device playback, memory/performance |
 | S31–S33 | Local audio import/library/queue/seek/shuffle/repeat/AirPlay/Now Playing; paged audio.get catalog and transient remote queue only with actual audio grant and VK-provided HTTPS stream | VK music approval and licensed streams; real audio interruption/AirPlay checks |
-| S34–S39 | Theme/cache/logout; APNs delegate/token/errors; VK register/unregister device; permission/retry/status; notification routing; read-only VK account diagnostics | Apple signing/APNs entitlement, VK provider configuration and actual delivery |
+| S34–S39 | Theme/cache/logout; read-only VK account diagnostics; push explicitly excluded from current scope | Normal app signing and device/account checks; no APNs/provider gate |
 | S40 | Paged typed saved items; link/post/video/page addition; supported post/video/product/article/page/link removal with server confirmation | Real bookmark API acceptance |
 | S41 | Live stories.get/getById list and image/video viewer, expiry/visibility checks and safe links; labeled demo remains separate | Real Stories grants and media |
 | S42 | calls.start/forceFinish and official conference join/share links | Native incoming media needs supplied official VK SDK/docs/access |
@@ -24,5 +24,7 @@ Source 6c02f89 passed compilation/tests on iOS 18/Xcode 16.4 and iOS 27/Xcode 27
 
 See TEST_RESULTS.md for exact results and docs/DEVICE_AND_VK_ACCEPTANCE.md for real-account, signed-device, APNs and SDK requirements. No full release-readiness claim is made.
 
-## APNs configuration follow-up
-Push registration now uses the signing APNS_ENVIRONMENT via Info.plist, rejects unknown configuration and registers a rotated token after an in-flight request. A direct APNs smoke sender and four offline Node tests are added; those tests PASS. Three new Swift regression tests cover environment mapping, unknown configuration and token rotation (36 unit tests total; new Xcode run PENDING). Actual Apple/VK provider configuration and delivery remain BLOCKED: Apple sign-in is required; VK ID cabinet access is denied by this environment's browser site-safety policy. No native iOS calling SDK/authorization or music approval is available. See docs/DEVICE_AND_VK_ACCEPTANCE.md.
+## Current scope: no push notifications
+On 02.11.2026 the user explicitly excluded notifications/APNs. Removed runtime permission requests, APNs/VK device registration, push routes, the settings toggle, signing entitlement and remote-notification background mode. Launch cleanup unregisters any previous local registration and removes this app's pending/delivered notifications. Removed the APNs diagnostic sender and its tests; device-smoke.sh now needs only normal app signing. Apple login/provider setup is no longer required for the selected scope. Music rights and native incoming-call SDK/access remain external VK dependencies; VK ID cabinet access is denied by this environment's browser site-safety policy.
+
+The earlier APNs revision 12dcccd passed Xcode 27 and 36 unit tests in run 41517627368; it was subsequently removed by the scope change. Current no-push revision returns to 33 unit tests; compilation/regression run PENDING. Previous PASS results apply to their recorded commits.

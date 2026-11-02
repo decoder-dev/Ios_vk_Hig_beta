@@ -4,11 +4,12 @@
 - **VK configuration:** callback vkhig://vkid, bundle ID com.decoderdev.vkhig and approved scopes must match the application cabinet. Default grant is identity only. Real OAuth/API acceptance has not been performed here.
 - **Music:** the grant-gated audio.get catalog and native player are implemented. VK must approve music access and provide licensed streams.
 - **Native incoming calls:** conference-link calls are implemented. An official VK calling SDK/package, documentation and application authorization have not been supplied; native incoming media is not implemented or claimed.
-- **Push delivery:** client registration and routing are implemented. Apple Developer team/provisioning/APNs entitlement and VK push-provider setup are absent; actual delivery remains unverified.
 - **Device/UI:** physical-device camera/location/uploads, VoiceOver/Reduce Motion, audio interruptions/AirPlay, performance and the complete screen/state matrix remain unverified. Simulator screenshots are demo fixtures and do not prove live API behavior.
 - **Voice recording:** OGG voice-file import/upload and received voice playback are implemented; recording/encoding a new native OGG voice message is not included.
 
 Run signed-device and real-account acceptance using docs/DEVICE_AND_VK_ACCEPTANCE.md and scripts/device-smoke.sh. Secrets/certificates/profiles must not be committed.
 
-## APNs configuration follow-up
-Push registration now uses the signing APNS_ENVIRONMENT via Info.plist, rejects unknown configuration and registers a rotated token after an in-flight request. A direct APNs smoke sender and four offline Node tests are added; those tests PASS. Three new Swift regression tests cover environment mapping, unknown configuration and token rotation (36 unit tests total; new Xcode run PENDING). Actual Apple/VK provider configuration and delivery remain BLOCKED: Apple sign-in is required; VK ID cabinet access is denied by this environment's browser site-safety policy. No native iOS calling SDK/authorization or music approval is available. See docs/DEVICE_AND_VK_ACCEPTANCE.md.
+## Current scope: no push notifications
+On 02.11.2026 the user explicitly excluded notifications/APNs. Removed runtime permission requests, APNs/VK device registration, push routes, the settings toggle, signing entitlement and remote-notification background mode. Launch cleanup unregisters any previous local registration and removes this app's pending/delivered notifications. Removed the APNs diagnostic sender and its tests; device-smoke.sh now needs only normal app signing. Apple login/provider setup is no longer required for the selected scope. Music rights and native incoming-call SDK/access remain external VK dependencies; VK ID cabinet access is denied by this environment's browser site-safety policy.
+
+The earlier APNs revision 12dcccd passed Xcode 27 and 36 unit tests in run 41517627368; it was subsequently removed by the scope change. Current no-push revision returns to 33 unit tests; compilation/regression run PENDING. Previous PASS results apply to their recorded commits.
