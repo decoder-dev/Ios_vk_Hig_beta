@@ -9,6 +9,8 @@ struct ConversationView: View {
     @FocusState private var composerFocused: Bool
     @Environment(\.accessibilityReduceMotion) private var reduceMotion
     @Environment(\.scenePhase) private var scenePhase
+    @State private var editing: ChatMessage?
+    @State private var editedText = ""
     @State private var deleting: ChatMessage?
     @State private var forwarding: ChatMessage?
     @State private var forwardPeers: [Conversation] = []
@@ -39,6 +41,16 @@ struct ConversationView: View {
         .confirmationDialog("Удалить сообщение у себя?",isPresented:Binding(get:{deleting != nil},set:{if !$0 {deleting = nil}})) {
             Button("Удалить",role:.destructive) { if let message = deleting { Task { await model?.delete(message) } }; deleting = nil }
         }
+        .sheet(item:$editing) { message in
+            NavigationStack {
+                Form { TextField("Сообщение",text:$editedText,axis:.vertical).lineLimit(4...12) }
+                    .navigationTitle("Редактировать")
+                    .toolbar {
+                        ToolbarItem(placement:.cancellationAction) { Button("Отмена") { editing = nil } }
+                        ToolbarItem(placement:.confirmationAction) { Button("Сохранить") { Task { await model?.edit(message,text:editedText); editing = nil } }.disabled(editedText.trimmingCharacters(in:.whitespacesAndNewlines).isEmpty) }
+                    }
+            }
+        }
         .sheet(item:$forwarding) { message in
             NavigationStack {
                 List(forwardPeers) { peer in Button(peer.displayName) { Task { await model?.forward(message,to:peer.id); forwarding = nil } } }
@@ -54,8 +66,8 @@ struct ConversationView: View {
         .task(id:scenePhase) {
             guard scenePhase == .active else { return }
             while !Task.isCancelled {
+                if model != nil,env.isLiveVKSession { await model?.poll() }
                 do { try await Task.sleep(for:.seconds(20)) } catch { return }
-                if env.isLiveVKSession { await model?.load(quiet:true) }
             }
         }
         .task {
@@ -63,6 +75,9 @@ struct ConversationView: View {
                 let vm = ConversationViewModel(conversation: conversation, environment: env)
                 model = vm
                 await vm.load()
+                if env.isLiveVKSession,scenePhase == .active {
+                    _ = try? await env.catalog.request("messages.markAsRead",["peer_id":"\(conversation.id)","mark_conversation_as_read":"1"])
+                }
             }
         }
     }
@@ -95,7 +110,7 @@ struct ConversationView: View {
                         LazyVStack(spacing: 9) {
                             if !model.reachedStart { Button("Загрузить предыдущие") { Task { await model.loadOlder() } }.disabled(model.loadingOlder).frame(minHeight:44) }
                             ForEach(messages) { message in
-                                MessageBubble(message: message, onReply:{model.replyingTo = message; composerFocused = true}, onForward:{forwarding = message}, onDelete:{deleting = message}, onRetry:{Task { await model.retry(message) }})
+                                MessageBubble(message: message, onReply:{model.replyingTo = message; composerFocused = true}, onForward:{forwarding = message}, onDelete:{deleting = message}, onRetry:{Task { await model.retry(message) }},onEdit:{editedText = message.text; editing = message})
                                     .id(message.id)
                             }
                         }
@@ -158,6 +173,7 @@ private struct MessageBubble: View {
     let onForward: () -> Void
     let onDelete: () -> Void
     let onRetry: () -> Void
+    let onEdit: () -> Void
 
     private var timeLabel: String {
         message.timestamp.formatted(date: .omitted, time: .shortened)
@@ -177,6 +193,12 @@ private struct MessageBubble: View {
                         message.isOutgoing ? VKStyle.accent : VKStyle.cell,
                         in: RoundedRectangle(cornerRadius: VKStyle.Radius.bubble)
                     )
+                ForEach(message.attachments) { attachment in
+                    if attachment.kind == .photo {
+                        AsyncImage(url:attachment.url) { image in image.resizable().scaledToFit() } placeholder: { ProgressView() }
+                            .frame(maxWidth:260,maxHeight:220).clipShape(RoundedRectangle(cornerRadius:12))
+                    } else { Link(destination:attachment.url) { Label(attachment.title,systemImage:attachment.kind == .video ? "play.rectangle" : "doc") }.frame(minHeight:44) }
+                }
                 HStack(spacing: 4) {
                     Text(timeLabel)
                     if message.state == .pending { Image(systemName: "clock") }
@@ -196,6 +218,7 @@ private struct MessageBubble: View {
             // S13 — message actions; destructive paths need confirmation when live.
             Button("Copy") { UIPasteboard.general.string = message.text }
             Button("Ответить",action:onReply)
+            if message.isOutgoing,message.serverID != nil { Button("Редактировать",action:onEdit) }
             Button("Переслать",action:onForward)
                 .disabled(message.serverID == nil)
             Divider()

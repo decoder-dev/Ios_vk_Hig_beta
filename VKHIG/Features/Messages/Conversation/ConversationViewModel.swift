@@ -118,6 +118,32 @@ final class ConversationViewModel {
         case .failure(let error): optimistic.state = .failed; upsert(optimistic); sendNotice = error.localizedDescription
         }
     }
+    func poll() async {
+        guard environment.isLiveVKSession,environment.capabilities.canUseLiveAPI(.conversation) else { return }
+        do {
+            let server = try await environment.catalog.request("messages.getLongPollServer",["lp_version":"3"])
+            let raw = server["server"].string
+            guard var url = URLComponents(string:raw.hasPrefix("https://") ? raw : "https://" + raw),url.scheme == "https",url.host != nil else { throw AppError.decoding }
+            var timestamp = server["ts"].string.isEmpty ? "\(server["ts"].int)" : server["ts"].string
+            while !Task.isCancelled,environment.isLiveVKSession {
+                url.queryItems = [URLQueryItem(name:"act",value:"a_check"),.init(name:"key",value:server["key"].string),.init(name:"ts",value:timestamp),.init(name:"wait",value:"25"),.init(name:"mode",value:"2"),.init(name:"version",value:"3")]
+                guard let address = url.url else { throw AppError.decoding }
+                var request = URLRequest(url:address); request.timeoutInterval = 35
+                let (data,response) = try await URLSession.shared.data(for:request)
+                guard let response = response as? HTTPURLResponse,response.statusCode == 200 else { throw AppError.network("Соединение с VK прервано.") }
+                let update = try JSONDecoder().decode(VKJSON.self,from:data)
+                if update["failed"].int > 1 { return }
+                timestamp = update["ts"].string.isEmpty ? "\(update["ts"].int)" : update["ts"].string
+                if !update["updates"].items.isEmpty { await load(quiet:true) }
+            }
+        } catch is CancellationError { return }
+        catch let error as URLError where error.code == .cancelled { return }
+        catch { sendNotice = "Обновление сообщений: " + error.localizedDescription }
+    }
+    func edit(_ message: ChatMessage,text:String) async {
+        guard let serverID = message.serverID,!text.trimmingCharacters(in:.whitespacesAndNewlines).isEmpty else { return }
+        if await environment.catalog.perform("messages.edit",["peer_id":"\(conversation.id)","message_id":"\(serverID)","message":text,"keep_forward_messages":"1"]) { await load(quiet:true) }
+    }
     func delete(_ message: ChatMessage) async {
         if let serverID = message.serverID, environment.isLiveVKSession {
             guard await environment.catalog.perform("messages.delete", ["message_ids":"\(serverID)","delete_for_all":"0"]) else { return }
