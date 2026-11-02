@@ -1,45 +1,25 @@
 # Implementation status — 2026-11-02
 
-Development branch: main. New commits use the decoder-dev account.
-Status means source implementation, NOT verified production/API availability.
+Branch: main. New commits: decoder-dev. Source implementation does not imply VK application rights or production acceptance.
 
-| Screens | Source implementation | Remaining acceptance |
+| Screens | Implemented source paths | Remaining acceptance |
 |---|---|---|
-| S01–S02 | ASWebAuthenticationSession; public OAuth 2.1; state validation; S256 PKCE; Keychain; serialized refresh; logout | Register callback and app settings; real device/account smoke |
-| S03 | Existing onboarding and demo entry | Visual/accessibility QA |
-| S04–S05 | Live feed repository; next_from pagination; deduplication; actual media; detail; likes and link copy | Approved scopes; real API QA; richer attachments |
-| S06–S07 | Root comment pagination; independently paged reply threads; read/send/reply/edit/delete; persistent drafts; post photo upload | Real account acceptance; rich comment attachments; scopes |
-| S08–S09 | Live inbox/history/send; offset pages; stable identities; pending/failed; persisted outbox/drafts; retry same random_id; foreground Long Poll, read receipts and photo/document rendering | Full rich attachment coverage; live account tests |
-| S10–S11 | Group chat route; live participant/details loading; navigation | Advanced group administration controls |
-| S12 | PhotosPicker/fileImporter; documented photo/doc upload/save/send; size limit; retry send identity | Camera/location; live upload smoke |
-| S13–S14 | Copy/reply/edit/forward/delete-confirmation/retry; peer-scoped live search with offset pages and server-ID deduplication | Recipient picker pagination; live permission checks |
-| S15–S22 | Live adapters including server-side friends.search and paged results for user/profile/friends/groups/members/requests; incoming/outgoing requests; friend add/accept; basic profile save; community wall | Remaining profile fields; advanced community admin; API grants |
-| S23–S25 | Debounced/cancellable users/groups/newsfeed search; separate errors and pages; notification links/read marking | Real search and notification payload acceptance |
-| S26–S30 | Albums; album photos; getAll; thumbnails/full-size; AVKit direct approved stream or official web player | Offset pagination implemented; image memory profiling and playback QA |
-| S31–S33 | AVPlayer local audio import; persistent library, queue, seek, shuffle/repeat, AirPlay, Now Playing and remote commands | VK catalog/streams require approved music API; physical-device audio QA |
-| S34–S39 | Theme/cache/logout; APNs delegate/token/error handling; account.registerDevice/unregisterDevice; push permission/retry/status; notification tap routes | Signed APNs provisioning and VK push-provider setup; physical-device delivery; privacy APIs |
-| S40 | Paged fave.get with post/photo/video/link targets | Mutations and API acceptance |
-| S41–S42 | Stories demo; calls.start conference creation, join/share official link, calls.forceFinish | Native incoming calls/media require an official SDK/access; real call QA |
-| S43–S44 | Existing error/action demos; request errors/retry on live paths | Full state matrix and accessibility verification |
+| S01–S03 | Public OAuth 2.1/PKCE, state validation, Keychain, serialized refresh, logout, onboarding and labeled demo | Approved callback/scopes; real account/device |
+| S04–S07 | Paged live feed/posts; likes; post creation/photo upload; root comments and independently paged reply threads; send/reply/edit/delete/drafts; rich attachment rendering | Real permissions, payloads and mutation smoke |
+| S08–S14 | Paged inbox/history/search; foreground Long Poll/read receipts; outbox/drafts and stable retry random_id; replies/forwards with quotes; paged recipient picker; ACL-aware chat rename/invite/remove/leave/pin/unpin | Real account, chat ACL and upload checks |
+| S12 media | Shared photo/document/video/audio/voice/sticker/link/graffiti rendering; camera/photo/document/video/OGG voice-file uploads and coordinate sending; unsupported formats remain visible | Real camera/location/uploads; no native OGG recorder is implemented |
+| S15–S22 | Profiles/friends/requests/community wall; personal/profile fields with official country/city/partner IDs; community join/leave/settings/members/moderation/manager roles | Real granted APIs and administrator accounts |
+| S23–S25 | Debounced/cancellable people/community/post search; paged friend and peer-message search; notifications with targets/read marking | Real search and notification payloads |
+| S26–S30 | Paged albums/photos/videos; full-size photo viewer; AVKit approved stream or official VK player | Device playback, memory/performance |
+| S31–S33 | Local audio import/library/queue/seek/shuffle/repeat/AirPlay/Now Playing; paged audio.get catalog and transient remote queue only with actual audio grant and VK-provided HTTPS stream | VK music approval and licensed streams; real audio interruption/AirPlay checks |
+| S34–S39 | Theme/cache/logout; APNs delegate/token/errors; VK register/unregister device; permission/retry/status; notification routing; read-only VK account diagnostics | Apple signing/APNs entitlement, VK provider configuration and actual delivery |
+| S40 | Paged typed saved items; link/post/video/page addition; supported post/video/product/article/page/link removal with server confirmation | Real bookmark API acceptance |
+| S41 | Live stories.get/getById list and image/video viewer, expiry/visibility checks and safe links; labeled demo remains separate | Real Stories grants and media |
+| S42 | calls.start/forceFinish and official conference join/share links | Native incoming media needs supplied official VK SDK/docs/access |
+| S43–S44 | Loading/empty/error/retry, confirmation dialogs and action demos | Complete state matrix, VoiceOver and physical-device QA |
 
-## Build and validation
+## Verification
 
-Linux: no Xcode/Simulator. Swift parsed with tree-sitter; project/workflow YAML and resource plists parsed; shell syntax/config generation checked; git diff --check checked. These are NOT an iOS compile.
+Source 6c02f89 passed compilation/tests on iOS 18/Xcode 16.4 and iOS 27/Xcode 27 (run 41506365100). A screenshot-detected large-text inbox pagination overlap was corrected in 3b77c51. Source a134aea then passed all 33 unit and 5 UI tests on iOS 27 (run 41509033714); all 17 screenshots were inspected again. Final source 33846a3 additionally rejects stale user/location-picker pages after query changes; its focused Xcode 27/iOS 27 compilation and all 33 unit tests passed in run 41511022163.
 
-A macOS CI workflow now generates the project, builds/tests it and retains only test results. Unit regression cases cover callback forgery/duplicates, form encoding, scope gating and retry identity. UI tests cover launch/demo navigation and light/dark screenshots. See TEST_RESULTS.md for actual results.
-
-## Verified simulator result
-
-Source main @ 774b58efd6505eac280c44e5a98e13972ded349d: macOS CI build + 17 unit tests + 3 UI tests PASS (0 failures). Run 41496009543. This confirms simulator compilation and fixture regression paths; real API grants, APNs delivery and physical-device acceptance remain open.
-
-## Remaining-feature revision (awaiting CI)
-- S04–S09: shared photo/document/video/audio/voice/sticker/link/graffiti rendering; bounded reply/forward quotes.
-- S10–S14: ACL-aware chat rename, invite/remove/leave, pin/unpin; paged recipient picker; camera, coordinate, video and OGG voice-file sending.
-- S15–S22: profile country/city/partner and personal fields; community membership, settings, paged members and manager roles.
-- S31–S33: grant-gated VK audio.get catalog with transient playback queue. Actual licensed stream access still requires VK approval.
-- S40: paged typed saved items, add links/posts/pages and supported removal operations with confirmed server results.
-- S41: live Stories list/viewer, expiry, image/video and safe links; demo remains explicitly labeled.
-- CI now targets iOS 18 and iOS 27, with 33 unit tests and 5 UI tests per SDK, including large text and screenshot export. No new CI result is claimed yet.
-- Physical-device/archive script and account diagnostics are provided; external acceptance is recorded in docs/DEVICE_AND_VK_ACCEPTANCE.md.
-
-The remaining-acceptance column above describes the previous verified baseline. The source additions in this section replace its feature gaps; validation and external service requirements remain open.
+See TEST_RESULTS.md for exact results and docs/DEVICE_AND_VK_ACCEPTANCE.md for real-account, signed-device, APNs and SDK requirements. No full release-readiness claim is made.

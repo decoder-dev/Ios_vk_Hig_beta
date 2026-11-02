@@ -1,28 +1,33 @@
 # Test results — 2026-11-02
 
-## macOS CI: PASS
+## Final source: compile/unit verification PASS
 
-Verified source commit: `774b58efd6505eac280c44e5a98e13972ded349d` (main).
-Run: https://github.com/decoder-dev/Ios_vk_Hig_beta/actions/runs/41496009543
+Source 33846a3 (main) adds guards that reject stale user/location-picker responses after query changes. Focused Xcode 27/iOS 27 compilation and all 33 unit tests passed (0 failures), job 125502580523: run https://github.com/decoder-dev/Ios_vk_Hig_beta/actions/runs/41511022163. This run intentionally excludes UI tests; it does not replace the UI result below.
 
-- Xcode 16.4, iOS 18.5 iPhone simulator on macos-15-intel.
-- XcodeGen project generation and iOS compilation: PASS.
-- 17 unit tests: PASS, 0 failures.
-- 3 UI tests: PASS, 0 failures; launch/demo navigation and light/dark screenshot attachments.
-- xcodebuild final result: **TEST SUCCEEDED**.
-- Results retained in the `ios-test-results` artifact (`TestResults.xcresult`).
+## iOS 27 interface revision: PASS
 
-Regression coverage includes OAuth callback validation, form encoding, scope gates, message retry identity, comment reply edit/delete counts, and cancellation of debounced search. Music capability tests concern the unavailable VK catalog; imported local audio playback is implemented separately.
+Source a134aea8dcc965dca13e1ed2eefdf6df5f7f7227.
+Run: https://github.com/decoder-dev/Ios_vk_Hig_beta/actions/runs/41509033714
+Job: 125495749264, Xcode 27 / iOS 27 / iPhone 18 Pro simulator.
 
-## Local checks: PASS
+- Project generation and compilation: PASS.
+- 33 unit tests: PASS, 0 failures.
+- 5 UI tests: PASS, 0 failures: demo navigation, light/dark/large text and saved/Stories service screens.
+- All 17 exported PNG attachments inspected. Pagination now sits in the inbox List instead of overlapping the last row at large text sizes. Content below the floating tab bar remains scrollable; these screenshots are not a full accessibility certification.
+- Artifact: ios-27-test-results; verified SHA-256 4d4724b4dcd0a07aeeb0603e8c06b87f477845554f464657be2b47699070b599.
+- UI hierarchy/rendering is unchanged by the later stale-response guards; those affect asynchronous results after a query change. Real-account search acceptance remains open.
 
-49 Swift source/test files parsed; only the tree-sitter limitation at valid `Result<Void>.success(())` remains. Compiler acceptance is confirmed by CI. Project/workflow YAML, Info.plist, privacy manifest and entitlements parse; shell syntax and git diff --check pass.
+## Cross-version feature revision: PASS
 
-## NOT RUN
+Source 6c02f898652f2e9b0b7dfb6ad1e4e55af6ac22d8, run https://github.com/decoder-dev/Ios_vk_Hig_beta/actions/runs/41506365100.
+Both iOS 18/Xcode 16.4 (job 125486594384) and iOS 27/Xcode 27 (job 125486594891) completed compilation/tests successfully. This predates the pure inbox layout and stale-response fixes. Visual review of this first run found the overlap despite all screenshot tests passing, which prompted the correction and second UI run.
 
-Real VK OAuth/API acceptance with approved application scopes; physical-device APNs delivery and provisioning; licensed VK music streams; native incoming VK calls; audio interruption/AirPlay device QA; full accessibility and performance matrix. CI uses demo fixtures and does not prove availability of VK rights.
+## Regression coverage and local checks
 
-Earlier main runs failed due to fixture closures without return and an unsupported multi-variable Observable declaration. These were fixed. Router destination types were simplified; CI now compiles files separately with timing diagnostics.
+Unit coverage includes OAuth validation/scope gates/retry identity, comment reply mutations, cancellation, server ACL override and write guards, recipient pagination/deduplication, saved-item identities/payloads and failed deletion, profile IDs/birthday validation, media/quote mapping, Story expiry/visibility, safe upload names, integer bounds and music grant/stream checks. The final helper-view stale-response guards are checked by recompiling the app and running the existing unit suite; their race path is not directly exercised by that suite or a real-account test.
 
-## New remaining-feature revision: PENDING
-The PASS above applies only to commit 774b58e. The new source revision adds 33 unit tests total, 5 UI tests total, and an iOS 18/iOS 27 CI matrix with screenshot export. New regression cases cover ACL enforcement, recipient pagination, bookmark mutation failure, profile payloads, media and quote mapping, Story expiry, safe uploads and music scope gating. Local syntax/resource checks pass; compilation and simulator tests must be reported after CI finishes. Device/account/APNs/native incoming-call acceptance remains NOT RUN.
+Swift tree-sitter parsing, YAML/plist parsing, shell syntax and git diff --check pass. The parser has one known false positive at valid Result<Void>.success(()) in VKIDAuthCoordinator; Xcode accepts it.
+
+## External acceptance: NOT RUN
+
+Real OAuth/account/API mutations and granted music streams; signed physical-device/APNs delivery; native incoming VK calls; camera/location uploads; audio interruption/AirPlay; VoiceOver/Reduce Motion; performance and full screen/state coverage. Fixtures and simulators do not establish these capabilities.

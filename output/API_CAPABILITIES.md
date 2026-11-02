@@ -1,16 +1,16 @@
 # API capabilities
 
-Official public OAuth 2.1 + PKCE is implemented using Apple AuthenticationServices. VKCOM/vkid-ios-sdk 3.0.0 served as protocol reference; it is not bundled or modified. No confidential secret is shipped.
+Public OAuth 2.1 + PKCE uses Apple AuthenticationServices; VKCOM/vkid-ios-sdk 3.0.0 is a protocol reference, not a bundled calling SDK. Client secret never enters the app, logs or CI artifacts. Both requested Actions secrets were saved previously; only the public client ID is materialized by CI.
 
-The OAuth response grants determine P0 repository access; server permission errors remain authoritative for catalog methods. Default requested scope: vkid.personal_info. Configure additional scopes ONLY if granted to this app in the VK cabinet.
+Default requested scope is vkid.personal_info. Actual OAuth grants and server responses are authoritative. Configure only rights approved for this VK application.
 
-Implemented method adapters: users.get; messages.getConversations/getHistory/send/search/delete/getConversationsById; newsfeed.get; wall.getComments/createComment/post; likes.add/delete; friends.get/getRequests/add; groups.get/getById/getMembers; users.search/groups.search; notifications.get; photos.getAlbums/getAll/get/getMessagesUploadServer/saveMessagesPhoto; docs.getMessagesUploadServer/save; video.get; fave.get.
+Implemented adapters include:
+- users.get/search; friends.get/search/getRequests/add; groups.get/getById/getMembers/getSettings/join/leave/edit/editManager/removeUser; database.getCountries/getCities; account.getProfileInfo/saveProfileInfo.
+- messages.getConversations/getConversationsById/getConversationMembers/getHistory/getLongPollServer/markAsRead/send/search/searchConversations/edit/delete/editChat/addChatUser/removeChatUser/pin/unpin.
+- newsfeed.get/search; wall.get/getComments/createComment/editComment/deleteComment/post; likes.add/delete; notifications.get/markAsViewed.
+- photos album/photo/upload/save methods; docs.getMessagesUploadServer/save; video.get/save; safe media and quote mapping.
+- fave.get and typed add/remove methods; stories.get/getById; audio.get only when the actual audio grant is present; calls.start/forceFinish; account.registerDevice/unregisterDevice.
 
-First live-success verification: NOT RUN. No user access token available. VK music catalog and native incoming calling require official authorization/SDK. Local audio and conference-link calling are implemented. APNs device registration requires signed entitlements and VK push-provider configuration.
+Offset/cursor pagination and deduplication cover conversations/history/message search, recipient selection, friends/groups/members, country/city selection, photos/albums/videos, notifications, saved items and music. messages.searchConversations has no offset contract: up to 200 results prompt a narrower query.
 
-Additional adapters: wall.deleteComment/editComment; newsfeed.search; notifications.markAsViewed; calls.start/forceFinish; account.registerDevice/unregisterDevice. Offset/cursor pagination covers friends, groups, members, albums, photos, videos, notifications and bookmarks.
-
-Server-side friends.search and paged peer-specific messages.search are implemented; message search pages deduplicate by server ID. Simulator build, 17 unit and 3 UI tests PASS at main 774b58e; real API acceptance is still NOT RUN.
-
-## Remaining-feature implementation
-Added official adapters for rich attachments and quotes; chat metadata/ACL, members, rename/invite/remove/leave and pin/unpin; profile fields with database country/city IDs; community membership/settings/moderation; paginated recipient selection; typed fave add/remove; live stories.get/getById; audio.get only with an actual audio grant. Camera, location, video and OGG voice-file uploads are supported. No native voice encoder or private API is used. Settings includes a user-initiated read-only account diagnostics screen. These additions await the new CI run and real-account acceptance.
+Settings offers user-initiated read-only account checks without displaying a token. Successful real-account acceptance is NOT RUN here. Music rights/streams, native incoming-call SDK and APNs/VK provider setup cannot be inferred from client ID/secret or simulator tests.
