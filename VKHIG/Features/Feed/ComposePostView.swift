@@ -3,7 +3,9 @@ import SwiftUI
 /// S07 — compose post sheet (local draft only; no fake publish success).
 struct ComposePostView: View {
     @Environment(\.dismiss) private var dismiss
-    @State private var text = ""
+    @Environment(AppEnvironment.self) private var env
+    @AppStorage("vkhig.post.draft") private var text = ""
+    @State private var sending = false
     @State private var showDiscard = false
     @State private var notice: String?
 
@@ -15,8 +17,8 @@ struct ComposePostView: View {
                         .lineLimit(5...12)
                 }
                 Section("Вложения") {
-                    Label("Photo (permissions later)", systemImage: "photo")
-                    Label("Video (permissions later)", systemImage: "video")
+                    Text("Для загрузки фото к записи используйте официальный VK до подключения wall upload flow.").font(.footnote)
+
                 }
                 if let notice {
                     Section {
@@ -24,7 +26,7 @@ struct ComposePostView: View {
                     }
                 }
                 Section {
-                    Text("Publishing requires verified wall.post scope. Draft stays local.")
+                    Text("Черновик сохраняется на устройстве. Для публикации нужен доступ к стене.")
                         .font(.footnote)
                         .foregroundStyle(.secondary)
                 }
@@ -39,13 +41,17 @@ struct ComposePostView: View {
                 }
                 ToolbarItem(placement: .confirmationAction) {
                     Button("Publish") {
-                        notice = "Not published — live wall.post is gated. Draft kept locally."
+                        Task {
+                            guard env.isLiveVKSession else { notice = "Деморежим: запись не опубликована. Черновик сохранён."; return }
+                            sending = true; defer { sending = false }
+                            if await env.catalog.perform("wall.post", ["message":text]) { text = ""; dismiss() }
+                        }
                     }
-                    .disabled(text.trimmingCharacters(in: .whitespacesAndNewlines).isEmpty)
+                    .disabled(sending || text.trimmingCharacters(in: .whitespacesAndNewlines).isEmpty)
                 }
             }
             .confirmationDialog("Discard draft?", isPresented: $showDiscard) {
-                Button("Discard", role: .destructive) { dismiss() }
+                Button("Удалить черновик", role: .destructive) { text = ""; dismiss() }
                 Button("Keep editing", role: .cancel) {}
             }
         }

@@ -11,7 +11,7 @@ struct FeedView: View {
             if let model {
                 feedBody(model)
             } else {
-                VKLoadingState(title: "Loading…")
+                VKLoadingState(title: "Загрузка…")
             }
         }
         .navigationTitle("Лента")
@@ -32,9 +32,9 @@ struct FeedView: View {
         @Bindable var model = model
         LoadableContainer(
             state: model.state,
-            titleForEmpty: "Feed is empty",
+            titleForEmpty: "Лента пуста",
             emptySymbol: "newspaper",
-            emptyDetails: "newsfeed.get / wall.get will load here after scopes are verified.",
+            emptyDetails: "Обновите ленту или проверьте доступ приложения к новостям.",
             onRetry: { Task { await model.load() } }
         ) { posts in
             ScrollView {
@@ -45,13 +45,7 @@ struct FeedView: View {
                             .padding(.horizontal, 16)
                     }
 
-                    storiesRow
-
-                    Picker("Section", selection: $model.filter) {
-                        ForEach(["Для вас", "Друзья", "Сообщества"], id: \.self) { Text($0).tag($0) }
-                    }
-                    .pickerStyle(.segmented)
-                    .padding(.horizontal, 16)
+                    if model.usesFixtures { storiesRow }
 
                     ForEach(posts) { post in
                         NavigationLink(value: AppRoute.postDetail(post.id)) {
@@ -59,6 +53,12 @@ struct FeedView: View {
                         }
                         .buttonStyle(.plain)
                         .padding(.horizontal, 16)
+                    }
+                    if let error = model.pageError { Text(error).font(.footnote).foregroundStyle(.red) }
+                    if !model.reachedEnd {
+                        Button("Загрузить ещё") { Task { await model.loadMore() } }
+                            .disabled(model.isLoadingMore)
+                            .frame(minHeight:44)
                     }
                 }
                 .padding(.vertical, 12)
@@ -72,17 +72,17 @@ struct FeedView: View {
                     Image(systemName: "square.and.pencil")
                         .frame(minWidth: 44, minHeight: 44)
                 }
-                .accessibilityLabel("New post")
+                .accessibilityLabel("Новая запись")
                 NavigationLink(value: AppRoute.notifications) {
                     Image(systemName: "bell")
                         .frame(minWidth: 44, minHeight: 44)
                 }
-                .accessibilityLabel("Notifications")
+                .accessibilityLabel("Уведомления")
                 NavigationLink(value: AppRoute.globalSearch) {
                     Image(systemName: "magnifyingglass")
                         .frame(minWidth: 44, minHeight: 44)
                 }
-                .accessibilityLabel("Search")
+                .accessibilityLabel("Поиск")
             }
         }
     }
@@ -123,13 +123,10 @@ private struct PostCard: View {
             Text(post.text).font(.body)
                 .foregroundStyle(.primary)
             if post.hasMedia {
-                RoundedRectangle(cornerRadius: VKStyle.Radius.medium)
-                    .fill(VKStyle.groupedCanvas)
-                    .frame(height: 160)
-                    .overlay {
-                        Label("Media placeholder", systemImage: "photo")
-                            .foregroundStyle(.secondary)
-                    }
+                if let url = post.mediaURL {
+                    AsyncImage(url:url) { image in image.resizable().scaledToFit() } placeholder: { ProgressView().frame(height:160) }
+                        .clipShape(RoundedRectangle(cornerRadius:VKStyle.Radius.medium))
+                }
             }
             HStack(spacing: 16) {
                 Label(post.reactionCount.formatted(), systemImage: "heart")
