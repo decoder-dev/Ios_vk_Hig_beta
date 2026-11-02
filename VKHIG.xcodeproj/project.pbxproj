@@ -57,6 +57,10 @@
 		918ECD417C5A11D3677E76EB /* preview_data.json in Resources */ = {isa = PBXBuildFile; fileRef = A126A0DE6FE5715D0B29F984 /* preview_data.json */; };
 		9EAE55B157EDE6A583E6BD6A /* Assets.xcassets in Resources */ = {isa = PBXBuildFile; fileRef = CD73FA17883C14233FC5D66E /* Assets.xcassets */; };
 		2C80D30550A376ADD38E405B /* VKHIGFoundationTests.swift in Sources */ = {isa = PBXBuildFile; fileRef = 88133A961E36795FA834DB54 /* VKHIGFoundationTests.swift */; };
+		ABD69E70846E648234D4F3DF /* MusicCore.swift in Sources */ = {isa = PBXBuildFile; fileRef = AE17C3A902D0D5DC984869C8 /* MusicCore.swift */; };
+		A7E96F2369E7DDA361256C9D /* MusicLibrary.swift in Sources */ = {isa = PBXBuildFile; fileRef = 2E6C0A170DFDDF66BBEF53EB /* MusicLibrary.swift */; };
+		355381B31C1D1AA0CB768AF0 /* MusicCatalog.swift in Sources */ = {isa = PBXBuildFile; fileRef = 4BA065E4FBCE5BF7A5C1FA77 /* MusicCatalog.swift */; };
+		7F243544E7B2D6D9F4C759DB /* MusicViews.swift in Sources */ = {isa = PBXBuildFile; fileRef = 5AA7504C36AD1180E2C5F408 /* MusicViews.swift */; };
 /* End PBXBuildFile section */
 
 /* Begin PBXFileReference section */
@@ -115,6 +119,10 @@
 		A126A0DE6FE5715D0B29F984 /* preview_data.json */ = {isa = PBXFileReference; lastKnownFileType = text.json; path = preview_data.json; sourceTree = "<group>"; };
 		CD73FA17883C14233FC5D66E /* Assets.xcassets */ = {isa = PBXFileReference; lastKnownFileType = folder.assetcatalog; path = Assets.xcassets; sourceTree = "<group>"; };
 		CCA0C063EE80C8259F07D1FA /* Info.plist */ = {isa = PBXFileReference; lastKnownFileType = text.plist.xml; path = Info.plist; sourceTree = "<group>"; };
+		AE17C3A902D0D5DC984869C8 /* MusicCore.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = MusicCore.swift; sourceTree = "<group>"; };
+		2E6C0A170DFDDF66BBEF53EB /* MusicLibrary.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = MusicLibrary.swift; sourceTree = "<group>"; };
+		4BA065E4FBCE5BF7A5C1FA77 /* MusicCatalog.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = MusicCatalog.swift; sourceTree = "<group>"; };
+		5AA7504C36AD1180E2C5F408 /* MusicViews.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = MusicViews.swift; sourceTree = "<group>"; };
 /* End PBXFileReference section */
 
 /* Begin PBXGroup section */
@@ -318,6 +326,10 @@
 		E936FF628E7C8CF62F24567D /* Music */ = {
 			isa = PBXGroup;
 			children = (
+				AE17C3A902D0D5DC984869C8 /* MusicCore.swift */,
+				2E6C0A170DFDDF66BBEF53EB /* MusicLibrary.swift */,
+				4BA065E4FBCE5BF7A5C1FA77 /* MusicCatalog.swift */,
+				5AA7504C36AD1180E2C5F408 /* MusicViews.swift */,
 				683D1E7C474FF30E68BF5E61 /* MusicPlaceholderView.swift */,
 			);
 			path = Music;
@@ -453,6 +465,10 @@
 				913312A77E89BB465AB5A2C5 /* ConversationViewModel.swift in Sources */,
 				0BAC762A4159B8C674CAAAA7 /* InboxView.swift in Sources */,
 				94A0942FE9AE6AEDE684F1D7 /* InboxViewModel.swift in Sources */,
+				ABD69E70846E648234D4F3DF /* MusicCore.swift in Sources */,
+				A7E96F2369E7DDA361256C9D /* MusicLibrary.swift in Sources */,
+				355381B31C1D1AA0CB768AF0 /* MusicCatalog.swift in Sources */,
+				7F243544E7B2D6D9F4C759DB /* MusicViews.swift in Sources */,
 				F288174E68992515345E4D25 /* MusicPlaceholderView.swift in Sources */,
 				09D5889B581BDAB68B8AE5B9 /* ProfileView.swift in Sources */,
 				FD8C722B17DC688744FB9AF5 /* ProfileViewModel.swift in Sources */,
