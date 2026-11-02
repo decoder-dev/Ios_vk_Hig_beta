@@ -119,6 +119,7 @@ struct AccountSettingsView: View {
     var body: some View {
         Form {
             Section("S39 · Сессия") {
+                NavigationLink("Проверить доступ к VK") {VKConnectionCheckView()}
                 LabeledContent("Режим") {
                     Text(env.isLiveVKSession ? "VK ID" : "Fixture shell")
                 }
@@ -144,5 +145,46 @@ struct AccountSettingsView: View {
             Button("Выйти", role: .destructive) { env.signOut() }
             Button("Отмена", role: .cancel) {}
         }
+    }
+}
+
+struct VKConnectionCheckView:View {
+    @Environment(AppEnvironment.self) private var env
+    @State private var running=false
+    @State private var results:[String]=[]
+    @State private var checkedAt:Date?
+    var body:some View {
+        List {
+            Section {
+                Text("Проверка читает данные аккаунта и доступность разделов. Записи и сообщения не отправляются.").font(.footnote)
+                Button(running ? "Проверка…" : "Проверить доступ") {Task {await check()}}.disabled(running || !env.isLiveVKSession)
+                if running {ProgressView()}
+                if let checkedAt {Text(checkedAt.formatted()).font(.caption)}
+            }
+            ForEach(Array(results.enumerated()),id:\.offset) {_,text in Text(text).font(.callout)}
+            Section("Push") {Text(PushRegistration.shared.status);Text("Доставка проверяется отдельным уведомлением на подписанной сборке.").font(.footnote)}
+            if !results.isEmpty {Button("Скопировать отчёт") {UIPasteboard.general.string=(["VK HIG · "+(checkedAt?.formatted() ?? "")]+results).joined(separator:"\n")}}
+        }.navigationTitle("Проверка VK")
+    }
+    private func check() async {
+        guard env.isLiveVKSession,!running else {return};running=true;results=[];checkedAt=Date();defer {running=false}
+        let token=await env.tokenProvider.accessToken()
+        let profile=await env.profileRepository.fetchProfile(dataMode:.live,capabilities:env.capabilities,isNetworkReachable:env.isNetworkReachable,accessToken:token)
+        switch profile {case .success:results.append("Профиль VK ID: доступен");case .failure(let error):results.append("Профиль VK ID: "+error.localizedDescription)}
+        let checks:[(String,String,[String:String])]=[
+            ("Переписка","messages.getConversations",["count":"1"]),
+            ("Лента","newsfeed.get",["count":"1"]),
+            ("Истории","stories.get",[:]),
+            ("Фото","photos.getAlbums",["count":"1"]),
+            ("Сохранённое","fave.get",["count":"1"])
+        ]
+        for (name,method,parameters) in checks {
+            do {_ = try await env.catalog.request(method,parameters);results.append(name+": доступен")}
+            catch {results.append(name+": "+error.localizedDescription)}
+        }
+        if env.capabilities.grantedScopes.contains("audio") {
+            do {_ = try await env.catalog.request("audio.get",["count":"1"]);results.append("Музыка VK: доступна")}
+            catch {results.append("Музыка VK: "+error.localizedDescription)}
+        } else {results.append("Музыка VK: право audio не выдано")}
     }
 }
