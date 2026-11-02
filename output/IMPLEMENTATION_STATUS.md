@@ -8,7 +8,7 @@ Status means source implementation, NOT verified production/API availability.
 | S01–S02 | ASWebAuthenticationSession; public OAuth 2.1; state validation; S256 PKCE; Keychain; serialized refresh; logout | Register callback and app settings; real device/account smoke |
 | S03 | Existing onboarding and demo entry | Visual/accessibility QA |
 | S04–S05 | Live feed repository; next_from pagination; deduplication; actual media; detail; likes and link copy | Approved scopes; real API QA; richer attachments |
-| S06–S07 | Root comment pagination; independently paged reply threads; read/send/reply/delete; persistent drafts; post photo upload | Real account acceptance; edit/rich comment attachments; scopes |
+| S06–S07 | Root comment pagination; independently paged reply threads; read/send/reply/edit/delete; persistent drafts; post photo upload | Real account acceptance; rich comment attachments; scopes |
 | S08–S09 | Live inbox/history/send; offset pages; stable identities; pending/failed; persisted outbox/drafts; retry same random_id; foreground Long Poll, read receipts and photo/document rendering | Full rich attachment coverage; live account tests |
 | S10–S11 | Group chat route; live participant/details loading; navigation | Advanced group administration controls |
 | S12 | PhotosPicker/fileImporter; documented photo/doc upload/save/send; size limit; retry send identity | Camera/location; live upload smoke |
