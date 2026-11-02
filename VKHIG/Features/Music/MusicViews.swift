@@ -364,7 +364,7 @@ struct MusicMiniPlayer:View {
                     VStack(alignment:.leading) {Text(library.current?.title ?? "").font(.subheadline.weight(.semibold)).lineLimit(1);Text(library.current?.subtitle ?? "").font(.caption).foregroundStyle(.secondary).lineLimit(1)}
                     Spacer(minLength:0)
                 }.contentShape(Rectangle())
-            }.buttonStyle(.plain).accessibilityLabel("Открыть плеер")
+            }.buttonStyle(.plain).accessibilityLabel("Открыть плеер").accessibilityIdentifier("music-mini-player-open")
             Button {if library.playing {library.pause()} else {library.resume()}} label:{Image(systemName:library.playing ? "pause.fill" : "play.fill").frame(width:44,height:44)}.accessibilityLabel(library.playing ? "Пауза" : "Воспроизвести")
             Button {library.next()} label:{Image(systemName:"forward.fill").frame(width:44,height:44)}.accessibilityLabel("Следующий трек")
         }.padding(.horizontal,14).padding(.vertical,5)
