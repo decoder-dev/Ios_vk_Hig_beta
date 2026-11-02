@@ -1,15 +1,11 @@
-# Remaining requirements
+# Remaining requirements — version without push
 
-- **Validation:** feature source 6c02f89 passed iOS 18 and 27 CI. UI source a134aea passed 33 unit + 5 UI tests on iOS 27 after the large-text inbox fix; 17 screenshots were inspected. Final stale-response guards in 33846a3 also passed focused compilation and all 33 unit tests in run 41511022163. See TEST_RESULTS.md.
-- **VK configuration:** callback vkhig://vkid, bundle ID com.decoderdev.vkhig and approved scopes must match the application cabinet. Default grant is identity only. Real OAuth/API acceptance has not been performed here.
-- **Music:** the grant-gated audio.get catalog and native player are implemented. VK must approve music access and provide licensed streams.
-- **Native incoming calls:** conference-link calls are implemented. An official VK calling SDK/package, documentation and application authorization have not been supplied; native incoming media is not implemented or claimed.
-- **Device/UI:** physical-device camera/location/uploads, VoiceOver/Reduce Motion, audio interruptions/AirPlay, performance and the complete screen/state matrix remain unverified. Simulator screenshots are demo fixtures and do not prove live API behavior.
-- **Voice recording:** OGG voice-file import/upload and received voice playback are implemented; recording/encoding a new native OGG voice message is not included.
+- **Selected scope:** push notifications/APNs are explicitly excluded by the user. There is no push-entitlement/provider delivery gate for this version.
+- **Validation:** current source 8545072, run 41521893697, Xcode 27/iOS 27 compilation and 33 unit tests: PASS. Earlier UI source a134aea passed 5 UI tests with 17 inspected screenshots. The latest removal of push/settings has not had a new full UI/device pass.
+- **VK application rights:** callback vkhig://vkid, bundle ID com.decoderdev.vkhig and approved scopes must match the VK cabinet. Default scope is identity only. The cabinet is blocked by this environment's browser site-safety policy; its configuration has not been changed.
+- **Music:** grant-gated audio.get and the native player are implemented. Approval of audio access and licensed streams for this application remains unverified.
+- **Native incoming calls:** conference-link calling is implemented through documented adapters. The official VK iOS calling SDK/package, auth/signaling contract and application permission have not been supplied. Native incoming media is not implemented or claimed.
+- **Account/device/UI:** real OAuth/API acceptance, physical-device camera/location/uploads, VoiceOver/Reduce Motion, AirPlay/audio interruptions, performance and full screen/state coverage remain unverified.
+- **Voice recording:** OGG file import/upload and received voice playback are implemented; native recording/OGG encoding is not included.
 
-Run signed-device and real-account acceptance using docs/DEVICE_AND_VK_ACCEPTANCE.md and scripts/device-smoke.sh. Secrets/certificates/profiles must not be committed.
-
-## Current scope: no push notifications
-On 02.11.2026 the user explicitly excluded notifications/APNs. Removed runtime permission requests, APNs/VK device registration, push routes, the settings toggle, signing entitlement and remote-notification background mode. Launch cleanup unregisters any previous local registration and removes this app's pending/delivered notifications. Removed the APNs diagnostic sender and its tests; device-smoke.sh now needs only normal app signing. Apple login/provider setup is no longer required for the selected scope. Music rights and native incoming-call SDK/access remain external VK dependencies; VK ID cabinet access is denied by this environment's browser site-safety policy.
-
-The earlier APNs revision 12dcccd passed Xcode 27 and 36 unit tests in run 41517627368; it was subsequently removed by the scope change. Current no-push revision returns to 33 unit tests; compilation/regression run PENDING. Previous PASS results apply to their recorded commits.
+See docs/DEVICE_AND_VK_ACCEPTANCE.md. Normal app signing is needed to install on a physical device; APNs keys/provisioning/provider setup are no longer requested.

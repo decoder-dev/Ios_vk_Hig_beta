@@ -22,9 +22,10 @@ Branch: main. New commits: decoder-dev. Source implementation does not imply VK 
 
 Source 6c02f89 passed compilation/tests on iOS 18/Xcode 16.4 and iOS 27/Xcode 27 (run 41506365100). A screenshot-detected large-text inbox pagination overlap was corrected in 3b77c51. Source a134aea then passed all 33 unit and 5 UI tests on iOS 27 (run 41509033714); all 17 screenshots were inspected again. Final source 33846a3 additionally rejects stale user/location-picker pages after query changes; its focused Xcode 27/iOS 27 compilation and all 33 unit tests passed in run 41511022163.
 
-See TEST_RESULTS.md for exact results and docs/DEVICE_AND_VK_ACCEPTANCE.md for real-account, signed-device, APNs and SDK requirements. No full release-readiness claim is made.
+See TEST_RESULTS.md for exact results and docs/DEVICE_AND_VK_ACCEPTANCE.md for real-account, signed-device and SDK requirements. No full release-readiness claim is made.
 
-## Current scope: no push notifications
-On 02.11.2026 the user explicitly excluded notifications/APNs. Removed runtime permission requests, APNs/VK device registration, push routes, the settings toggle, signing entitlement and remote-notification background mode. Launch cleanup unregisters any previous local registration and removes this app's pending/delivered notifications. Removed the APNs diagnostic sender and its tests; device-smoke.sh now needs only normal app signing. Apple login/provider setup is no longer required for the selected scope. Music rights and native incoming-call SDK/access remain external VK dependencies; VK ID cabinet access is denied by this environment's browser site-safety policy.
+## Current scope — notifications excluded
 
-The earlier APNs revision 12dcccd passed Xcode 27 and 36 unit tests in run 41517627368; it was subsequently removed by the scope change. Current no-push revision returns to 33 unit tests; compilation/regression run PENDING. Previous PASS results apply to their recorded commits.
+By user instruction on 02.11.2026, this release has no push notification permission request, APNs/VK registration, push routing, settings toggle, signing entitlement or remote-notification background mode. Launch cleanup unregisters previous local registration and removes this app's pending/delivered notifications. APNs credentials and provider configuration are not release requirements. The direct APNs diagnostic sender and its tests were removed. Normal app signing is still required for physical-device installation.
+
+Current source 8545072 passed Xcode 27/iOS 27 compilation and all 33 unit tests (0 failures) in run 41521893697, job 125539754736. Earlier successful results refer to their recorded source commits. Music rights and native incoming-call SDK/access remain unprovided. VK ID cabinet access is denied by this environment's browser site-safety policy.

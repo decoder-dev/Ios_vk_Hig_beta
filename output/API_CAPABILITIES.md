@@ -13,9 +13,10 @@ Implemented adapters include:
 
 Offset/cursor pagination and deduplication cover conversations/history/message search, recipient selection, friends/groups/members, country/city selection, photos/albums/videos, notifications, saved items and music. messages.searchConversations has no offset contract: up to 200 results prompt a narrower query.
 
-Settings offers user-initiated read-only account checks without displaying a token. Successful real-account acceptance is NOT RUN here. Music rights/streams, native incoming-call SDK and APNs/VK provider setup cannot be inferred from client ID/secret or simulator tests.
+Settings offers user-initiated read-only account checks without displaying a token. Successful real-account acceptance is NOT RUN here. Music rights/streams, native incoming-call SDK  cannot be inferred from client ID/secret or simulator tests.
 
-## Current scope: no push notifications
-On 02.11.2026 the user explicitly excluded notifications/APNs. Removed runtime permission requests, APNs/VK device registration, push routes, the settings toggle, signing entitlement and remote-notification background mode. Launch cleanup unregisters any previous local registration and removes this app's pending/delivered notifications. Removed the APNs diagnostic sender and its tests; device-smoke.sh now needs only normal app signing. Apple login/provider setup is no longer required for the selected scope. Music rights and native incoming-call SDK/access remain external VK dependencies; VK ID cabinet access is denied by this environment's browser site-safety policy.
+## Current scope — notifications excluded
 
-The earlier APNs revision 12dcccd passed Xcode 27 and 36 unit tests in run 41517627368; it was subsequently removed by the scope change. Current no-push revision returns to 33 unit tests; compilation/regression run PENDING. Previous PASS results apply to their recorded commits.
+By user instruction on 02.11.2026, this release has no push notification permission request, APNs/VK registration, push routing, settings toggle, signing entitlement or remote-notification background mode. Launch cleanup unregisters previous local registration and removes this app's pending/delivered notifications. APNs credentials and provider configuration are not release requirements. The direct APNs diagnostic sender and its tests were removed. Normal app signing is still required for physical-device installation.
+
+Current source 8545072 passed Xcode 27/iOS 27 compilation and all 33 unit tests (0 failures) in run 41521893697, job 125539754736. Earlier successful results refer to their recorded source commits. Music rights and native incoming-call SDK/access remain unprovided. VK ID cabinet access is denied by this environment's browser site-safety policy.

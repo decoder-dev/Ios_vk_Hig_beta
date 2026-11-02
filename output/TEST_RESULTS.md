@@ -1,6 +1,12 @@
 # Test results — 2026-11-02
 
-## Final source: compile/unit verification PASS
+## Current no-push source: PASS
+
+Source 85450726b0a9dc1afc305d5f6d54f196a01e0cdc. Run https://github.com/decoder-dev/Ios_vk_Hig_beta/actions/runs/41521893697 passed Xcode 27/iOS 27 compilation and all 33 remaining unit tests (0 failures), job 125539754736. Push was removed by explicit user instruction, including its three tests. No new full UI/device pass is claimed for this scope change.
+
+Static checks PASS: no notification authorization or APNs/VK registration calls; no signing entitlement; Info.plist has audio background mode only; shell syntax and git diff --check pass. A launch migration only unregisters previous remote registration and clears this app's pending/delivered notifications.
+
+## Earlier async-safety revision: PASS
 
 Source 33846a3 (main) adds guards that reject stale user/location-picker responses after query changes. Focused Xcode 27/iOS 27 compilation and all 33 unit tests passed (0 failures), job 125502580523: run https://github.com/decoder-dev/Ios_vk_Hig_beta/actions/runs/41511022163. This run intentionally excludes UI tests; it does not replace the UI result below.
 
@@ -26,13 +32,10 @@ Both iOS 18/Xcode 16.4 (job 125486594384) and iOS 27/Xcode 27 (job 125486594891)
 
 Unit coverage includes OAuth validation/scope gates/retry identity, comment reply mutations, cancellation, server ACL override and write guards, recipient pagination/deduplication, saved-item identities/payloads and failed deletion, profile IDs/birthday validation, media/quote mapping, Story expiry/visibility, safe upload names, integer bounds and music grant/stream checks. The final helper-view stale-response guards are checked by recompiling the app and running the existing unit suite; their race path is not directly exercised by that suite or a real-account test.
 
-Swift tree-sitter parsing, YAML/plist parsing, shell syntax and git diff --check pass. The parser has one known false positive at valid Result<Void>.success(()) in VKIDAuthCoordinator; Xcode accepts it.
+Resource/plist checks, shell syntax and git diff --check pass. Earlier Swift tree-sitter checks had one known false positive at valid Result<Void>.success(()) in VKIDAuthCoordinator; Xcode accepts it. The new revision is checked by the actual Xcode run above.
 
 ## External acceptance: NOT RUN
 
-Real OAuth/account/API mutations and granted music streams; signed physical-device/APNs delivery; native incoming VK calls; camera/location uploads; audio interruption/AirPlay; VoiceOver/Reduce Motion; performance and full screen/state coverage. Fixtures and simulators do not establish these capabilities.
+Real OAuth/account/API mutations and granted music streams; signed physical-device installation; native incoming VK calls; camera/location uploads; audio interruption/AirPlay; VoiceOver/Reduce Motion; performance and full screen/state coverage. Fixtures and simulators do not establish these capabilities.
 
-## Current scope: no push notifications
-On 02.11.2026 the user explicitly excluded notifications/APNs. Removed runtime permission requests, APNs/VK device registration, push routes, the settings toggle, signing entitlement and remote-notification background mode. Launch cleanup unregisters any previous local registration and removes this app's pending/delivered notifications. Removed the APNs diagnostic sender and its tests; device-smoke.sh now needs only normal app signing. Apple login/provider setup is no longer required for the selected scope. Music rights and native incoming-call SDK/access remain external VK dependencies; VK ID cabinet access is denied by this environment's browser site-safety policy.
-
-The earlier APNs revision 12dcccd passed Xcode 27 and 36 unit tests in run 41517627368; it was subsequently removed by the scope change. Current no-push revision returns to 33 unit tests; compilation/regression run PENDING. Previous PASS results apply to their recorded commits.
+Push/APNs delivery is excluded from acceptance for this release. The preceding APNs-only revision 12dcccd passed 36 unit tests in run 41517627368 before that functionality was removed.
