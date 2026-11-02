@@ -48,6 +48,7 @@ struct RootTabView: View {
             .tabItem { Label("Профиль", systemImage: "person.crop.circle") }
             .tag(AppTab.profile)
         }
+        .modifier(MusicMiniPlayerModifier())
         .disabled(env.isSigningOut)
         .overlay {if env.isSigningOut {ProgressView("Выход из аккаунта…").padding(24).background(.regularMaterial,in:RoundedRectangle(cornerRadius:16))}}
         .tint(VKStyle.accent)
