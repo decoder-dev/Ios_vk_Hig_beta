@@ -48,7 +48,8 @@ struct CapabilityRegistry: Sendable {
             // SDK still must be linked on Mac; credentials alone are not enough to sign in.
             return hasVKIDCredentials ? .needsConfig : .needsConfig
         case .music:
-            return .unavailable
+            guard grantedScopes.contains("audio") else {return .unavailable}
+            return hasAccessToken ? .enabled : .needsToken
         case .video:
             return .needsScopeCheck
         case .inbox, .conversation, .sendMessage, .feed, .profile, .friends, .communities, .photos, .notifications:

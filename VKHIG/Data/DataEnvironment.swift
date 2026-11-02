@@ -91,6 +91,7 @@ final class AppEnvironment {
         session.signOut()
         dataMode = .fixtures
         catalog.clear()
+        AudioLibrary.shared.resetRemoteSession()
         capabilities.hasAccessToken = false
         syncAuthFromSession()
     }
