@@ -2,6 +2,43 @@ import XCTest
 @testable import VKHIG
 
 final class VKHIGFoundationTests: XCTestCase {
+    func testAPNsEnvironmentUsesSigningConfiguration() {
+        XCTAssertEqual(APNsEnvironment(rawValue:"development")?.vkSandbox,"1")
+        XCTAssertEqual(APNsEnvironment(rawValue:"production")?.vkSandbox,"0")
+        XCTAssertNil(APNsEnvironment(rawValue:"$(APNS_ENVIRONMENT)"))
+        XCTAssertNil(APNsEnvironment(rawValue:""))
+    }
+    @MainActor
+    func testPushRegistrationRejectsUnknownEnvironment() async {
+        var calls=0
+        let push=PushRegistration(request:{_,_ in calls+=1;return .number(1)},userID:{42},enabled:{true},environment:{nil},deviceID:"fixture")
+        await push.received(Data([1]))
+        XCTAssertEqual(calls,0)
+        XCTAssertTrue(push.status.contains("Не настроено"))
+    }
+    @MainActor
+    func testRotatedAPNsTokenIsRegisteredAfterInflightRequest() async {
+        var requests:[[String:String]]=[]
+        var firstResponse:CheckedContinuation<VKJSON,Error>?
+        let started=expectation(description:"First token registration started")
+        let registered=expectation(description:"Latest token registered")
+        let push=PushRegistration(request:{method,parameters in
+            XCTAssertEqual(method,"account.registerDevice")
+            requests.append(parameters)
+            if requests.count==1 {return try await withCheckedThrowingContinuation {firstResponse=$0;started.fulfill()}}
+            registered.fulfill();return .number(1)
+        },userID:{42},enabled:{true},environment:{.production},deviceID:"fixture")
+        let first=Task {await push.received(Data([1]))}
+        await fulfillment(of:[started],timeout:3)
+        guard let firstResponse else {first.cancel();return}
+        await push.received(Data([2]))
+        firstResponse.resume(returning:.number(1))
+        await first.value
+        await fulfillment(of:[registered],timeout:3)
+        XCTAssertEqual(requests.map {$0["token"]},["01","02"])
+        XCTAssertTrue(requests.allSatisfy {$0["sandbox"]=="0"})
+    }
+
     func testChatActionUsesChatIDAndRejectsPersonalDialog() throws {
         XCTAssertThrowsError(try VKAction.chat("messages.editChat",peerID:123))
         XCTAssertThrowsError(try VKAction.chat("messages.editChat",peerID:2_000_000_000))
