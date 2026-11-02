@@ -1,4 +1,6 @@
 import SwiftUI
+import AVKit
+import SafariServices
 
 /// S26 — photo albums.
 struct PhotoAlbumsView: View {
@@ -6,14 +8,14 @@ struct PhotoAlbumsView: View {
         FixtureScreen(
             title: "Альбомы",
             screenID: "S26",
-            emptyTitle: "No albums",
+            emptyTitle: "Нет альбомов",
             emptySymbol: "rectangle.stack",
             emptyDetails: "photos.getAlbums when scoped.",
             isEmpty: { $0.isEmpty },
             loadValue: { CatalogFixtures.albums }
         ) { albums in
             List(albums) { album in
-                NavigationLink(value: AppRoute.photos) {
+                NavigationLink(value: AppRoute.albumPhotos(album.id)) {
                     HStack {
                         RoundedRectangle(cornerRadius: 8)
                             .fill(VKStyle.cell)
@@ -33,13 +35,15 @@ struct PhotoAlbumsView: View {
 
 /// S27 — photos grid.
 struct PhotosGridView: View {
+    var albumID: Int64? = nil
     private let columns = [GridItem(.adaptive(minimum: 100), spacing: 4)]
 
     var body: some View {
         FixtureScreen(
             title: "Фотографии",
             screenID: "S27",
-            emptyTitle: "No photos",
+            resourceID:albumID,
+            emptyTitle: "Нет фотографий",
             emptySymbol: "photo",
             emptyDetails: "photos.get when scoped.",
             isEmpty: { $0.isEmpty },
@@ -49,12 +53,8 @@ struct PhotosGridView: View {
                 LazyVGrid(columns: columns, spacing: 4) {
                     ForEach(photos) { photo in
                         NavigationLink(value: AppRoute.photoViewer(photo.id)) {
-                            RoundedRectangle(cornerRadius: 4)
-                                .fill(VKStyle.cell)
-                                .aspectRatio(1, contentMode: .fit)
-                                .overlay {
-                                    Text("\(photo.id)").font(.caption2).foregroundStyle(.secondary)
-                                }
+                            AsyncImage(url:photo.url) { image in image.resizable().scaledToFill() } placeholder: { Rectangle().fill(VKStyle.cell).overlay { Image(systemName:"photo") } }
+                                .frame(height:110).clipped().accessibilityLabel(photo.caption.isEmpty ? "Фотография" : photo.caption)
                         }
                         .buttonStyle(.plain)
                         .frame(minHeight: 44)
@@ -70,35 +70,27 @@ struct PhotosGridView: View {
 /// S28 — photo viewer.
 struct PhotoViewerView: View {
     let photoID: Int64
+    @Environment(AppEnvironment.self) private var env
     @State private var scale: CGFloat = 1
 
     var body: some View {
         ZStack {
             Color.black.ignoresSafeArea()
-            RoundedRectangle(cornerRadius: 8)
-                .fill(Color.gray.opacity(0.35))
-                .overlay {
-                    VStack {
-                        Image(systemName: "photo")
-                            .font(.system(size: 48))
-                        Text("Photo \(photoID)")
-                        Text("S28 · fixture placeholder — no remote bitmap")
-                            .font(.caption)
-                    }
-                    .foregroundStyle(.white)
-                }
-                .padding(24)
-                .scaleEffect(scale)
-                .gesture(MagnifyGesture().onChanged { scale = $0.magnification })
+            AsyncImage(url:env.catalog.photos[photoID]?.url) { image in image.resizable().scaledToFit() } placeholder: {
+                VStack { Image(systemName:"photo"); Text(env.isLiveVKSession ? "Фотография недоступна" : "Демонстрационный просмотр") }.foregroundStyle(.white)
+            }
+            .scaleEffect(scale)
+            .gesture(MagnifyGesture().onChanged { scale = min(5,max(1,$0.magnification)) })
+            .onTapGesture(count:2) { scale = scale == 1 ? 2 : 1 }
         }
         .navigationTitle("Фото")
         .navigationBarTitleDisplayMode(.inline)
         .toolbar {
             ToolbarItem(placement: .topBarTrailing) {
-                ShareLink(item: "Photo \(photoID) fixture") {
+                if let url = env.catalog.photos[photoID]?.url { ShareLink(item:url) {
                     Image(systemName: "square.and.arrow.up")
                         .frame(minWidth: 44, minHeight: 44)
-                }
+                } }
             }
         }
     }
@@ -110,7 +102,7 @@ struct VideoListView: View {
         FixtureScreen(
             title: "Видео",
             screenID: "S29",
-            emptyTitle: "No videos",
+            emptyTitle: "Нет видео",
             emptySymbol: "play.rectangle",
             emptyDetails: "video.get when scoped.",
             isEmpty: { $0.isEmpty },
@@ -139,34 +131,27 @@ struct VideoListView: View {
 /// S30 — video player stub (no illegal stream).
 struct VideoPlayerView: View {
     let videoID: Int64
-
+    @Environment(AppEnvironment.self) private var env
+    @State private var player: AVPlayer?
+    @State private var showOfficialPlayer = false
     var body: some View {
-        VStack(spacing: 16) {
-            ZStack {
-                RoundedRectangle(cornerRadius: 12).fill(.black)
-                VStack(spacing: 8) {
-                    Image(systemName: "play.slash")
-                        .font(.system(size: 40))
-                        .foregroundStyle(.white)
-                    Text("Playback gated")
-                        .foregroundStyle(.white)
-                    Text("S30 · AVKit only when official URL + rights exist")
-                        .font(.caption)
-                        .foregroundStyle(.white.opacity(0.7))
-                        .multilineTextAlignment(.center)
-                        .padding(.horizontal)
-                }
-            }
-            .frame(height: 220)
-            .padding()
-            Text("Video id \(videoID)")
-                .foregroundStyle(.secondary)
-            Spacer()
+        Group {
+            if let player { VideoPlayer(player:player).onDisappear { player.pause() } }
+            else if let url = env.catalog.videos[videoID]?.playerURL {
+                VStack(spacing:20) {
+                    Label("Просмотр видео",systemImage:"play.rectangle").font(.title2)
+                    Button("Открыть официальный плеер VK") { showOfficialPlayer = true }.buttonStyle(.borderedProminent)
+                }.sheet(isPresented:$showOfficialPlayer) { OfficialWebPlayer(url:url) }
+            } else { ContentUnavailableView("Видео недоступно",systemImage:"play.slash",description:Text("VK не предоставил ссылку для воспроизведения.")) }
         }
-        .background(VKStyle.groupedCanvas)
         .navigationTitle("Видео")
-        .navigationBarTitleDisplayMode(.inline)
+        .task { if let url = env.catalog.videos[videoID]?.streamURL { player = AVPlayer(url:url) } }
     }
+}
+struct OfficialWebPlayer: UIViewControllerRepresentable {
+    let url: URL
+    func makeUIViewController(context:Context) -> SFSafariViewController { SFSafariViewController(url:url) }
+    func updateUIViewController(_ controller:SFSafariViewController,context:Context) {}
 }
 
 /// S31 — music library (honest unavailable + fixture library browse).
@@ -179,8 +164,8 @@ struct MusicLibraryView: View {
                 List {
                     Section {
                         VKUnavailableState(
-                            title: "Music streaming unavailable",
-                            details: "Official audio rights are not confirmed for this app. Fixture track list is for UI layout only — play is disabled."
+                            title: "Музыка недоступна",
+                            details: "VK не предоставил этому приложению доступ к музыкальным потокам."
                         )
                         .listRowBackground(Color.clear)
                     }
@@ -191,7 +176,7 @@ struct MusicLibraryView: View {
                             }
                         }
                         NavigationLink(value: AppRoute.audioPlayer) {
-                            Label("Player shell", systemImage: "play.circle")
+                            Label("Просмотр плеера", systemImage: "play.circle")
                         }
                     }
                 }
@@ -212,7 +197,7 @@ struct AudioPlayerView: View {
                 .fill(VKStyle.cell)
                 .frame(width: 220, height: 220)
                 .overlay { Image(systemName: "music.note").font(.system(size: 48)) }
-            Text("Fixture track").font(.title2.bold())
+            Text("Демонстрационная композиция").font(.title2.bold())
             Text("S32 · Seek/AirPlay only with licensed streams").font(.footnote).foregroundStyle(.secondary)
             HStack(spacing: 32) {
                 Button {} label: { Image(systemName: "backward.fill").frame(width: 44, height: 44) }
@@ -239,7 +224,7 @@ struct PlaylistView: View {
         FixtureScreen(
             title: "Плейлист",
             screenID: "S33",
-            emptyTitle: "Empty playlist",
+            emptyTitle: "Плейлист пуст",
             emptySymbol: "music.note.list",
             emptyDetails: "Audio methods gated.",
             isEmpty: { $0.isEmpty },
