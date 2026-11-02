@@ -2,6 +2,8 @@ import Foundation
 
 /// Typed navigation for all kit screen IDs (S01–S44).
 enum AppRoute: Hashable, Identifiable {
+    case conversation(Int64)
+    case albumPhotos(Int64)
     case onboarding
     case postDetail(Int64)
     case comments(Int64)
@@ -43,6 +45,8 @@ enum AppRoute: Hashable, Identifiable {
 
     var screenID: String {
         switch self {
+        case .conversation: "S09"
+        case .albumPhotos: "S27"
         case .onboarding: "S03"
         case .postDetail: "S05"
         case .comments: "S06"
