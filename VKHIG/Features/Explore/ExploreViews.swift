@@ -13,7 +13,9 @@ final class GlobalSearchModel {
     private var userOffset=0
     private var groupOffset=0
     private var postCursor:String?
-    private var usersMore=true,groupsMore=true,postsMore=true
+    private var usersMore=true
+    private var groupsMore=true
+    private var postsMore=true
     var hasMore:Bool {usersMore || groupsMore || postsMore}
     init(environment:AppEnvironment) {self.environment=environment}
     private func result(_ method:String,_ parameters:[String:String],enabled:Bool) async -> Result<VKJSON,AppError> {
