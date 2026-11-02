@@ -13,7 +13,8 @@ actor FeedRepository {
         dataMode: DataMode,
         capabilities: CapabilityRegistry,
         isNetworkReachable: Bool,
-        accessToken: String? = nil
+        accessToken: String? = nil,
+        reset: Bool = true
     ) async -> Result<[FeedPost], AppError> {
         if !isNetworkReachable { return .failure(.offline) }
 
@@ -21,7 +22,9 @@ actor FeedRepository {
             guard let accessToken, !accessToken.isEmpty else {
                 return .failure(.notAuthenticated)
             }
-            return .failure(.capabilityUnavailable("newsfeed.get mapping pending verification"))
+            do { return .success(try await VKCatalogService.shared.feed(reset: reset)) }
+            catch let error as AppError { return .failure(error) }
+            catch { return .failure(.network(error.localizedDescription)) }
         }
 
         switch dataMode {

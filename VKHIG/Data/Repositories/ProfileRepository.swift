@@ -21,7 +21,12 @@ actor ProfileRepository {
             guard let accessToken, !accessToken.isEmpty else {
                 return .failure(.notAuthenticated)
             }
-            return .failure(.capabilityUnavailable("users.get mapping pending verification"))
+            do {
+                let response: VKJSON = try await apiClient.call(method:"users.get", parameters:["fields":"city,status"], accessToken:accessToken, apiVersion:AppSecrets.vkAPIVersion)
+                guard let user = response.items.first else { return .failure(.decoding) }
+                let name = await VKCatalogService.name(user)
+                return .success(UserProfile(id:user["id"].int, displayName:name, initials:await VKCatalogService.initials(name), city:user["city"]["title"].string, statusText:user["status"].string))
+            } catch { return .failure(.network(error.localizedDescription)) }
         }
 
         switch dataMode {
