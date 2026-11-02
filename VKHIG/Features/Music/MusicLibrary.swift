@@ -259,7 +259,8 @@ final class AudioLibrary {
         guard playbackEnabled else {return}
         do {
             try AVAudioSession.sharedInstance().setCategory(.playback,mode:.default)
-            if autoplay {try AVAudioSession.sharedInstance().setActive(true)}
+            // AVAudioEngine needs an active audio route even when the selected file is paused.
+            if autoplay || (equalizerSettings.enabled && canEqualize) {try AVAudioSession.sharedInstance().setActive(true)}
             if equalizerSettings.enabled && canEqualize {
                 do {
                     try equalizer.load(track.url,position:elapsed,autoplay:autoplay,settings:equalizerSettings) {[weak self] in self?.finished()}
@@ -346,7 +347,7 @@ final class AudioLibrary {
                 var resource=URLResourceValues();resource.isExcludedFromBackup=true;var localURL=destination;try? localURL.setResourceValues(resource)
                 let item=LocalAudioTrack(id:"offline_\(account)_\(track.id)",title:track.title,url:destination,artist:track.artist,album:track.album,duration:Double(track.duration),accountID:account,sourceID:track.id,byteCount:Int64(size))
                 tracks.append(item);saveIndex()
-            } catch is CancellationError {} catch {if ticket==downloadRevision {self.error=error.localizedDescription}}
+            } catch is CancellationError {} catch {if !Task.isCancelled && ticket==downloadRevision {self.error=error.localizedDescription}}
         }
     }
     private static func downloadFile(_ url:URL) async throws -> (URL,HTTPURLResponse) {

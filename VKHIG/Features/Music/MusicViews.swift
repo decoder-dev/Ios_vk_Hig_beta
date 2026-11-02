@@ -267,7 +267,7 @@ struct MusicEqualizerView:View {
                     }
                 }
             }
-            if let error=library.error {Text(error).foregroundStyle(.red)}
+            if let error=library.error {Text(error).foregroundStyle(.red).accessibilityIdentifier("music-error")}
         }.navigationTitle("Эквалайзер")
     }
     private func frequency(_ index:Int) -> String {
