@@ -9,3 +9,11 @@
 - **Voice recording:** OGG file import/upload and received voice playback are implemented; native recording/OGG encoding is not included.
 
 See docs/DEVICE_AND_VK_ACCEPTANCE.md. Normal app signing is needed to install on a physical device; APNs keys/provisioning/provider setup are no longer requested.
+
+
+## PrivateMusic2 adaptation (validation pending)
+Native music module added using PrivateMusic2 @ 68d10a9 as a behavioral reference:
+local playlists, persistent paused queue, global mini-player, account-isolated direct-file downloads,
+LRC/LRCLIB lyrics and a real local ten-band equalizer. See docs/MUSIC_ADAPTATION.md for precise scope.
+New simulator build/unit/UI checks: NOT RUN yet. Live VK music approval and device audio checks:
+NOT RUN. Calls deferred; push remains disabled.

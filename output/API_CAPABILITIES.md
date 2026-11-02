@@ -20,3 +20,11 @@ Settings offers user-initiated read-only account checks without displaying a tok
 By user instruction on 02.11.2026, this release has no push notification permission request, APNs/VK registration, push routing, settings toggle, signing entitlement or remote-notification background mode. Launch cleanup unregisters previous local registration and removes this app's pending/delivered notifications. APNs credentials and provider configuration are not release requirements. The direct APNs diagnostic sender and its tests were removed. Normal app signing is still required for physical-device installation.
 
 Current source 8545072 passed Xcode 27/iOS 27 compilation and all 33 unit tests (0 failures) in run 41521893697, job 125539754736. Earlier successful results refer to their recorded source commits. Music rights and native incoming-call SDK/access remain unprovided. VK ID cabinet access is denied by this environment's browser site-safety policy.
+
+
+## PrivateMusic2 adaptation (validation pending)
+Native music module added using PrivateMusic2 @ 68d10a9 as a behavioral reference:
+local playlists, persistent paused queue, global mini-player, account-isolated direct-file downloads,
+LRC/LRCLIB lyrics and a real local ten-band equalizer. See docs/MUSIC_ADAPTATION.md for precise scope.
+New simulator build/unit/UI checks: NOT RUN yet. Live VK music approval and device audio checks:
+NOT RUN. Calls deferred; push remains disabled.

@@ -39,3 +39,11 @@ Resource/plist checks, shell syntax and git diff --check pass. Earlier Swift tre
 Real OAuth/account/API mutations and granted music streams; signed physical-device installation; native incoming VK calls; camera/location uploads; audio interruption/AirPlay; VoiceOver/Reduce Motion; performance and full screen/state coverage. Fixtures and simulators do not establish these capabilities.
 
 Push/APNs delivery is excluded from acceptance for this release. The preceding APNs-only revision 12dcccd passed 36 unit tests in run 41517627368 before that functionality was removed.
+
+
+## PrivateMusic2 adaptation (validation pending)
+Native music module added using PrivateMusic2 @ 68d10a9 as a behavioral reference:
+local playlists, persistent paused queue, global mini-player, account-isolated direct-file downloads,
+LRC/LRCLIB lyrics and a real local ten-band equalizer. See docs/MUSIC_ADAPTATION.md for precise scope.
+New simulator build/unit/UI checks: NOT RUN yet. Live VK music approval and device audio checks:
+NOT RUN. Calls deferred; push remains disabled.
