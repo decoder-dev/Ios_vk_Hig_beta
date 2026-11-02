@@ -9,3 +9,5 @@ Implemented method adapters: users.get; messages.getConversations/getHistory/sen
 First live-success verification: NOT RUN. No user access token available. VK music catalog and native incoming calling require official authorization/SDK. Local audio and conference-link calling are implemented. APNs device registration requires signed entitlements and VK push-provider configuration.
 
 Additional adapters: wall.deleteComment/editComment; newsfeed.search; notifications.markAsViewed; calls.start/forceFinish; account.registerDevice/unregisterDevice. Offset/cursor pagination covers friends, groups, members, albums, photos, videos, notifications and bookmarks.
+
+Server-side friends.search and paged peer-specific messages.search are implemented; message search pages deduplicate by server ID. Simulator build, 17 unit and 3 UI tests PASS at main 774b58e; real API acceptance is still NOT RUN.

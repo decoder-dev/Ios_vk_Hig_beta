@@ -12,8 +12,8 @@ Status means source implementation, NOT verified production/API availability.
 | S08–S09 | Live inbox/history/send; offset pages; stable identities; pending/failed; persisted outbox/drafts; retry same random_id; foreground Long Poll, read receipts and photo/document rendering | Full rich attachment coverage; live account tests |
 | S10–S11 | Group chat route; live participant/details loading; navigation | Advanced group administration controls |
 | S12 | PhotosPicker/fileImporter; documented photo/doc upload/save/send; size limit; retry send identity | Camera/location; live upload smoke |
-| S13–S14 | Copy/reply/edit/forward/delete-confirmation/retry; peer-scoped live search | Recipient picker pagination; live permission checks |
-| S15–S22 | Live adapters for user/profile/friends/groups/members/requests; incoming/outgoing requests; friend add/accept; basic profile save; community wall | Remaining profile fields; advanced community admin; API grants |
+| S13–S14 | Copy/reply/edit/forward/delete-confirmation/retry; peer-scoped live search with offset pages and server-ID deduplication | Recipient picker pagination; live permission checks |
+| S15–S22 | Live adapters including server-side friends.search and paged results for user/profile/friends/groups/members/requests; incoming/outgoing requests; friend add/accept; basic profile save; community wall | Remaining profile fields; advanced community admin; API grants |
 | S23–S25 | Debounced/cancellable users/groups/newsfeed search; separate errors and pages; notification links/read marking | Real search and notification payload acceptance |
 | S26–S30 | Albums; album photos; getAll; thumbnails/full-size; AVKit direct approved stream or official web player | Offset pagination implemented; image memory profiling and playback QA |
 | S31–S33 | AVPlayer local audio import; persistent library, queue, seek, shuffle/repeat, AirPlay, Now Playing and remote commands | VK catalog/streams require approved music API; physical-device audio QA |
@@ -27,3 +27,7 @@ Status means source implementation, NOT verified production/API availability.
 Linux: no Xcode/Simulator. Swift parsed with tree-sitter; project/workflow YAML and resource plists parsed; shell syntax/config generation checked; git diff --check checked. These are NOT an iOS compile.
 
 A macOS CI workflow now generates the project, builds/tests it and retains only test results. Unit regression cases cover callback forgery/duplicates, form encoding, scope gating and retry identity. UI tests cover launch/demo navigation and light/dark screenshots. See TEST_RESULTS.md for actual results.
+
+## Verified simulator result
+
+Source main @ 774b58efd6505eac280c44e5a98e13972ded349d: macOS CI build + 17 unit tests + 3 UI tests PASS (0 failures). Run 41496009543. This confirms simulator compilation and fixture regression paths; real API grants, APNs delivery and physical-device acceptance remain open.

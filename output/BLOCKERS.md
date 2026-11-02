@@ -1,6 +1,6 @@
 # Blockers
 
-- **Release gate:** actual iOS build, XCTest/UI results and device smoke must be verified in CI/macOS. Linux cannot run Xcode.
+- **Release gate:** simulator build, 17 unit tests and 3 UI tests PASS at main 774b58e (run 41496009543). Physical-device smoke, real API acceptance and the full accessibility/performance matrix remain required.
 - **VK app configuration:** callback `vkhig://vkid`, bundle id and approved scopes must match VK ID cabinet. Default grant is identity only. No code can turn client secret into messaging/music rights.
 - **API acceptance:** adapters follow public VK schemas, but no user OAuth token is available here; successful real calls are NOT claimed.
 - **Still incomplete:** rich comment/chat attachment formats, advanced community admin, full accessibility/performance matrix. Comment threads, post search, notification targets and catalog pagination now have source implementations.
