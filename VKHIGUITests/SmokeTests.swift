@@ -14,16 +14,29 @@ final class SmokeTests: XCTestCase {
     }
     func testLightScreens() { captureScreens(dark:false) }
     func testDarkScreens() { captureScreens(dark:true) }
-    private func captureScreens(dark:Bool) {
+    func testLargeTextScreens() {captureScreens(dark:false,large:true)}
+    func testNativeServiceScreens() {
+        let app=XCUIApplication();app.launchArguments=["--uitesting"];app.launch()
+        app.buttons["Посмотреть демоверсию"].tap()
+        app.tabBars.buttons["Сервисы"].tap()
+        for destination in ["Сохранённое","Истории VK"] {
+            app.buttons[destination].tap()
+            let title=destination=="Истории VK" ? "Истории" : destination
+            XCTAssertTrue(app.navigationBars[title].waitForExistence(timeout:10))
+            let attachment=XCTAttachment(screenshot:app.screenshot());attachment.name="service-"+destination;attachment.lifetime = .keepAlways;add(attachment)
+            app.navigationBars.buttons.element(boundBy:0).tap()
+        }
+    }
+    private func captureScreens(dark:Bool,large:Bool=false) {
         let app = XCUIApplication()
-        app.launchArguments = ["--uitesting", dark ? "--dark" : "--light"]
+        app.launchArguments = ["--uitesting", dark ? "--dark" : "--light"]+(large ? ["--large-type"] : [])
         app.launch()
         app.buttons["Посмотреть демоверсию"].tap()
-        for tab in ["Сообщения","Лента","Сервисы","Профиль"] {
+        for tab in ["Сообщения","Лента","Сервисы","Музыка","Профиль"] {
             XCTAssertTrue(app.tabBars.buttons[tab].waitForExistence(timeout:10))
             app.tabBars.buttons[tab].tap()
             let attachment = XCTAttachment(screenshot:app.screenshot())
-            attachment.name = "\(dark ? "dark" : "light")-\(tab)"; attachment.lifetime = .keepAlways
+            attachment.name = "\(large ? "large" : dark ? "dark" : "light")-\(tab)"; attachment.lifetime = .keepAlways
             add(attachment)
         }
     }
