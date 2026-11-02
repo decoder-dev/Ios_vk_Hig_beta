@@ -74,7 +74,7 @@ final class VKCatalogService {
     private var buffers:[String:Any]=[:]
     private var morePages:[String:Bool]=[:]
     private var pageCursors:[String:String]=[:]
-    private let pagedScreens:Set<String>=["S18","S21","S22","S24","S26","S27","S29","S40"]
+    private let pagedScreens:Set<String>=["S14","S18","S21","S22","S24","S26","S27","S29","S40"]
     func pageKey(_ screen:String,_ id:Int64?,_ query:String) -> String {"\(screen):\(id ?? 0):\(query)"}
     func hasMore(_ screen:String,resourceID:Int64?,query:String) -> Bool {morePages[pageKey(screen,resourceID,query)] == true}
     private func joinArrays<Value>(_ old:Value?,_ new:Value) -> Value {
@@ -82,6 +82,8 @@ final class VKCatalogService {
         guard let old else {return new}
         let merged:Any
         switch (old,new) {
+        case (let a as [ChatMessage],let b as [ChatMessage]):
+            var ids=Set(a.compactMap(\.serverID));merged=a+b.filter {message in guard let id=message.serverID else {return true};return ids.insert(id).inserted}
         case (let a as [Friend],let b as [Friend]):merged=join(a,b)
         case (let a as [Community],let b as [Community]):merged=join(a,b)
         case (let a as [PhotoAlbum],let b as [PhotoAlbum]):merged=join(a,b)
@@ -175,7 +177,7 @@ final class VKCatalogService {
             result = response.list.map { j in CommentItem(id:j["id"].int, postID:resourceID ?? 0, author:names[j["from_id"].int] ?? "VK", initials:Self.initials(names[j["from_id"].int] ?? "VK"), text:j["text"].string, dateLabel:Self.date(j["date"]), replyToID:j["reply_to_comment"].int == 0 ? nil : j["reply_to_comment"].int) }
         case "S14":
             guard !query.trimmingCharacters(in:.whitespacesAndNewlines).isEmpty else { result = [ChatMessage](); break }
-            let response = try await request("messages.search", ["q":query,"peer_id":"\(resourceID ?? 0)","count":"100"])
+            let response = try await request("messages.search", ["q":query,"peer_id":"\(resourceID ?? 0)","count":"100","offset":"\(offset)"])
             result = response.list.map { j in ChatMessage(id:UUID(),serverID:j["id"].int,peerID:PeerID(raw:resourceID ?? 0),text:j["text"].string,timestamp:Date(timeIntervalSince1970:Double(j["date"].int)),isOutgoing:j["out"].flag,state:.received,randomID:nil) }
         case "S11":
             let response = try await request("messages.getConversationsById",["peer_ids":"\(resourceID ?? 0)"])
@@ -186,7 +188,14 @@ final class VKCatalogService {
             guard let j = response.items.first else { throw AppError.network("Пользователь не найден.") }
             let person = Self.friend(j); people[person.id] = person; result = person
         case "S18", "S22":
-            let response = try await request(screen == "S18" ? "friends.get" : "groups.getMembers", screen == "S18" ? ["fields":"city,online", "count":"100","offset":"\(offset)"] : ["group_id":"\(resourceID ?? 0)", "fields":"city,online", "count":"100","offset":"\(offset)"])
+            var parameters=["fields":"city,online","count":"100","offset":"\(offset)"]
+            let method:String
+            if screen == "S18" {
+                let text=query.trimmingCharacters(in:.whitespacesAndNewlines)
+                method=text.isEmpty ? "friends.get" : "friends.search"
+                if !text.isEmpty {parameters["q"]=text}
+            } else {method="groups.getMembers";parameters["group_id"]="\(resourceID ?? 0)"}
+            let response=try await request(method,parameters)
             let list = response.list.map(Self.friend); for person in list { people[person.id] = person }; result = list
         case "S19":
             async let incoming = request("friends.getRequests", ["extended":"1", "count":"1000"])
