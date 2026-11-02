@@ -19,30 +19,12 @@ struct AuthStubView: View {
                 Text("VK HIG")
                     .font(.largeTitle.bold())
 
-                Text("Sign-in uses official VK ID (OAuth 2.1 + PKCE). No password fields and no third-party client keys.")
+                Text("Войдите через VK ID, чтобы открыть свой профиль и доступные разделы ВКонтакте.")
                     .font(.body)
                     .foregroundStyle(VKStyle.secondaryText)
                     .multilineTextAlignment(.center)
                     .padding(.horizontal, VKStyle.Spacing.xl)
 
-                VStack(alignment: .leading, spacing: VKStyle.Spacing.sm) {
-                    Label(
-                        AppSecrets.hasVKIDCredentials
-                            ? "Client id loaded from local/CI config"
-                            : "Add VK_ID_CLIENT_ID (GitHub secret or Secrets.xcconfig)",
-                        systemImage: "1.circle"
-                    )
-                    Label("Register redirect URI \(AppSecrets.vkRedirectURI)", systemImage: "2.circle")
-                    Label("Link VKID iOS SDK (PKCE); Keychain tokens only", systemImage: "3.circle")
-                    Text("Client secret stays out of the app binary.")
-                        .font(.caption)
-                        .foregroundStyle(.secondary)
-                }
-                .font(.subheadline)
-                .frame(maxWidth: .infinity, alignment: .leading)
-                .padding(VKStyle.Spacing.md)
-                .background(VKStyle.cell, in: RoundedRectangle(cornerRadius: VKStyle.Radius.medium))
-                .padding(.horizontal, VKStyle.Spacing.md)
 
                 Button {
                     Task { await attemptVKID() }
@@ -51,7 +33,7 @@ struct AuthStubView: View {
                         if isAuthorizing {
                             ProgressView()
                         } else {
-                            Text("Continue with VK ID")
+                            Text("Войти через VK ID")
                         }
                     }
                     .frame(maxWidth: .infinity)
@@ -66,7 +48,7 @@ struct AuthStubView: View {
                 Button {
                     env.enterShellWithoutAuth()
                 } label: {
-                    Text("Continue with fixture UI shell")
+                    Text("Посмотреть демоверсию")
                         .frame(maxWidth: .infinity)
                         .frame(minHeight: VKStyle.Size.tapTargetMin)
                 }
@@ -83,18 +65,18 @@ struct AuthStubView: View {
                 }
 
                 NavigationLink(value: AppRoute.onboarding) {
-                    Text("What is VK HIG? (onboarding)")
+                    Text("О приложении")
                         .frame(minHeight: VKStyle.Size.tapTargetMin)
                 }
 
-                Text("Live VK API success is never simulated.")
+                Text("Набор функций зависит от разрешений вашего аккаунта и приложения.")
                     .font(.caption)
                     .foregroundStyle(VKStyle.secondaryText)
 
                 Spacer()
             }
             .background(VKStyle.groupedCanvas)
-            .navigationTitle("Sign in")
+            .navigationTitle("Вход")
             .navigationBarTitleDisplayMode(.inline)
             .withAppRoutes()
         }
@@ -109,7 +91,6 @@ struct AuthStubView: View {
             authError = nil
         case .failure(let error):
             authError = error.localizedDescription
-                + " — supply VK ID client id/redirect (see output/BLOCKERS.md)."
         }
     }
 }

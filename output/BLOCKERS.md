@@ -1,16 +1,9 @@
-# BLOCKERS — VK HIG
+# Blockers
 
-| Priority | Blocker | Required input/action | Safe fallback | Status |
-|---|---|---|---|---|
-| P0 | No macOS/Xcode on Cloud Linux VM | Jessica: `xcodebuild -scheme VKHIG -destination 'platform=iOS Simulator,name=iPhone 16' build test` | UI + fixtures; build/tests `NOT RUN` | OPEN |
-| P0 | GitHub Actions secrets API 403 for agent token | Jessica: add `VK_ID_CLIENT_ID` and `VK_ID_CLIENT_SECRET` in repo **Settings → Secrets and variables → Actions** | Local gitignored `Secrets.xcconfig` on Mac; workflow ready | OPEN (needs human) |
-| P1 | VKID iOS SDK not linked | Add SPM `vkid-ios-sdk` on Mac after secrets exist | `authorize()` → `.sdkNotLinked` when client id configured | OPEN |
-| P1 | Official scopes unverified | Confirm scopes; set `CapabilityRegistry.verifiedLiveFeatures` | Fixtures + honest errors without token | OPEN |
-| P1 | Music / calling live | Official rights/SDK | Unavailable UI | MITIGATED |
-| P2 | App icon 1024×1024 | Supply marketing icon | Empty AppIcon slot | OPEN |
-
-## Credentials handling
-
-- Values live in **gitignored** `VKHIG/Config/Secrets.xcconfig` (local) and intended GitHub Actions secrets (`VK_ID_CLIENT_ID`, `VK_ID_CLIENT_SECRET`).
-- Client secret is **not** wired into Info.plist / app binary APIs (PKCE public client).
-- Agent could **not** call `gh secret set` (HTTP 403 Resource not accessible by integration).
+- **Release gate:** actual iOS build, XCTest/UI results and device smoke must be verified in CI/macOS. Linux cannot run Xcode.
+- **VK app configuration:** callback `vkhig://vkid`, bundle id and approved scopes must match VK ID cabinet. Default grant is identity only. No code can turn client secret into messaging/music rights.
+- **API acceptance:** adapters follow public VK schemas, but no user OAuth token is available here; successful real calls are NOT claimed.
+- **Still incomplete:** full comment threads, additional chat attachment formats, advanced community admin, post search, notification routing, large catalog pagination, full accessibility/performance matrix.
+- **External capabilities:** music streams, VK calling and push service need official rights/SDK/backend. They remain unavailable rather than simulated.
+- **Design:** no claim of pixel-perfect iOS 27 validation without simulator/device screenshots.
+- **Secrets:** both user-requested Actions secrets were saved. Client secret is never consumed/exported by the iOS workflow. Public OAuth uses client ID and PKCE.

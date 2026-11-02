@@ -3,11 +3,13 @@ import SwiftUI
 /// S15 — another user's profile.
 struct UserProfileView: View {
     let userID: Int64
+    @Environment(AppEnvironment.self) private var env
 
     var body: some View {
         FixtureScreen(
             title: "Профиль",
             screenID: "S15",
+            resourceID: userID,
             emptyTitle: "User not found",
             emptySymbol: "person.crop.circle",
             emptyDetails: "users.get when scoped.",
@@ -28,8 +30,11 @@ struct UserProfileView: View {
                     }
                 }
                 Section("Действия") {
-                    Button("Написать сообщение") {}
-                    Button("Добавить в друзья") {}
+                    NavigationLink(value: AppRoute.conversation(userID)) { Label("Написать сообщение", systemImage:"bubble.left") }
+                    Button("Добавить в друзья") { Task {
+                        if env.isLiveVKSession { _ = await env.catalog.perform("friends.add", ["user_id":"\(userID)"]) }
+                        else { env.catalog.notice = "Деморежим: заявка не отправлена." }
+                    } }
                 }
             }
         }
@@ -52,6 +57,8 @@ struct UserProfileView: View {
 
 /// S17 — edit profile (local form; save gated).
 struct EditProfileView: View {
+    @Environment(AppEnvironment.self) private var env
+    @State private var isSaving = false
     @State private var name = "Preview User"
     @State private var status = ""
     @State private var city = "Москва"
@@ -62,7 +69,7 @@ struct EditProfileView: View {
             Section("S17") {
                 TextField("Имя", text: $name)
                 TextField("Статус", text: $status)
-                TextField("Город", text: $city)
+                LabeledContent("Город",value:city)
             }
             if let notice {
                 Section { Text(notice).foregroundStyle(.secondary) }
@@ -73,10 +80,21 @@ struct EditProfileView: View {
             }
         }
         .navigationTitle("Редактирование")
+        .task {
+            guard env.isLiveVKSession else { return }
+            if let user: VKJSON = try? await env.catalog.request("users.get", ["fields":"status,city"]), let first = user.items.first {
+                name = VKCatalogService.name(first); status = first["status"].string; city = first["city"]["title"].string
+            }
+        }
         .toolbar {
             ToolbarItem(placement: .confirmationAction) {
                 Button("Save") {
-                    notice = "Not saved to VK — local draft only."
+                    Task {
+                        guard env.isLiveVKSession else { notice = "Деморежим: изменения не отправлены в VK."; return }
+                        isSaving = true; defer { isSaving = false }
+                        let parts = name.split(separator:" ", maxSplits:1).map(String.init)
+                        if await env.catalog.perform("account.saveProfileInfo", ["first_name":parts.first ?? "", "last_name":parts.count > 1 ? parts[1] : "", "status":status]) { notice = "Профиль сохранён" }
+                    }
                 }
             }
         }
@@ -91,7 +109,7 @@ struct FriendsView: View {
         FixtureScreen(
             title: "Друзья",
             screenID: "S18",
-            emptyTitle: "No friends",
+            emptyTitle: "Нет друзей",
             emptySymbol: "person.2",
             emptyDetails: "friends.get when scoped.",
             isEmpty: { $0.isEmpty },
@@ -132,11 +150,13 @@ struct FriendsView: View {
 
 /// S19 — friend requests.
 struct FriendRequestsView: View {
+    @Environment(AppEnvironment.self) private var env
+    @State private var accepted: Set<Int64> = []
     var body: some View {
         FixtureScreen(
             title: "Заявки",
             screenID: "S19",
-            emptyTitle: "No requests",
+            emptyTitle: "Нет заявок",
             emptySymbol: "person.badge.plus",
             emptyDetails: "friends.getRequests when scoped.",
             isEmpty: { $0.isEmpty },
@@ -166,7 +186,12 @@ struct FriendRequestsView: View {
             }
             Spacer()
             if req.direction == .incoming {
-                Button("Accept") {}
+                Button(accepted.contains(req.id) ? "Принято" : "Принять") { Task {
+                    if env.isLiveVKSession {
+                        if await env.catalog.perform("friends.add", ["user_id":"\(req.user.id)"]) { accepted.insert(req.id) }
+                    } else { accepted.insert(req.id) }
+                } }
+                .disabled(accepted.contains(req.id))
                     .buttonStyle(.borderedProminent)
                     .controlSize(.small)
             }
@@ -177,11 +202,15 @@ struct FriendRequestsView: View {
 /// S20 — community page.
 struct CommunityView: View {
     let communityID: Int64
+    @Environment(AppEnvironment.self) private var env
+    @State private var wallPosts: [FeedPost] = []
+    @State private var wallError: String?
 
     var body: some View {
         FixtureScreen(
             title: "Сообщество",
             screenID: "S20",
+            resourceID: communityID,
             emptyTitle: "Not found",
             emptySymbol: "person.3",
             emptyDetails: "groups.getById when scoped.",
@@ -209,11 +238,19 @@ struct CommunityView: View {
                     }
                 }
                 Section("Записи") {
-                    Text("Community wall posts appear here with fixtures/API.")
-                        .font(.footnote).foregroundStyle(.secondary)
+                    ForEach(wallPosts) { post in NavigationLink(value:AppRoute.postDetail(post.id)) { VStack(alignment:.leading) { Text(post.text).lineLimit(5); Text(post.dateLabel).font(.caption).foregroundStyle(.secondary) } } }
+                    if let wallError { Text(wallError).font(.footnote).foregroundStyle(.red) }
+                    if !env.isLiveVKSession { Text("Демонстрационная страница сообщества").font(.footnote) }
                 }
             }
             .withAppRoutes()
+            .task(id:communityID) {
+                guard env.isLiveVKSession else { return }
+                do {
+                    let response = try await env.catalog.request("wall.get",["owner_id":"-\(communityID)","count":"30","extended":"1"])
+                    wallPosts = env.catalog.mapPosts(response)
+                } catch { wallError = error.localizedDescription }
+            }
         }
     }
 }
@@ -226,17 +263,15 @@ struct CommunitiesListView: View {
         FixtureScreen(
             title: "Сообщества",
             screenID: "S21",
-            emptyTitle: "No communities",
+            emptyTitle: "Нет сообществ",
             emptySymbol: "person.3",
             emptyDetails: "groups.get when scoped.",
             isEmpty: { $0.isEmpty },
             loadValue: {
-                let all = CatalogFixtures.communities
-                if query.isEmpty { return all }
-                return all.filter { $0.name.localizedCaseInsensitiveContains(query) }
+                CatalogFixtures.communities
             }
         ) { items in
-            List(items) { community in
+            List(items.filter { query.isEmpty || $0.name.localizedCaseInsensitiveContains(query) }) { community in
                 NavigationLink(value: AppRoute.community(community.id)) {
                     HStack(spacing: 12) {
                         VKAvatar(initials: community.initials, size: 44, tint: .mint)
@@ -263,18 +298,17 @@ struct CommunityMembersView: View {
         FixtureScreen(
             title: "Участники",
             screenID: "S22",
-            emptyTitle: "No members",
+            resourceID: communityID,
+            emptyTitle: "Нет участников",
             emptySymbol: "person.2",
             emptyDetails: "groups.getMembers when scoped.",
             isEmpty: { $0.isEmpty },
             loadValue: {
                 _ = communityID
-                let all = CatalogFixtures.friends
-                if query.isEmpty { return all }
-                return all.filter { $0.displayName.localizedCaseInsensitiveContains(query) }
+                CatalogFixtures.friends
             }
         ) { members in
-            List(members) { friend in
+            List(members.filter { query.isEmpty || $0.displayName.localizedCaseInsensitiveContains(query) }) { friend in
                 NavigationLink(value: AppRoute.userProfile(friend.id)) {
                     Label(friend.displayName, systemImage: "person")
                 }

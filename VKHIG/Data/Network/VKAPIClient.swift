@@ -54,14 +54,11 @@ actor VKAPIClient {
         var request = URLRequest(url: url)
         request.httpMethod = "POST"
         request.setValue("application/x-www-form-urlencoded", forHTTPHeaderField: "Content-Type")
-        let sorted = parameters.sorted { $0.key < $1.key }
-        var components = URLComponents()
-        components.queryItems = sorted.map { URLQueryItem(name: $0.key, value: $0.value) }
-            + [
-                URLQueryItem(name: "access_token", value: accessToken),
-                URLQueryItem(name: "v", value: apiVersion)
-            ]
-        request.httpBody = components.percentEncodedQuery?.data(using: .utf8)
+        var fields = parameters
+        fields["access_token"] = accessToken
+        fields["v"] = apiVersion
+        request.httpBody = FormEncoding.data(fields)
+        request.timeoutInterval = 30
         // Never log request bodies — they contain tokens.
 
         let (data, urlResponse) = try await session.data(for: request)
@@ -77,5 +74,15 @@ actor VKAPIClient {
         }
         guard let response = envelope.response else { throw VKAPITransportError.missingResponse }
         return response
+    }
+}
+
+
+enum FormEncoding {
+    static func data(_ values: [String: String]) -> Data {
+        let allowed = CharacterSet(charactersIn: "ABCDEFGHIJKLMNOPQRSTUVWXYZabcdefghijklmnopqrstuvwxyz0123456789-._~")
+        return Data(values.sorted { $0.key < $1.key }.map {
+            "\($0.key.addingPercentEncoding(withAllowedCharacters: allowed) ?? "")=\($0.value.addingPercentEncoding(withAllowedCharacters: allowed) ?? "")"
+        }.joined(separator: "&").utf8)
     }
 }

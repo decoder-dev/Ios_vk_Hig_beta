@@ -10,7 +10,7 @@ options:
   developmentLanguage: ru
 settings:
   BASE_SDK: iphoneos
-  SWIFT_VERSION: "5.10"
+  SWIFT_VERSION: "5.0"
   TARGETED_DEVICE_FAMILY: "1,2"
   IPHONEOS_DEPLOYMENT_TARGET: "17.0"
 configFiles:
@@ -31,6 +31,7 @@ targets:
     settings:
       PRODUCT_BUNDLE_IDENTIFIER: com.decoderdev.vkhig
       PRODUCT_NAME: VK HIG
+      PRODUCT_MODULE_NAME: VKHIG
       INFOPLIST_FILE: VKHIG/Resources/Info.plist
       GENERATE_INFOPLIST_FILE: false
       ASSETCATALOG_COMPILER_APPICON_NAME: AppIcon
@@ -40,17 +41,6 @@ targets:
       SUPPORTS_XR_DESIGNED_FOR_IPHONE_IPAD: false
       INFOPLIST_EXPAND_BUILD_SETTINGS: true
 
-    info:
-      path: VKHIG/Resources/Info.plist
-      properties:
-        CFBundleDisplayName: VK HIG
-        UILaunchScreen: {}
-        UISupportedInterfaceOrientations:
-          - UIInterfaceOrientationPortrait
-          - UIInterfaceOrientationLandscapeLeft
-          - UIInterfaceOrientationLandscapeRight
-        UIApplicationSceneManifest:
-          UIApplicationSupportsMultipleScenes: false
   VKHIGTests:
     type: bundle.unit-test
     platform: iOS
@@ -61,16 +51,30 @@ targets:
     settings:
       PRODUCT_BUNDLE_IDENTIFIER: com.decoderdev.vkhig.tests
       GENERATE_INFOPLIST_FILE: true
-      TEST_HOST: "$(BUILT_PRODUCTS_DIR)/VK HIG.app/$(BUNDLE_EXECUTABLE_FOLDER_PATH)/VK HIG"
+      TEST_HOST: "$(BUILT_PRODUCTS_DIR)/VK HIG.app/VK HIG"
       BUNDLE_LOADER: "$(TEST_HOST)"
+  VKHIGUITests:
+    type: bundle.ui-testing
+    platform: iOS
+    sources:
+      - path: VKHIGUITests
+    dependencies:
+      - target: VKHIG
+    settings:
+      PRODUCT_BUNDLE_IDENTIFIER: com.decoderdev.vkhig.uitests
+      GENERATE_INFOPLIST_FILE: true
+      TEST_TARGET_NAME: VKHIG
+
 schemes:
   VKHIG:
     build:
       targets:
         VKHIG: all
         VKHIGTests: [test]
+        VKHIGUITests: [test]
     test:
       targets:
         - VKHIGTests
+        - VKHIGUITests
     run:
       config: Debug

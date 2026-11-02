@@ -1,22 +1,15 @@
-# TEST RESULTS — VK HIG
+# Test results
 
-| Suite | Command | Environment | Result | Evidence |
-|---|---|---|---|---|
-| Unit (`VKHIGTests`) | `xcodebuild -scheme VKHIG -destination 'platform=iOS Simulator,name=iPhone 16' test` | Cursor Cloud Linux | **NOT RUN** | No Xcode / iOS Simulator on this VM |
-| App build | `xcodebuild -scheme VKHIG -destination 'platform=iOS Simulator,name=iPhone 16' build` | Cursor Cloud Linux | **NOT RUN** | Same |
-| UI tests | — | — | **NOT RUN** | No UI test target yet |
-| Manual Simulator smoke | — | — | **NOT RUN** | Requires Mac |
+2026-11-02. Local Linux validation:
 
-## Tests authored (awaiting Mac execution)
+- YAML parse: project.yml and iOS workflow — PASS.
+- XML plist parse: Info.plist and PrivacyInfo.xcprivacy — PASS.
+- bash -n scripts/write_secrets_xcconfig.sh — PASS.
+- Config generation using public client ID — PASS; no client secret read/written.
+- git diff --check — PASS.
+- Swift tree-sitter parse: no ERROR nodes. Parser reports a missing token at Result<Void>.success(()); this is valid Swift syntax, compiler is authoritative.
+- Xcode build, XCTest, UI screenshot tests: NOT RUN locally (no Apple SDK).
+- Live VK API and OAuth device smoke: NOT RUN (no user session/confirmed app scope settings).
 
-`VKHIGTests/VKHIGFoundationTests.swift`:
-
-- Session shell sign-in/out local only
-- Design token contract (spacing 16 / tap 44 / card radius 20)
-- MessageReconciler idempotency per `random_id`
-- Fixture inbox load
-- Outgoing fixture message remains `.pending`
-- VK ID authorize fails without credentials
-- Music capability is `unavailable`
-
-Do **not** treat this file as proof of PASS.
+macOS workflow: `.github/workflows/ios-secrets-config.yml`, results artifact `ios-test-results`.
+Auth code follows public OAuth parameters verified against VKCOM/vkid-ios-sdk tag 3.0.0; API adapters verified against VKCOM/vk-api-schema parameter definitions. No SDK source was copied into the app.

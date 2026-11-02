@@ -63,6 +63,8 @@ struct PhotoItem: Identifiable, Hashable, Sendable {
     let id: Int64
     let albumID: Int64
     let caption: String
+    var url: URL? = nil
+    var ownerID: Int64 = 0
 }
 
 struct VideoItem: Identifiable, Hashable, Sendable {
@@ -70,6 +72,9 @@ struct VideoItem: Identifiable, Hashable, Sendable {
     let title: String
     let durationLabel: String
     let author: String
+    var streamURL: URL? = nil
+    var playerURL: URL? = nil
+    var ownerID: Int64 = 0
 }
 
 struct TrackItem: Identifiable, Hashable, Sendable {
@@ -96,4 +101,10 @@ struct StoryItem: Identifiable, Hashable, Sendable {
     let id: Int64
     let author: String
     let initials: String
+}
+
+struct ChatDetails: Equatable, Sendable {
+    let peerID: Int64
+    let title: String
+    let members: [Friend]
 }

@@ -5,6 +5,10 @@ struct AppRouteDestination: View {
 
     var body: some View {
         switch route {
+        case .conversation(let id):
+            ConversationView(conversation: Conversation(peerID:PeerID(raw:id),displayName:"VK \(id)",initials:"VK",lastMessagePreview:"",lastUpdatedLabel:"",unreadCount:0,isOnline:false))
+        case .albumPhotos(let id):
+            PhotosGridView(albumID:id)
         case .onboarding:
             OnboardingView()
         case .postDetail(let id):

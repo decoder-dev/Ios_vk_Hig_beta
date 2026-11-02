@@ -1,9 +1,16 @@
 import SwiftUI
+import PhotosUI
 
 /// S07 — compose post sheet (local draft only; no fake publish success).
 struct ComposePostView: View {
     @Environment(\.dismiss) private var dismiss
-    @State private var text = ""
+    @Environment(AppEnvironment.self) private var env
+    @AppStorage("vkhig.post.draft") private var text = ""
+    @State private var sending = false
+    @State private var photo: PhotosPickerItem?
+    @State private var photoData: Data?
+    @State private var attachment: String?
+    @State private var publishGUID = UUID().uuidString
     @State private var showDiscard = false
     @State private var notice: String?
 
@@ -15,8 +22,9 @@ struct ComposePostView: View {
                         .lineLimit(5...12)
                 }
                 Section("Вложения") {
-                    Label("Photo (permissions later)", systemImage: "photo")
-                    Label("Video (permissions later)", systemImage: "video")
+                    PhotosPicker(selection:$photo,matching:.images) { Label(photoData == nil ? "Добавить фотографию" : "Фотография выбрана",systemImage:"photo") }
+                    if photoData != nil { Button("Убрать фотографию",role:.destructive) { photo = nil; photoData = nil; attachment = nil } }
+
                 }
                 if let notice {
                     Section {
@@ -24,7 +32,7 @@ struct ComposePostView: View {
                     }
                 }
                 Section {
-                    Text("Publishing requires verified wall.post scope. Draft stays local.")
+                    Text("Черновик сохраняется на устройстве. Для публикации нужен доступ к стене.")
                         .font(.footnote)
                         .foregroundStyle(.secondary)
                 }
@@ -39,13 +47,31 @@ struct ComposePostView: View {
                 }
                 ToolbarItem(placement: .confirmationAction) {
                     Button("Publish") {
-                        notice = "Not published — live wall.post is gated. Draft kept locally."
+                        Task {
+                            guard env.isLiveVKSession else { notice = "Деморежим: запись не опубликована. Черновик сохранён."; return }
+                            sending = true; defer { sending = false }
+                            do {
+                                if let photoData, attachment == nil { attachment = try await env.catalog.upload(photoData,photo:true,peerID:0,wall:true) }
+                                var parameters = ["message":text,"guid":publishGUID]
+                                if let attachment { parameters["attachments"] = attachment }
+                                _ = try await env.catalog.request("wall.post",parameters)
+                                text = ""; dismiss()
+                            } catch { notice = error.localizedDescription }
+                        }
                     }
-                    .disabled(text.trimmingCharacters(in: .whitespacesAndNewlines).isEmpty)
+                    .disabled(sending || (text.trimmingCharacters(in: .whitespacesAndNewlines).isEmpty && photoData == nil))
                 }
             }
+            .task(id:photo) {
+                guard let photo else { return }
+                do {
+                    guard let data = try await photo.loadTransferable(type:Data.self),data.count <= 20_000_000,
+                          let image = UIImage(data:data),let jpeg = image.jpegData(compressionQuality:0.8) else { notice = "Не удалось прочитать фото (лимит 20 МБ)."; return }
+                    photoData = jpeg; attachment = nil
+                } catch { notice = "Не удалось открыть фотографию." }
+            }
             .confirmationDialog("Discard draft?", isPresented: $showDiscard) {
-                Button("Discard", role: .destructive) { dismiss() }
+                Button("Удалить черновик", role: .destructive) { text = ""; dismiss() }
                 Button("Keep editing", role: .cancel) {}
             }
         }

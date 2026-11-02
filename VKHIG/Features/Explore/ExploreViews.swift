@@ -9,7 +9,8 @@ struct GlobalSearchView: View {
         FixtureScreen(
             title: "Поиск",
             screenID: "S23",
-            emptyTitle: "No results",
+            query: query,
+            emptyTitle: "Ничего не найдено",
             emptySymbol: "magnifyingglass",
             emptyDetails: "users.search / groups.search when scoped.",
             isEmpty: { $0.isEmpty },
@@ -67,7 +68,7 @@ struct NotificationsView: View {
         FixtureScreen(
             title: "Уведомления",
             screenID: "S24",
-            emptyTitle: "No notifications",
+            emptyTitle: "Нет уведомлений",
             emptySymbol: "bell",
             emptyDetails: "notifications.get when scoped.",
             isEmpty: { $0.isEmpty },
@@ -144,7 +145,7 @@ struct ServicesHubView: View {
                 }
             }
             Section {
-                Text("Routes open fixture-backed screens. Live VK calls stay capability-gated.")
+                Text("Доступность разделов зависит от разрешений VK.")
                     .font(.footnote).foregroundStyle(.secondary)
             }
         }

@@ -34,6 +34,7 @@ struct ChatMessage: Identifiable, Hashable, Sendable {
     var state: DeliveryState
     /// Used for idempotent `messages.send` once live API is enabled.
     let randomID: Int64?
+    var attachments: [ChatAttachment] = []
 }
 
 struct FeedPost: Identifiable, Hashable, Sendable {
@@ -45,6 +46,9 @@ struct FeedPost: Identifiable, Hashable, Sendable {
     let hasMedia: Bool
     let reactionCount: Int
     let commentCount: Int
+    var ownerID: Int64 = 0
+    var nativeID: Int64? = nil
+    var mediaURL: URL? = nil
 }
 
 struct UserProfile: Identifiable, Hashable, Sendable {
@@ -66,15 +70,15 @@ enum AppError: Error, LocalizedError, Equatable, Sendable {
     var errorDescription: String? {
         switch self {
         case .notAuthenticated:
-            return "Sign in required"
+            return "Войдите в аккаунт VK ID."
         case .capabilityUnavailable(let feature):
             return "\(feature) is unavailable for this app configuration"
         case .offline:
-            return "No network connection"
+            return "Нет подключения к сети."
         case .network(let message):
             return message
         case .decoding:
-            return "Could not read server response"
+            return "Не удалось прочитать ответ сервера."
         case .fixtureOnly(let detail):
             return detail
         }
@@ -88,4 +92,12 @@ enum LoadState<Value: Equatable>: Equatable {
     case empty
     case failed(AppError)
     case offline
+}
+
+struct ChatAttachment: Identifiable, Hashable, Sendable {
+    enum Kind: String, Hashable, Sendable { case photo, document, video }
+    let id: String
+    let kind: Kind
+    let title: String
+    let url: URL
 }

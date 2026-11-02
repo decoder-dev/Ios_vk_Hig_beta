@@ -10,7 +10,7 @@ struct InboxView: View {
             if let model {
                 inboxBody(model)
             } else {
-                VKLoadingState(title: "Loading…")
+                VKLoadingState(title: "Загрузка…")
             }
         }
         .navigationTitle("Сообщения")
@@ -79,13 +79,16 @@ struct InboxView: View {
         }
         .toolbar {
             ToolbarItem(placement: .topBarTrailing) {
-                Button {} label: {
+                NavigationLink(value: AppRoute.globalSearch) {
                     Image(systemName: "square.and.pencil")
                         .frame(minWidth: VKStyle.Size.tapTargetMin, minHeight: VKStyle.Size.tapTargetMin)
                 }
                 .accessibilityLabel("New message")
                 .disabled(true)
             }
+        }
+        .safeAreaInset(edge:.bottom) {
+            if !model.reachedEnd { Button("Загрузить ещё") { Task { await model.loadMore() } }.disabled(model.isLoadingMore).frame(minHeight:44) }
         }
         .refreshable { await model.load() }
     }

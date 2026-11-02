@@ -73,6 +73,7 @@ final class VKHIGFoundationTests: XCTestCase {
         XCTAssertNotNil(message.randomID)
     }
 
+    @MainActor
     func testVKIDAuthorizeFailsWithoutCredentials() async {
         let coordinator = VKIDAuthCoordinator(
             configuration: VKIDConfiguration(clientID: nil, redirectURLScheme: nil)
@@ -88,4 +89,47 @@ final class VKHIGFoundationTests: XCTestCase {
         let registry = CapabilityRegistry()
         XCTAssertEqual(registry.status(for: .music), .unavailable)
     }
+    func testFormEncodingEscapesPlusAndSeparators() {
+        let value = String(decoding:FormEncoding.data(["message":"a+b & привет=1"]),as:UTF8.self)
+        XCTAssertEqual(value,"message=a%2Bb%20%26%20%D0%BF%D1%80%D0%B8%D0%B2%D0%B5%D1%82%3D1")
+    }
+    @MainActor
+    func testOAuthRejectsWrongStateAndForeignCallback() {
+        XCTAssertThrowsError(try VKIDAuthCoordinator.validateCallback(URL(string:"vkhig://vkid?code=c&device_id=d&state=wrong")!,redirectURI:"vkhig://vkid",state:"expected"))
+        XCTAssertThrowsError(try VKIDAuthCoordinator.validateCallback(URL(string:"vkhig://evil?code=c&device_id=d&state=s")!,redirectURI:"vkhig://vkid",state:"s"))
+        XCTAssertThrowsError(try VKIDAuthCoordinator.validateCallback(URL(string:"vkhig://vkid?code=c&code=x&device_id=d&state=s")!,redirectURI:"vkhig://vkid",state:"s"))
+    }
+    @MainActor
+    func testOAuthAcceptsValidCallback() throws {
+        let values = try VKIDAuthCoordinator.validateCallback(URL(string:"vkhig://vkid?code=c&device_id=d&state=s")!,redirectURI:"vkhig://vkid",state:"s")
+        XCTAssertEqual(values["code"],"c")
+    }
+    func testCapabilityRequiresGrantedScope() {
+        var caps = CapabilityRegistry(hasVKIDCredentials:true,hasAccessToken:true)
+        XCTAssertFalse(caps.canUseLiveAPI(.sendMessage))
+        caps.grantedScopes = ["messages"]
+        XCTAssertTrue(caps.canUseLiveAPI(.sendMessage))
+        XCTAssertFalse(caps.canUseLiveAPI(.feed))
+    }
+    func testLiveHistoryWithoutMessagesGrantDoesNotReturnFixtures() async {
+        let repository = ConversationRepository(fixtures:.embedded)
+        let result = await repository.fetchHistory(peerID:PeerID(raw:111),dataMode:.live,capabilities:CapabilityRegistry(hasVKIDCredentials:true,hasAccessToken:true),isNetworkReachable:true,accessToken:"test-token")
+        guard case .failure(.capabilityUnavailable) = result else { return XCTFail("Must reject denied scope") }
+    }
+    func testRetryRetainsRandomIDAndLocalIdentity() async {
+        let repo = ConversationRepository(fixtures:.embedded)
+        let localID = UUID()
+        let first = await repo.enqueueOutgoing(peerID:PeerID(raw:111),text:"test",dataMode:.fixtures,capabilities:CapabilityRegistry(),randomID:42,localID:localID)
+        let second = await repo.enqueueOutgoing(peerID:PeerID(raw:111),text:"test",dataMode:.fixtures,capabilities:CapabilityRegistry(),randomID:42,localID:localID)
+        guard case .success(let a) = first,case .success(let b) = second else { return XCTFail("Expected fixture pending") }
+        XCTAssertEqual(a.id,b.id); XCTAssertEqual(a.randomID,b.randomID)
+        let history = await repo.fetchHistory(peerID:PeerID(raw:111),dataMode:.fixtures,capabilities:CapabilityRegistry(),isNetworkReachable:true)
+        guard case .success(let items) = history else { return XCTFail("Expected local history") }
+        XCTAssertEqual(items.filter { $0.id == localID }.count,1)
+    }
+    func testJSONRejectsInsecureMediaURL() throws {
+        let j = try JSONDecoder().decode(VKJSON.self,from:Data("{\"url\":\"http://example.com/a\"}".utf8))
+        XCTAssertNil(j["url"].url)
+    }
+
 }

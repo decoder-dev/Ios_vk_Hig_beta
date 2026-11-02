@@ -13,7 +13,8 @@ struct KeychainTokenStore: Sendable {
             kSecAttrService as String: service,
             kSecAttrAccount as String: account
         ]
-        SecItemDelete(query as CFDictionary)
+        let update = SecItemUpdate(query as CFDictionary, [kSecValueData as String:Data(token.utf8)] as CFDictionary)
+        if update != errSecItemNotFound { return update }
         var item = query
         item[kSecValueData as String] = Data(token.utf8)
         item[kSecAttrAccessible as String] = kSecAttrAccessibleAfterFirstUnlockThisDeviceOnly

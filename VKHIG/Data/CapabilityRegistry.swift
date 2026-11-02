@@ -27,6 +27,7 @@ enum CapabilityStatus: String, Sendable {
 
 struct CapabilityRegistry: Sendable {
     var hasVKIDCredentials: Bool
+    var grantedScopes: Set<String> = []
     var hasAccessToken: Bool
     /// Explicit allow-list after docs/scope verification. Empty = nothing live.
     var verifiedLiveFeatures: Set<FeatureCapability>
@@ -52,7 +53,17 @@ struct CapabilityRegistry: Sendable {
             return .needsScopeCheck
         case .inbox, .conversation, .sendMessage, .feed, .profile, .friends, .communities, .photos, .notifications:
             guard hasVKIDCredentials else { return .needsConfig }
-            guard verifiedLiveFeatures.contains(feature) else { return .needsScopeCheck }
+            let scope: String
+            switch feature {
+            case .inbox, .conversation, .sendMessage: scope = "messages"
+            case .feed: scope = "wall"
+            case .friends: scope = "friends"
+            case .communities: scope = "groups"
+            case .photos: scope = "photos"
+            case .notifications: scope = "notifications"
+            default: scope = "vkid.personal_info"
+            }
+            guard grantedScopes.contains(scope) else { return .needsScopeCheck }
             guard hasAccessToken else { return .needsToken }
             return .enabled
         }

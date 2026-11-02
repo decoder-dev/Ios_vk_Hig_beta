@@ -21,7 +21,9 @@ actor ProfileRepository {
             guard let accessToken, !accessToken.isEmpty else {
                 return .failure(.notAuthenticated)
             }
-            return .failure(.capabilityUnavailable("users.get mapping pending verification"))
+            do { return .success(try await VKIDAuthCoordinator.shared.fetchIdentity()) }
+            catch let error as AppError { return .failure(error) }
+            catch { return .failure(.network(error.localizedDescription)) }
         }
 
         switch dataMode {
