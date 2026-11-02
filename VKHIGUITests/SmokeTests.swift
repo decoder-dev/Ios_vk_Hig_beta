@@ -65,8 +65,13 @@ final class SmokeTests: XCTestCase {
             } else {
                 let equalizer=app.switches["Эквалайзер"]
                 XCTAssertTrue(equalizer.waitForExistence(timeout:5))
-                equalizer.tap()
-                XCTAssertEqual(equalizer.value as? String,"1")
+                // SwiftUI exposes the full Form row as a switch; tap the actual trailing control.
+                equalizer.coordinate(withNormalizedOffset:CGVector(dx:0.92,dy:0.5)).tap()
+                let enabled=XCTNSPredicateExpectation(predicate:NSPredicate(format:"value == %@", "1"),object:equalizer)
+                let result=XCTWaiter.wait(for:[enabled],timeout:5)
+                capture(app,"music-equalizer-enabled",large:large)
+                if app.staticTexts["music-error"].exists {XCTFail(app.staticTexts["music-error"].label)}
+                XCTAssertEqual(result,.completed)
             }
             capture(app,"music-"+destination,large:large)
             app.navigationBars.buttons.element(boundBy:0).tap()
