@@ -1,5 +1,4 @@
 import SwiftUI
-import UserNotifications
 
 /// S34 — settings hub (replaces/extends simple settings).
 struct SettingsHubView: View {
@@ -14,9 +13,6 @@ struct SettingsHubView: View {
                 }
             }
             Section("Приложение") {
-                NavigationLink(value: AppRoute.notificationSettings) {
-                    Label("Уведомления", systemImage: "bell")
-                }
                 NavigationLink(value: AppRoute.appearanceSettings) {
                     Label("Оформление", systemImage: "paintbrush")
                 }
@@ -40,16 +36,9 @@ struct SettingsHubView: View {
 }
 
 struct NotificationSettingsView:View {
-    @AppStorage("vkhig.notifications.enabled") private var enabled=false
-    @State private var push=PushRegistration.shared
     var body:some View {
-        Form {
-            Toggle("Push-уведомления",isOn:$enabled)
-            Text(push.status).font(.footnote).foregroundStyle(.secondary)
-            if enabled {Button("Повторить регистрацию") {Task {await push.enable();await push.registerIfNeeded()}}}
-            Link("Настройки уведомлений iOS",destination:URL(string:UIApplication.openSettingsURLString)!)
-        }.navigationTitle("Уведомления")
-        .onChange(of:enabled) {_,value in Task {if value {await push.enable()} else {await push.disable()}}}
+        ContentUnavailableView("Push-уведомления отключены",systemImage:"bell.slash",description:Text("Эта версия работает без push-уведомлений."))
+            .navigationTitle("Уведомления")
     }
 }
 
@@ -162,7 +151,7 @@ struct VKConnectionCheckView:View {
                 if let checkedAt {Text(checkedAt.formatted()).font(.caption)}
             }
             ForEach(Array(results.enumerated()),id:\.offset) {_,text in Text(text).font(.callout)}
-            Section("Push") {Text(PushRegistration.shared.status);Text("Доставка проверяется отдельным уведомлением на подписанной сборке.").font(.footnote)}
+            Section("Push") {Text("Push-уведомления отключены в этой версии.")}
             if !results.isEmpty {Button("Скопировать отчёт") {UIPasteboard.general.string=(["VK HIG · "+(checkedAt?.formatted() ?? "")]+results).joined(separator:"\n")}}
         }.navigationTitle("Проверка VK")
     }
