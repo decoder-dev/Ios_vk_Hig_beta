@@ -48,6 +48,8 @@ struct RootTabView: View {
             .tabItem { Label("Профиль", systemImage: "person.crop.circle") }
             .tag(AppTab.profile)
         }
+        .disabled(env.isSigningOut)
+        .overlay {if env.isSigningOut {ProgressView("Выход из аккаунта…").padding(24).background(.regularMaterial,in:RoundedRectangle(cornerRadius:16))}}
         .tint(VKStyle.accent)
         .onAppear { if env.isLiveVKSession,!env.capabilities.canUseLiveAPI(.inbox) { selected = .profile };openPendingRoute() }
         .alert("VK HIG",isPresented:Binding(get:{env.catalog.notice != nil},set:{if !$0 {env.catalog.notice = nil}})) {
