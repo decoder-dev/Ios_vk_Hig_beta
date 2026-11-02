@@ -39,38 +39,17 @@ struct SettingsHubView: View {
     }
 }
 
-/// S35
-struct NotificationSettingsView: View {
-    @AppStorage("vkhig.notifications.enabled") private var enabled = false
-    @State private var permission = ""
-    @AppStorage("vkhig.notifications.messages") private var messages = true
-    @AppStorage("vkhig.notifications.feedback") private var feedback = true
-
-    var body: some View {
+struct NotificationSettingsView:View {
+    @AppStorage("vkhig.notifications.enabled") private var enabled=false
+    @State private var push=PushRegistration.shared
+    var body:some View {
         Form {
-            Section("S35") {
-                Toggle("Уведомления в приложении", isOn: $enabled)
-                Toggle("Сообщения", isOn: $messages)
-                    .disabled(!enabled)
-                Toggle("Лайки и комментарии", isOn: $feedback)
-                    .disabled(!enabled)
-            }
-            Section {
-                Text(permission.isEmpty ? "Разрешение iOS позволяет показывать уведомления. Доставка push от VK требует отдельно зарегистрированного сервиса." : permission)
-                    .font(.footnote).foregroundStyle(.secondary)
-            }
-        }
-        .navigationTitle("Уведомления")
-        .onChange(of:enabled) { _,value in
-            guard value else { return }
-            Task {
-                do {
-                    let granted = try await UNUserNotificationCenter.current().requestAuthorization(options:[.alert,.sound,.badge])
-                    enabled = granted
-                    permission = granted ? "Разрешение получено. Push-сервис ещё не зарегистрирован." : "Уведомления запрещены в настройках iOS."
-                } catch { enabled = false; permission = "Не удалось запросить разрешение." }
-            }
-        }
+            Toggle("Push-уведомления",isOn:$enabled)
+            Text(push.status).font(.footnote).foregroundStyle(.secondary)
+            if enabled {Button("Повторить регистрацию") {Task {await push.enable();await push.registerIfNeeded()}}}
+            Link("Настройки уведомлений iOS",destination:URL(string:UIApplication.openSettingsURLString)!)
+        }.navigationTitle("Уведомления")
+        .onChange(of:enabled) {_,value in Task {if value {await push.enable()} else {await push.disable()}}}
     }
 }
 
