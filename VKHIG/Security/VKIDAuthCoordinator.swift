@@ -153,6 +153,20 @@ final class VKIDAuthCoordinator: NSObject, ASWebAuthenticationPresentationContex
         refreshTask = nil
         return result
     }
+    func fetchIdentity() async throws -> UserProfile {
+        guard let accessToken = await freshAccessToken(),let session = savedSession(),let clientID = configuration.clientID else { throw AppError.notAuthenticated }
+        var request = URLRequest(url:URL(string:"https://id.vk.ru/oauth2/user_info")!)
+        request.httpMethod = "POST"; request.timeoutInterval = 30
+        request.setValue("Bearer " + accessToken,forHTTPHeaderField:"Authorization")
+        request.setValue("application/x-www-form-urlencoded",forHTTPHeaderField:"Content-Type")
+        request.httpBody = FormEncoding.data(["client_id":clientID,"device_id":session.deviceID])
+        let (data,http) = try await URLSession.shared.data(for:request)
+        guard let http = http as? HTTPURLResponse,(200...299).contains(http.statusCode) else { throw AppError.notAuthenticated }
+        let value = try JSONDecoder().decode(VKJSON.self,from:data)["user"]
+        let name = [value["first_name"].string,value["last_name"].string].filter { !$0.isEmpty }.joined(separator:" ")
+        guard !name.isEmpty else { throw AppError.decoding }
+        return UserProfile(id:session.userID,displayName:name,initials:VKCatalogService.initials(name),city:nil,statusText:nil)
+    }
     func restoreSessionIfPossible() -> Bool { savedSession() != nil }
     func clearSession() {
         generation = UUID(); webSession?.cancel(); webSession = nil
