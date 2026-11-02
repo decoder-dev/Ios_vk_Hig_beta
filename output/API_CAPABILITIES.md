@@ -14,3 +14,6 @@ Implemented adapters include:
 Offset/cursor pagination and deduplication cover conversations/history/message search, recipient selection, friends/groups/members, country/city selection, photos/albums/videos, notifications, saved items and music. messages.searchConversations has no offset contract: up to 200 results prompt a narrower query.
 
 Settings offers user-initiated read-only account checks without displaying a token. Successful real-account acceptance is NOT RUN here. Music rights/streams, native incoming-call SDK and APNs/VK provider setup cannot be inferred from client ID/secret or simulator tests.
+
+## APNs configuration follow-up
+Push registration now uses the signing APNS_ENVIRONMENT via Info.plist, rejects unknown configuration and registers a rotated token after an in-flight request. A direct APNs smoke sender and four offline Node tests are added; those tests PASS. Three new Swift regression tests cover environment mapping, unknown configuration and token rotation (36 unit tests total; new Xcode run PENDING). Actual Apple/VK provider configuration and delivery remain BLOCKED: Apple sign-in is required; VK ID cabinet access is denied by this environment's browser site-safety policy. No native iOS calling SDK/authorization or music approval is available. See docs/DEVICE_AND_VK_ACCEPTANCE.md.

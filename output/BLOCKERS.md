@@ -9,3 +9,6 @@
 - **Voice recording:** OGG voice-file import/upload and received voice playback are implemented; recording/encoding a new native OGG voice message is not included.
 
 Run signed-device and real-account acceptance using docs/DEVICE_AND_VK_ACCEPTANCE.md and scripts/device-smoke.sh. Secrets/certificates/profiles must not be committed.
+
+## APNs configuration follow-up
+Push registration now uses the signing APNS_ENVIRONMENT via Info.plist, rejects unknown configuration and registers a rotated token after an in-flight request. A direct APNs smoke sender and four offline Node tests are added; those tests PASS. Three new Swift regression tests cover environment mapping, unknown configuration and token rotation (36 unit tests total; new Xcode run PENDING). Actual Apple/VK provider configuration and delivery remain BLOCKED: Apple sign-in is required; VK ID cabinet access is denied by this environment's browser site-safety policy. No native iOS calling SDK/authorization or music approval is available. See docs/DEVICE_AND_VK_ACCEPTANCE.md.

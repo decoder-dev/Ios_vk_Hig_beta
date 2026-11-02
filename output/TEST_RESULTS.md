@@ -31,3 +31,6 @@ Swift tree-sitter parsing, YAML/plist parsing, shell syntax and git diff --check
 ## External acceptance: NOT RUN
 
 Real OAuth/account/API mutations and granted music streams; signed physical-device/APNs delivery; native incoming VK calls; camera/location uploads; audio interruption/AirPlay; VoiceOver/Reduce Motion; performance and full screen/state coverage. Fixtures and simulators do not establish these capabilities.
+
+## APNs configuration follow-up
+Push registration now uses the signing APNS_ENVIRONMENT via Info.plist, rejects unknown configuration and registers a rotated token after an in-flight request. A direct APNs smoke sender and four offline Node tests are added; those tests PASS. Three new Swift regression tests cover environment mapping, unknown configuration and token rotation (36 unit tests total; new Xcode run PENDING). Actual Apple/VK provider configuration and delivery remain BLOCKED: Apple sign-in is required; VK ID cabinet access is denied by this environment's browser site-safety policy. No native iOS calling SDK/authorization or music approval is available. See docs/DEVICE_AND_VK_ACCEPTANCE.md.
