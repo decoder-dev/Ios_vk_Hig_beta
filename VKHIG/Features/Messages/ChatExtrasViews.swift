@@ -43,13 +43,14 @@ struct ChatInfoView: View {
             emptyTitle: "Unavailable",
             emptySymbol: "person.crop.circle",
             emptyDetails: "messages.getConversationsById when scoped.",
-            loadValue: { peerID }
-        ) { id in
+            loadValue: { ChatDetails(peerID:peerID,title:"Диалог",members:Array(CatalogFixtures.friends.prefix(3))) }
+        ) { details in
+            let id = details.peerID
             List {
                 Section {
                     HStack {
                         Spacer()
-                        VKAvatar(initials: id >= 2_000_000_000 ? "ГР" : "ЧТ", size: 72, tint: .indigo)
+                        VStack { VKAvatar(initials: id >= 2_000_000_000 ? "ГР" : "ЧТ", size: 72, tint: .indigo); Text(details.title).font(.headline) }
                         Spacer()
                     }
                     .listRowBackground(Color.clear)
@@ -64,7 +65,7 @@ struct ChatInfoView: View {
                     Text("Настройки уведомлений доступны в официальном VK.").font(.footnote)
                 }
                 Section("Участники") {
-                    ForEach(env.isLiveVKSession ? [] : Array(CatalogFixtures.friends.prefix(3))) { friend in
+                    ForEach(details.members) { friend in
                         Label(friend.displayName, systemImage: "person")
                     }
                 }
@@ -136,9 +137,9 @@ struct ChatAttachmentsView: View {
 }
 
 extension VKCatalogService {
-    func upload(_ data:Data,photo:Bool,peerID:Int64) async throws -> String {
+    func upload(_ data:Data,photo:Bool,peerID:Int64,wall:Bool = false) async throws -> String {
         guard data.count <= 20_000_000 else { throw AppError.network("Максимальный размер — 20 МБ.") }
-        let server = try await request(photo ? "photos.getMessagesUploadServer" : "docs.getMessagesUploadServer",photo ? ["peer_id":"\(peerID)"] : ["peer_id":"\(peerID)","type":"doc"])
+        let server = try await request(wall ? "photos.getWallUploadServer" : (photo ? "photos.getMessagesUploadServer" : "docs.getMessagesUploadServer"),wall ? [:] : (photo ? ["peer_id":"\(peerID)"] : ["peer_id":"\(peerID)","type":"doc"]))
         guard let url = server["upload_url"].url else { throw AppError.decoding }
         let boundary = "VK-" + UUID().uuidString
         var body = Data("--\(boundary)\r\nContent-Disposition: form-data; name=\"\(photo ? "photo" : "file")\"; filename=\"\(photo ? "photo.jpg" : "document.bin")\"\r\nContent-Type: \(photo ? "image/jpeg" : "application/octet-stream")\r\n\r\n".utf8)
@@ -149,7 +150,9 @@ extension VKCatalogService {
         guard let http = http as? HTTPURLResponse,(200...299).contains(http.statusCode) else { throw AppError.network("Загрузка вложения не завершена.") }
         let payload = try JSONDecoder().decode(VKJSON.self,from:response)
         if photo {
-            let saved = try await request("photos.saveMessagesPhoto",["photo":payload["photo"].string,"server":"\(payload["server"].int)","hash":payload["hash"].string])
+            var parameters = ["photo":payload["photo"].string,"server":"\(payload["server"].int)","hash":payload["hash"].string]
+            if wall,let userID = VKIDAuthCoordinator.shared.userID { parameters["user_id"] = "\(userID)" }
+            let saved = try await request(wall ? "photos.saveWallPhoto" : "photos.saveMessagesPhoto",parameters)
             guard let first = saved.items.first, first["id"].int != 0 else { throw AppError.decoding }
             return "photo\(first["owner_id"].int)_\(first["id"].int)"
         }
