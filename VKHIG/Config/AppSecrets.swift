@@ -22,6 +22,8 @@ enum AppSecrets {
         "\(vkRedirectScheme)://vkid"
     }
 
+    static var apnsEnvironment: APNsEnvironment? { APNsEnvironment(rawValue: string(for: "VK_APNS_ENVIRONMENT")) }
+
     static var requestedScopes: String { string(for: "VK_REQUESTED_SCOPES", fallback: "vkid.personal_info") }
 
     static var vkAPIVersion: String {
@@ -50,4 +52,10 @@ private extension String {
     func or(_ other: String) -> String {
         isEmpty ? other : self
     }
+}
+
+/// Matches the same APNS_ENVIRONMENT build setting used by the signing entitlement.
+enum APNsEnvironment: String, Sendable {
+    case development, production
+    var vkSandbox: String { self == .development ? "1" : "0" }
 }
