@@ -202,6 +202,9 @@ struct FriendRequestsView: View {
 /// S20 — community page.
 struct CommunityView: View {
     let communityID: Int64
+    @Environment(AppEnvironment.self) private var env
+    @State private var wallPosts: [FeedPost] = []
+    @State private var wallError: String?
 
     var body: some View {
         FixtureScreen(
@@ -235,11 +238,19 @@ struct CommunityView: View {
                     }
                 }
                 Section("Записи") {
-                    Text("Записи сообщества можно просмотреть в официальном VK.")
-                        .font(.footnote).foregroundStyle(.secondary)
+                    ForEach(wallPosts) { post in NavigationLink(value:AppRoute.postDetail(post.id)) { VStack(alignment:.leading) { Text(post.text).lineLimit(5); Text(post.dateLabel).font(.caption).foregroundStyle(.secondary) } } }
+                    if let wallError { Text(wallError).font(.footnote).foregroundStyle(.red) }
+                    if !env.isLiveVKSession { Text("Демонстрационная страница сообщества").font(.footnote) }
                 }
             }
             .withAppRoutes()
+            .task(id:communityID) {
+                guard env.isLiveVKSession else { return }
+                do {
+                    let response = try await env.catalog.request("wall.get",["owner_id":"-\(communityID)","count":"30","extended":"1"])
+                    wallPosts = env.catalog.mapPosts(response)
+                } catch { wallError = error.localizedDescription }
+            }
         }
     }
 }
