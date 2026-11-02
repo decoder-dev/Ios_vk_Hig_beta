@@ -1,85 +1,174 @@
 import SwiftUI
+import UIKit
+import Observation
 
-/// S06 — comments list (fixture).
-struct CommentsView: View {
+struct CommentThread: Identifiable, Equatable {
+    var id: Int64 { root.id }
+    var root: CommentItem
+    var replies: [CommentItem]
+    var totalReplies: Int
+}
+
+@MainActor
+@Observable
+final class CommentsViewModel {
     let postID: Int64
-    @Environment(AppEnvironment.self) private var env
-    @State private var revision = 0
-    @State private var sending = false
-    @State private var localComments: [CommentItem] = []
-    @State private var replyTo: CommentItem?
-    @State private var draft = ""
-
-    var body: some View {
-        FixtureScreen(
-            title: "Комментарии",
-            screenID: "S06",
-            resourceID: postID,
-            emptyTitle: "Нет комментариев",
-            emptySymbol: "text.bubble",
-            emptyDetails: "wall.getComments wires here when available.",
-            isEmpty: { $0.isEmpty },
-            loadValue: {
-                CatalogFixtures.comments.filter { $0.postID == postID || postID == 0 }
-            }
-        ) { comments in
-            List(comments + localComments) { item in
-                HStack(alignment: .top, spacing: 12) {
-                    VKAvatar(initials: item.initials, size: 36, tint: .indigo)
-                    VStack(alignment: .leading, spacing: 4) {
-                        HStack {
-                            Text(item.author).font(.subheadline.weight(.semibold))
-                            Spacer()
-                            Text(item.dateLabel).font(.caption2).foregroundStyle(.secondary)
-                        }
-                        Text(item.text).font(.body)
-                        Button("Ответить") { replyTo = item }
-                            .font(.caption).frame(minHeight:44)
-                        if item.replyToID != nil {
-                            Text("Reply")
-                                .font(.caption)
-                                .foregroundStyle(VKStyle.accent)
-                        }
-                    }
-                }
-                .padding(.vertical, 4)
-            }
-            .listStyle(.plain)
-            .safeAreaInset(edge: .bottom) {
-                HStack {
-                    TextField("Написать комментарий", text: $draft, axis: .vertical)
-                        .lineLimit(1...4)
-                        .textFieldStyle(.roundedBorder)
-                    Button { Task {
-                        let text = draft.trimmingCharacters(in:.whitespacesAndNewlines)
-                        guard !text.isEmpty, !sending else { return }
-                        sending = true; defer { sending = false }
-                        if env.isLiveVKSession {
-                            do {
-                                let post = try env.catalog.post(postID)
-                                var parameters = ["owner_id":"\(post.ownerID)","post_id":"\(post.nativeID ?? post.id)","message":text]
-                                if let replyTo { parameters["reply_to_comment"] = "\(replyTo.id)" }
-                                _ = try await env.catalog.request("wall.createComment",parameters)
-                                draft = ""; replyTo = nil; revision += 1
-                            } catch { env.catalog.notice = error.localizedDescription }
-                        } else {
-                            localComments.append(CommentItem(id:Int64(Date().timeIntervalSince1970 * 1000),postID:postID,author:"Вы (демо)",initials:"ВЫ",text:text,dateLabel:"Сейчас",replyToID:replyTo?.id))
-                            draft = ""; replyTo = nil
-                        }
-                    } } label: {
-                        Image(systemName: "arrow.up.circle.fill").font(.title2)
-                            .frame(minWidth: 44, minHeight: 44)
-                    }
-                    .disabled(sending || draft.trimmingCharacters(in: .whitespacesAndNewlines).isEmpty)
-                    .accessibilityLabel("Send comment (fixture — not live)")
-                }
-                .padding(10)
-                .background(.regularMaterial)
-            }
+    private let environment: AppEnvironment
+    var state: LoadState<[CommentThread]> = .idle
+    var draft = ""
+    var replyTo: CommentItem?
+    var sending = false
+    var loading = false
+    var loadingThreads: Set<Int64> = []
+    var hasMore = true
+    var error: String?
+    private var offset = 0
+    private var sendGUID = UUID().uuidString
+    private var draftKey: String
+    init(postID:Int64,environment:AppEnvironment) {
+        self.postID = postID; self.environment = environment
+        draftKey = "vkhig.comment.draft.\(VKIDAuthCoordinator.shared.userID ?? 0).\(postID)"
+        draft = UserDefaults.standard.string(forKey:draftKey) ?? ""
+    }
+    func saveDraft() { UserDefaults.standard.set(draft,forKey:draftKey) }
+    private func item(_ j:VKJSON,names:[Int64:String]) -> CommentItem {
+        let author = names[j["from_id"].int] ?? "VK \(j["from_id"].int)"
+        return CommentItem(id:j["id"].int,postID:postID,author:author,initials:VKCatalogService.initials(author),text:j["text"].string,
+            dateLabel:VKCatalogService.date(j["date"]),replyToID:j["reply_to_comment"].int == 0 ? nil : j["reply_to_comment"].int,authorID:j["from_id"].int)
+    }
+    private func names(_ response:VKJSON) -> [Int64:String] {
+        var names=Dictionary(response["profiles"].items.map { ($0["id"].int,VKCatalogService.name($0)) },uniquingKeysWith:{a,_ in a})
+        for group in response["groups"].items { names[-group["id"].int]=group["name"].string }
+        return names
+    }
+    func load(reset:Bool = true) async {
+        guard !loading else { return }; loading=true; defer { loading=false }
+        if reset { offset=0;hasMore=true;if case .loaded = state {} else {state = .loading} }
+        error=nil
+        if !environment.isLiveVKSession {
+            let items=CatalogFixtures.comments.filter {$0.postID == postID}
+            let roots=items.filter {$0.replyToID == nil}
+            let threads=roots.map { root in CommentThread(root:root,replies:items.filter {$0.replyToID == root.id},totalReplies:items.filter {$0.replyToID == root.id}.count) }
+            state=threads.isEmpty ? .empty : .loaded(threads);hasMore=false;return
         }
-        .id(revision)
-        .safeAreaInset(edge:.top) {
-            if let replyTo { HStack { Text("Ответ: \(replyTo.author)"); Button("Отмена") { self.replyTo = nil } }.font(.caption).padding(8) }
+        do {
+            let post=try environment.catalog.post(postID)
+            let response=try await environment.catalog.request("wall.getComments",["owner_id":"\(post.ownerID)","post_id":"\(post.nativeID ?? post.id)","extended":"1","count":"30","offset":"\(offset)","thread_items_count":"3","sort":"asc"])
+            try Task.checkCancellation()
+            let authors=names(response)
+            let page=response.list.map { j in CommentThread(root:item(j,names:authors),replies:j["thread"]["items"].items.map {item($0,names:authors)},totalReplies:Int(j["thread"]["count"].int)) }
+            var current:[CommentThread]=[];if !reset,case .loaded(let old)=state {current=old}
+            var seen=Set(current.map(\.id));current+=page.filter {seen.insert($0.id).inserted}
+            offset+=page.count;hasMore=page.count == 30
+            state=current.isEmpty ? .empty : .loaded(current)
+        } catch is CancellationError {return}
+        catch {
+            self.error=error.localizedDescription
+            if case .loaded = state {} else {state = .failed(error as? AppError ?? .network(error.localizedDescription))}
+        }
+    }
+    func loadReplies(_ thread:CommentThread) async {
+        guard !loadingThreads.contains(thread.id),environment.isLiveVKSession else {return}
+        loadingThreads.insert(thread.id);defer {loadingThreads.remove(thread.id)}
+        do {
+            let post=try environment.catalog.post(postID)
+            let response=try await environment.catalog.request("wall.getComments",["owner_id":"\(post.ownerID)","post_id":"\(post.nativeID ?? post.id)","comment_id":"\(thread.id)","offset":"\(thread.replies.count)","count":"30","extended":"1"])
+            let authors=names(response),page=response.list.filter {$0["id"].int != thread.id}.map {item($0,names:authors)}
+            guard case .loaded(var all)=state,let index=all.firstIndex(where:{$0.id == thread.id}) else {return}
+            var seen=Set(all[index].replies.map(\.id));all[index].replies+=page.filter {seen.insert($0.id).inserted}
+            if page.isEmpty {all[index].totalReplies=all[index].replies.count}
+            state = .loaded(all)
+        } catch {self.error=error.localizedDescription}
+    }
+    func send() async {
+        let text=draft.trimmingCharacters(in:.whitespacesAndNewlines)
+        guard !text.isEmpty,!sending else {return};sending=true;defer {sending=false}
+        if !environment.isLiveVKSession {
+            let local=CommentItem(id:Int64(Date().timeIntervalSince1970 * 1000),postID:postID,author:"Вы (демо)",initials:"ВЫ",text:text,dateLabel:"Сейчас",replyToID:replyTo?.id)
+            var all:[CommentThread]=[];if case .loaded(let old)=state {all=old}
+            if let replyTo,let i=all.firstIndex(where:{$0.id == replyTo.id || $0.replies.contains(where:{$0.id == replyTo.id})}) {all[i].replies.append(local);all[i].totalReplies+=1}
+            else {all.append(CommentThread(root:local,replies:[],totalReplies:0))}
+            state = .loaded(all);draft="";replyTo=nil;saveDraft();return
+        }
+        do {
+            let post=try environment.catalog.post(postID)
+            var parameters=["owner_id":"\(post.ownerID)","post_id":"\(post.nativeID ?? post.id)","message":text,"guid":sendGUID]
+            if let replyTo {parameters["reply_to_comment"]="\(replyTo.id)"}
+            let response=try await environment.catalog.request("wall.createComment",parameters)
+            guard response["comment_id"].int > 0 || response.int > 0 else {throw AppError.decoding}
+            draft="";replyTo=nil;sendGUID=UUID().uuidString;saveDraft();await load()
+        } catch {self.error=error.localizedDescription}
+    }
+    func remove(_ comment:CommentItem) async {
+        do {
+            if environment.isLiveVKSession {
+                let post=try environment.catalog.post(postID)
+                let response=try await environment.catalog.request("wall.deleteComment",["owner_id":"\(post.ownerID)","comment_id":"\(comment.id)"])
+                guard response.int == 1 else {throw AppError.decoding}
+            }
+            if case .loaded(var all)=state {
+                all.removeAll {$0.id == comment.id}
+                for i in all.indices {all[i].replies.removeAll {$0.id == comment.id}}
+                state=all.isEmpty ? .empty : .loaded(all)
+            }
+        } catch {self.error=error.localizedDescription}
+    }
+}
+
+struct CommentsView:View {
+    let postID:Int64
+    @Environment(AppEnvironment.self) private var env
+    @State private var model:CommentsViewModel?
+    @State private var deleting:CommentItem?
+    var body:some View {
+        Group {
+            if let model {content(model)} else {ProgressView()}
+        }.navigationTitle("Комментарии")
+        .task {if model == nil {let vm=CommentsViewModel(postID:postID,environment:env);model=vm;await vm.load()}}
+        .confirmationDialog("Удалить комментарий?",isPresented:Binding(get:{deleting != nil},set:{if !$0 {deleting=nil}})) {
+            Button("Удалить",role:.destructive) {if let comment=deleting {Task {await model?.remove(comment)}};deleting=nil}
+        }
+    }
+    @ViewBuilder private func content(_ model:CommentsViewModel) -> some View {
+        @Bindable var model=model
+        LoadableContainer(state:model.state,titleForEmpty:"Нет комментариев",emptySymbol:"text.bubble",emptyDetails:"Оставьте первый комментарий.",onRetry:{Task {await model.load()}}) {threads in
+            List {
+                if !env.isLiveVKSession {FixtureBanner()}
+                ForEach(threads) {thread in
+                    Section {
+                        row(thread.root,model:model)
+                        ForEach(thread.replies) {reply in row(reply,model:model).padding(.leading,24)}
+                        if thread.replies.count < thread.totalReplies {
+                            Button("Показать ответы (\(thread.totalReplies - thread.replies.count))") {Task {await model.loadReplies(thread)}}.disabled(model.loadingThreads.contains(thread.id)).frame(minHeight:44)
+                        }
+                    }
+                }
+                if model.hasMore {Button("Загрузить ещё комментарии") {Task {await model.load(reset:false)}}.disabled(model.loading).frame(minHeight:44)}
+            }.listStyle(.plain).refreshable {await model.load()}
+        }
+        .safeAreaInset(edge:.bottom) {
+            VStack(alignment:.leading,spacing:8) {
+                if let reply=model.replyTo {HStack {Text("Ответ: \(reply.author)").font(.caption);Spacer();Button("Отмена") {model.replyTo=nil}}}
+                if let error=model.error {Text(error).font(.caption).foregroundStyle(.red)}
+                HStack {
+                    TextField("Комментарий",text:$model.draft,axis:.vertical).lineLimit(1...5).textFieldStyle(.roundedBorder).onChange(of:model.draft) {_,_ in model.saveDraft()}
+                    Button {Task {await model.send()}} label:{Image(systemName:"arrow.up.circle.fill").font(.title).frame(width:44,height:44)}.disabled(model.sending || model.draft.trimmingCharacters(in:.whitespacesAndNewlines).isEmpty).accessibilityLabel("Отправить комментарий")
+                }
+            }.padding(12).background(.regularMaterial)
+        }
+    }
+    private func row(_ comment:CommentItem,model:CommentsViewModel) -> some View {
+        HStack(alignment:.top,spacing:10) {
+            VKAvatar(initials:comment.initials,size:36,tint:.indigo)
+            VStack(alignment:.leading,spacing:5) {
+                Text(comment.author).font(.headline)
+                Text(comment.text)
+                HStack {Text(comment.dateLabel).foregroundStyle(.secondary);Button("Ответить") {model.replyTo=comment}.frame(minHeight:44)}.font(.caption)
+            }
+        }.padding(.vertical,4).contextMenu {
+            Button("Копировать") {UIPasteboard.general.string=comment.text}
+            Button("Ответить") {model.replyTo=comment}
+            if !env.isLiveVKSession || comment.authorID == VKIDAuthCoordinator.shared.userID {Button("Удалить",role:.destructive) {deleting=comment}}
         }
     }
 }
