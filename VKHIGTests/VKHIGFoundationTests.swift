@@ -2,6 +2,167 @@ import XCTest
 @testable import VKHIG
 
 final class VKHIGFoundationTests: XCTestCase {
+    func testChatActionUsesChatIDAndRejectsPersonalDialog() throws {
+        XCTAssertThrowsError(try VKAction.chat("messages.editChat",peerID:123))
+        XCTAssertThrowsError(try VKAction.chat("messages.editChat",peerID:2_000_000_000))
+        let action=try VKAction.chat("messages.removeChatUser",peerID:2_000_000_042,values:["member_id":"123"])
+        XCTAssertEqual(action.parameters,["chat_id":"42","member_id":"123"])
+        XCTAssertFalse(VKAction.allows("owner",isOwner:false,isAdmin:true))
+        XCTAssertTrue(VKAction.allows("owner_and_admins",isOwner:false,isAdmin:true))
+        XCTAssertFalse(VKAction.allows("unknown",isOwner:false,isAdmin:false))
+    }
+    func testBookmarkActionsKeepObjectIdentity() throws {
+        let add=try VKAction.bookmarkAddition("https://vk.com/wall-42_99?access_key=fixture-key")
+        XCTAssertEqual(add.method,"fave.addPost")
+        XCTAssertEqual(add.parameters,["owner_id":"-42","id":"99","access_key":"fixture-key"])
+        let item=BookmarkItem(id:1,title:"Post",subtitle:"",symbol:"bookmark",kind:"post",ownerID:-42,itemID:99)
+        XCTAssertEqual(try VKAction.bookmarkRemoval(item).parameters,["owner_id":"-42","id":"99"])
+        XCTAssertThrowsError(try VKAction.bookmarkAddition("https://user:password@example.com/private"))
+        XCTAssertThrowsError(try VKAction.bookmarkAddition("http://example.com/"))
+        XCTAssertEqual(BookmarkItem.stableID("video:1:2"),BookmarkItem.stableID("video:1:2"))
+        XCTAssertNotEqual(BookmarkItem.stableID("video:1:2"),BookmarkItem.stableID("post:1:2"))
+    }
+    func testUploadNamesCannotInjectMultipartHeaders() {
+        let name=VKUploadFile.safeName("../../secret\"\r\nX-Header: injected.pdf")
+        XCTAssertFalse(name.contains("\r"));XCTAssertFalse(name.contains("\n"));XCTAssertFalse(name.contains("\""));XCTAssertFalse(name.contains("/"))
+        XCTAssertTrue(name.hasSuffix(".pdf"))
+        XCTAssertEqual(VKUploadFile.safeName(""),"document.bin")
+    }
+    func testJSONIntegerOverflowDoesNotCrash() {
+        XCTAssertEqual(VKJSON.number(1e100).int,0)
+        XCTAssertEqual(VKJSON.number(-1e100).int,0)
+        XCTAssertEqual(VKJSON.number(123).int,123)
+    }
+    func testReplyAndForwardQuotesPreserveAttachmentsAndStayBounded() throws {
+        let data=Data("""
+        {"reply_message":{"text":"Reply","attachments":[{"type":"link","link":{"url":"https://example.com/","title":"Source"}}]},"fwd_messages":[{"text":"Forward"}]}
+        """.utf8)
+        let quotes=try JSONDecoder().decode(VKJSON.self,from:data).messageQuotes
+        XCTAssertEqual(quotes.count,2)
+        XCTAssertEqual(quotes[0].attachments.count,1)
+        XCTAssertEqual(quotes[1].text,"Forward")
+        XCTAssertEqual(Set(quotes.map(\.id)).count,2)
+    }
+
+    @MainActor
+    func testAttachmentTypesAndUnsafeStreams() throws {
+        let data=Data("""
+        [{"type":"audio_message","audio_message":{"id":1,"owner_id":2,"link_mp3":"https://example.com/voice.mp3","duration":3}},
+         {"type":"sticker","sticker":{"images":[{"width":64,"url":"https://example.com/sticker.png"}]}},
+         {"type":"link","link":{"url":"https://example.com/","title":"Link"}},
+         {"type":"audio","audio":{"id":4,"url":"http://example.com/unsafe.mp3"}},
+         {"type":"unsupported_fixture","unsupported_fixture":{}}]
+        """.utf8)
+        let items=try JSONDecoder().decode(VKJSON.self,from:data).chatAttachments
+        XCTAssertEqual(items.count,5)
+        XCTAssertEqual(items[0].kind,.voice)
+        XCTAssertEqual(items[1].kind,.sticker)
+        XCTAssertEqual(items[2].kind,.link)
+        XCTAssertEqual(items[3].kind,.unsupported)
+        XCTAssertNil(items[3].playbackURL)
+        XCTAssertEqual(items[4].kind,.unsupported)
+    }
+    @MainActor
+    func testStoriesFlattenGroupsAndExcludeExpiredOrHidden() throws {
+        let data=Data("""
+        {"profiles":[{"id":1,"first_name":"Test","last_name":"User"}],"groups":[{"id":2,"name":"Group"}],"items":[
+        {"stories":[{"id":10,"owner_id":1,"photo":{"sizes":[{"width":100,"url":"https://example.com/story.jpg"}]}}]},
+        {"grouped":[{"stories":[{"id":10,"owner_id":-2},{"id":11,"owner_id":-2,"is_expired":true},{"id":12,"owner_id":-2,"can_see":0}]}]}]}
+        """.utf8)
+        let stories=VKCatalogService.mapStories(try JSONDecoder().decode(VKJSON.self,from:data))
+        XCTAssertEqual(stories.count,2)
+        XCTAssertEqual(Set(stories.map(\.id)).count,2)
+        XCTAssertEqual(stories[0].author,"Test User")
+        XCTAssertEqual(stories[1].author,"Group")
+        XCTAssertTrue(stories[0].available)
+    }
+    @MainActor
+    func testRecipientPagesDeduplicateAndKeepOffset() async {
+        var offsets:[String]=[]
+        let model=RecipientPickerModel {method,params in
+            XCTAssertEqual(method,"messages.getConversations")
+            offsets.append(params["offset"] ?? "")
+            let ids=params["offset"]=="0" ? Array(1...100) : [100,101]
+            let page=ids.map {id in VKJSON.object(["conversation":.object(["peer":.object(["id":.number(Double(id))])])])}
+            return .object(["items":.array(page)])
+        }
+        await model.load()
+        XCTAssertTrue(model.hasMore)
+        await model.load(reset:false)
+        XCTAssertEqual(offsets,["0","100"])
+        XCTAssertEqual(model.peers.count,101)
+        XCTAssertFalse(model.hasMore)
+    }
+    @MainActor
+    func testChatAdministrationDoesNotWriteWithoutPermission() async {
+        var calls=0
+        let model=ChatAdministrationModel(peerID:2_000_000_001) {_,_ in calls+=1;return .number(1)}
+        let changed=await model.rename("New name")
+        XCTAssertFalse(changed);XCTAssertEqual(calls,0)
+        XCTAssertNotNil(model.error)
+    }
+    @MainActor
+    func testChatServerACLOverridesPermissivePolicy() async {
+        let model=ChatAdministrationModel(peerID:2_000_000_001) {method,_ in
+            if method=="messages.getConversationsById" {
+                return .object(["items":.array([.object(["chat_settings":.object(["title":.string("Chat"),"acl":.object(["can_change_info":.bool(false),"can_invite":.bool(true)]),"permissions":.object(["change_info":.string("all")])])])])])
+            }
+            return .object(["items":.array([])])
+        }
+        await model.load()
+        XCTAssertFalse(model.canEdit)
+        XCTAssertTrue(model.canInvite)
+    }
+    @MainActor
+    func testCommunityManagementRefusesUnapprovedRoleChange() async {
+        var calls=0
+        let model=CommunityAdministrationModel(groupID:42) {_,_ in calls+=1;return .number(1)}
+        let user=Friend(id:1,displayName:"Test",initials:"T",isOnline:false,city:nil)
+        let result=await model.role("administrator",user:user)
+        XCTAssertFalse(result);XCTAssertEqual(calls,0)
+    }
+    @MainActor
+    func testBookmarkDeletionFailureKeepsItem() async {
+        let item=BookmarkItem(id:1,title:"Post",subtitle:"",symbol:"bookmark",kind:"post",ownerID:1,itemID:2)
+        let model=BookmarksModel {_,_ in throw AppError.network("Denied")}
+        model.items=[item]
+        await model.remove(item)
+        XCTAssertEqual(model.items,[item]);XCTAssertNotNil(model.error)
+    }
+    @MainActor
+    func testProfileBirthdayValidationRejectsInvalidComponents() {
+        XCTAssertTrue(ProfileEditorModel.validBirthday("29.02.2000"))
+        XCTAssertTrue(ProfileEditorModel.validBirthday("29.02"))
+        XCTAssertFalse(ProfileEditorModel.validBirthday("29.02.2001"))
+        XCTAssertFalse(ProfileEditorModel.validBirthday("1.2.invalid"))
+        XCTAssertFalse(ProfileEditorModel.validBirthday("31.04.2000"))
+    }
+    @MainActor
+    func testProfileSaveUsesCountryAndCityIDs() async {
+        var saved:[String:String]=[:]
+        let model=ProfileEditorModel {method,params in
+            if method=="account.saveProfileInfo" {saved=params;return .object(["changed":.number(1)])}
+            return .object(["first_name":.string("Test"),"last_name":.string("User")])
+        }
+        await model.load();model.country=VKLocationChoice(id:1,title:"Country");model.city=VKLocationChoice(id:2,title:"City")
+        await model.save()
+        XCTAssertEqual(saved["country_id"],"1");XCTAssertEqual(saved["city_id"],"2")
+        XCTAssertFalse(model.saving);XCTAssertNil(model.error)
+    }
+    @MainActor
+    func testMusicCatalogDoesNotRequestWithoutAudioGrant() async {
+        var calls=0
+        let model=VKMusicCatalogModel {_,_ in calls+=1;return .object([:])}
+        await model.load(grants:["vkid.personal_info"])
+        XCTAssertEqual(calls,0);XCTAssertNotNil(model.error)
+    }
+    @MainActor
+    func testMusicCatalogKeepsUnavailableTracksWithoutUnsafePlayback() {
+        let response=VKJSON.object(["items":.array([.object(["id":.number(1),"owner_id":.number(2),"title":.string("Track"),"url":.string("http://example.com/file.mp3")])])])
+        let tracks=VKMusicCatalogModel.map(response)
+        XCTAssertEqual(tracks.count,1);XCTAssertNil(tracks[0].url)
+    }
+
     @MainActor
     func testCommentReplyDeletionUpdatesThreadCount() async {
         let session=SessionStore(authCoordinator:VKIDAuthCoordinator(configuration:VKIDConfiguration(clientID:nil,redirectURLScheme:nil)))
