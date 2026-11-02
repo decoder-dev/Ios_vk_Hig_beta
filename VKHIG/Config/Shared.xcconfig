@@ -9,7 +9,3 @@ VK_API_VERSION = 5.199
 VK_REQUESTED_SCOPES = vkid.personal_info
 
 #include? "Secrets.xcconfig"
-
-CODE_SIGN_ENTITLEMENTS = VKHIG/Resources/VKHIG.entitlements
-APNS_ENVIRONMENT = development
-APNS_ENVIRONMENT[config=Release] = production
