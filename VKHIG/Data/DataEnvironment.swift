@@ -76,7 +76,6 @@ final class AppEnvironment {
         guard !isSigningOut else {return}
         isSigningOut=true
         Task {
-            await PushRegistration.shared.disable()
             finishSignOut()
             isSigningOut=false
         }
@@ -103,7 +102,6 @@ final class AppEnvironment {
         if capabilities.hasAccessToken {
             // Rights come from the actual OAuth response, never from a guessed allow-list.
             dataMode = .live
-            await PushRegistration.shared.registerIfNeeded()
         } else if session.isLiveVKSession {
             session.signOut()
             dataMode = .fixtures
