@@ -13,3 +13,5 @@
 
 macOS workflow: `.github/workflows/ios-secrets-config.yml`, results artifact `ios-test-results`.
 Auth code follows public OAuth parameters verified against VKCOM/vkid-ios-sdk tag 3.0.0; API adapters verified against VKCOM/vk-api-schema parameter definitions. No SDK source was copied into the app.
+
+Main integration: PR #2 merged; subsequent work committed directly to main by decoder-dev. The first main runs failed compilation (including a multi-statement fixture closure without return). Both affected loaders were fixed/replaced. New main build is queued/running; a successful compile/test is not yet claimed. Swift parser and configuration validation repeated after comments/search/audio/calls/push changes; only known Result<Void> parser limitation remains. Real APNs delivery, audio route changes and VK calling: NOT RUN.
