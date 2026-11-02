@@ -1,62 +1,40 @@
 # VK HIG
 
-Native SwiftUI VK client (Apple HIG–oriented) for repository `Ios_vk_Hig_beta`.
+Нативный SwiftUI-клиент для iOS 17+. Независимый проект, не официальный продукт VK или Apple.
 
-> Working name **VK HIG**. Not an official VK or Apple product.  
-> Handoff kit: see `README_START_HERE.md`, `AGENTS.md`, `PROMPT_FOR_CURSOR.md`.
+## Запуск
 
-## Status
-
-- Development lands on **`main`** (no long-lived feature branches).
-- **S01–S44** kit screens: SwiftUI UI + fixture/demo paths + capability gates (see `output/IMPLEMENTATION_STATUS.md`).
-- **Xcode build / XCTest / Simulator:** `NOT RUN` on Linux — verify on Mac.
-- Credentials: placeholders only (`Secrets.example.md`); Jessica fills VK ID locally when testing.
-
-Live VK API success is **not** simulated. Fixture data shows an orange banner.
-
-## Open on Mac
-
-```bash
-git clone https://github.com/decoder-dev/Ios_vk_Hig_beta.git
-cd Ios_vk_Hig_beta
-# optional: brew install xcodegen && xcodegen generate
+```sh
+brew install xcodegen
+bash scripts/write_secrets_xcconfig.sh
+xcodegen generate
 open VKHIG.xcodeproj
 ```
 
-### Build & test
+В кабинете **вашего** VK ID приложения зарегистрируйте `vkhig://vkid` и bundle id `com.decoderdev.vkhig`.
+Public client ID: `54707652`. Вход использует официальный публичный OAuth 2.1 через `ASWebAuthenticationSession`, S256 PKCE, проверку state и refresh. Client secret не нужен публичному потоку и не входит в приложение, логи или CI artifacts.
 
-```bash
-xcodebuild -scheme VKHIG \
-  -destination 'platform=iOS Simulator,name=iPhone 16' \
-  -configuration Debug build
+`VK_REQUESTED_SCOPES` в `VKHIG/Config/Shared.xcconfig` содержит только `vkid.personal_info` по умолчанию. Добавляйте лишь права, разрешённые вашему приложению в кабинете VK. Наличие ID/secret само по себе не выдаёт права `messages`, `wall`, `photos` и т. д. Функции с отказом API показывают ошибку и не заменяются демоданными.
 
-xcodebuild -scheme VKHIG \
-  -destination 'platform=iOS Simulator,name=iPhone 16' \
-  test
+## Реализованные пути
+
+- Вход, восстановление/обновление токена и выход; Keychain; защита callback.
+- Лента и диалоги с дополнительными страницами; история, отправка, устойчивые random_id, retry, reply/forward/delete.
+- Сохранение черновиков и очереди неотправленных сообщений; очистка приватных локальных данных при выходе.
+- Профили, друзья, заявки, сообщества, поиск, уведомления, фото/альбомы, видео и сохранённое: адаптеры официального API.
+- Загрузка фото/документа в диалог через системные pickers и upload/save endpoints.
+- Отправка поста и комментария, лайк; сервер подтверждает результат.
+- Просмотр фотографий, AVKit при выдаче прямого stream URL либо официальный видеоплеер VK.
+- Тема, разрешение iOS на уведомления, фактическая очистка URLCache, отдельные NavigationStack и deep links.
+
+В деморежиме данные явно помечены. Музыка, звонки и push-доставка не выдают несуществующую поддержку: нужны отдельные официальные права/SDK/сервер. Stories остаются только демосценарием. Полный экранный статус: `output/IMPLEMENTATION_STATUS.md`.
+
+## Проверка
+
+GitHub Actions выполняет генерацию проекта, build, unit tests и UI smoke/screenshots на macOS. Секреты не выгружаются. Результаты сохраняются в `ios-test-results` (`.xcresult`).
+
+```sh
+xcodebuild -scheme VKHIG -destination 'platform=iOS Simulator,name=iPhone 16' CODE_SIGNING_ALLOWED=NO test
 ```
 
-Min deployment: **iOS 17**.
-
-## VK ID credentials (required for live auth)
-
-1. Create your own app in the VK ID console  
-2. Set client/app id + redirect URI / URL scheme in the project (do not commit secrets)  
-3. Add [VKID iOS SDK](https://github.com/VKCOM/vkid-ios-sdk) via SPM  
-4. Wire `VKIDConfiguration` in `VKIDAuthCoordinator`  
-5. Verify scopes before enabling features in `CapabilityRegistry`
-
-Never use Fenrir/Phoenix keys or private VK APIs.
-
-## Layout
-
-| Path | Purpose |
-|---|---|
-| `VKHIG/` | App sources |
-| `VKHIGTests/` | Unit tests |
-| `docs/`, `design/`, `examples/` | Kit specs / tokens / reference |
-| `output/` | Audit & delivery status |
-| `project.yml` | XcodeGen definition |
-
-## License / legal
-
-See `README_LICENSE.md` and `docs/LEGAL_AND_BRANDING.md`. Independent implementation — no Fenrir/Phoenix source copied.
+До успешного CI и проверки с реальным разрешённым VK аккаунтом проект нельзя считать релизно готовым.

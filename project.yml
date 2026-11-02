@@ -40,17 +40,6 @@ targets:
       SUPPORTS_XR_DESIGNED_FOR_IPHONE_IPAD: false
       INFOPLIST_EXPAND_BUILD_SETTINGS: true
 
-    info:
-      path: VKHIG/Resources/Info.plist
-      properties:
-        CFBundleDisplayName: VK HIG
-        UILaunchScreen: {}
-        UISupportedInterfaceOrientations:
-          - UIInterfaceOrientationPortrait
-          - UIInterfaceOrientationLandscapeLeft
-          - UIInterfaceOrientationLandscapeRight
-        UIApplicationSceneManifest:
-          UIApplicationSupportsMultipleScenes: false
   VKHIGTests:
     type: bundle.unit-test
     platform: iOS
@@ -63,6 +52,18 @@ targets:
       GENERATE_INFOPLIST_FILE: true
       TEST_HOST: "$(BUILT_PRODUCTS_DIR)/VK HIG.app/$(BUNDLE_EXECUTABLE_FOLDER_PATH)/VK HIG"
       BUNDLE_LOADER: "$(TEST_HOST)"
+  VKHIGUITests:
+    type: bundle.ui-testing
+    platform: iOS
+    sources:
+      - path: VKHIGUITests
+    dependencies:
+      - target: VKHIG
+    settings:
+      PRODUCT_BUNDLE_IDENTIFIER: com.decoderdev.vkhig.uitests
+      GENERATE_INFOPLIST_FILE: true
+      TEST_TARGET_NAME: VKHIG
+
 schemes:
   VKHIG:
     build:
@@ -72,5 +73,6 @@ schemes:
     test:
       targets:
         - VKHIGTests
+        - VKHIGUITests
     run:
       config: Debug
