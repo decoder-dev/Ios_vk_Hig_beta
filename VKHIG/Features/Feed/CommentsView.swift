@@ -102,6 +102,27 @@ final class CommentsViewModel {
             draft="";replyTo=nil;sendGUID=UUID().uuidString;saveDraft();await load()
         } catch {self.error=error.localizedDescription}
     }
+    func edit(_ comment:CommentItem,text:String) async -> Bool {
+        let text=text.trimmingCharacters(in:.whitespacesAndNewlines)
+        guard !text.isEmpty,!sending else {return false}
+        sending=true;error=nil;defer {sending=false}
+        do {
+            if environment.isLiveVKSession {
+                let post=try environment.catalog.post(postID)
+                let response=try await environment.catalog.request("wall.editComment",["owner_id":"\(post.ownerID)","comment_id":"\(comment.id)","message":text])
+                guard response.int == 1 else {throw AppError.decoding}
+            }
+            let updated=CommentItem(id:comment.id,postID:comment.postID,author:comment.author,initials:comment.initials,text:text,dateLabel:comment.dateLabel,replyToID:comment.replyToID,authorID:comment.authorID)
+            if case .loaded(var threads)=state {
+                for i in threads.indices {
+                    if threads[i].root.id == comment.id {threads[i].root=updated}
+                    if let j=threads[i].replies.firstIndex(where:{$0.id == comment.id}) {threads[i].replies[j]=updated}
+                }
+                state = .loaded(threads)
+            }
+            return true
+        } catch {self.error=error.localizedDescription;return false}
+    }
     func remove(_ comment:CommentItem) async {
         do {
             if environment.isLiveVKSession {
@@ -127,11 +148,28 @@ struct CommentsView:View {
     @Environment(AppEnvironment.self) private var env
     @State private var model:CommentsViewModel?
     @State private var deleting:CommentItem?
+    @State private var editing:CommentItem?
+    @State private var editedText=""
     var body:some View {
         Group {
             if let model {content(model)} else {ProgressView()}
         }.navigationTitle("Комментарии")
         .task {if model == nil {let vm=CommentsViewModel(postID:postID,environment:env);model=vm;await vm.load()}}
+        .sheet(item:$editing) {comment in
+            NavigationStack {
+                Form {
+                    TextField("Комментарий",text:$editedText,axis:.vertical).lineLimit(3...12)
+                    if let error=model?.error {Text(error).foregroundStyle(.red)}
+                }.navigationTitle("Изменить комментарий")
+                .interactiveDismissDisabled(model?.sending == true)
+                .toolbar {
+                    ToolbarItem(placement:.cancellationAction) {Button("Отмена") {editing=nil}.disabled(model?.sending == true)}
+                    ToolbarItem(placement:.confirmationAction) {
+                        Button("Сохранить") {Task {if await model?.edit(comment,text:editedText) == true {editing=nil}}}.disabled(model?.sending == true || editedText.trimmingCharacters(in:.whitespacesAndNewlines).isEmpty)
+                    }
+                }
+            }
+        }
         .confirmationDialog("Удалить комментарий?",isPresented:Binding(get:{deleting != nil},set:{if !$0 {deleting=nil}})) {
             Button("Удалить",role:.destructive) {if let comment=deleting {Task {await model?.remove(comment)}};deleting=nil}
         }
@@ -175,7 +213,10 @@ struct CommentsView:View {
         }.padding(.vertical,4).contextMenu {
             Button("Копировать") {UIPasteboard.general.string=comment.text}
             Button("Ответить") {model.replyTo=comment}
-            if !env.isLiveVKSession || comment.authorID == VKIDAuthCoordinator.shared.userID {Button("Удалить",role:.destructive) {deleting=comment}}
+            if !env.isLiveVKSession || comment.authorID == VKIDAuthCoordinator.shared.userID {
+                Button("Изменить") {editedText=comment.text;editing=comment;model.error=nil}
+                Button("Удалить",role:.destructive) {deleting=comment}
+            }
         }
     }
 }
