@@ -667,8 +667,9 @@
 				SUPPORTS_MACCATALYST = NO;
 				SWIFT_EMIT_LOC_STRINGS = YES;
 				TARGETED_DEVICE_FAMILY = "1,2";
-				VK_CLIENT_ID = 54707652;
-				VK_REDIRECT_SCHEME = vkhig;
+				VK_CLIENT_ID = 54879294;
+				VK_REDIRECT_SCHEME = https;
+				VK_REDIRECT_HOST = com.decoderdev.vkhig;
 				VK_API_VERSION = 5.199;
 			};
 			name = Debug;
@@ -696,8 +697,9 @@
 				SUPPORTS_MACCATALYST = NO;
 				SWIFT_EMIT_LOC_STRINGS = YES;
 				TARGETED_DEVICE_FAMILY = "1,2";
-				VK_CLIENT_ID = 54707652;
-				VK_REDIRECT_SCHEME = vkhig;
+				VK_CLIENT_ID = 54879294;
+				VK_REDIRECT_SCHEME = https;
+				VK_REDIRECT_HOST = com.decoderdev.vkhig;
 				VK_API_VERSION = 5.199;
 			};
 			name = Release;

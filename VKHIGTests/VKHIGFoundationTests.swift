@@ -307,6 +307,25 @@ final class VKHIGFoundationTests: XCTestCase {
         let values = try VKIDAuthCoordinator.validateCallback(URL(string:"vkhig://vkid?code=c&device_id=d&state=s")!,redirectURI:"vkhig://vkid",state:"s")
         XCTAssertEqual(values["code"],"c")
     }
+    @MainActor
+    func testOAuthAcceptsHTTPSRedirectWithOrWithoutSlash() throws {
+        let redirect="https://com.decoderdev.vkhig"
+        for raw in ["https://com.decoderdev.vkhig?code=c&device_id=d&state=s","https://com.decoderdev.vkhig/?code=c&device_id=d&state=s"] {
+            XCTAssertEqual(try VKIDAuthCoordinator.validateCallback(URL(string:raw)!,redirectURI:redirect,state:"s")["code"],"c")
+        }
+        XCTAssertThrowsError(try VKIDAuthCoordinator.validateCallback(URL(string:"https://evil.example?code=c&device_id=d&state=s")!,redirectURI:redirect,state:"s"))
+        XCTAssertThrowsError(try VKIDAuthCoordinator.validateCallback(URL(string:"https://com.decoderdev.vkhig/other?code=c&device_id=d&state=s")!,redirectURI:redirect,state:"s"))
+    }
+    @MainActor
+    func testWebLoginInterceptsOnlyRegisteredRedirect() {
+        let redirect=URL(string:"https://com.decoderdev.vkhig")!
+        XCTAssertTrue(VKIDWebLoginController.matches(URL(string:"https://com.decoderdev.vkhig/?code=c")!,redirect:redirect))
+        XCTAssertFalse(VKIDWebLoginController.matches(URL(string:"https://id.vk.ru/authorize?redirect_uri=https://com.decoderdev.vkhig")!,redirect:redirect))
+        XCTAssertFalse(VKIDWebLoginController.matches(URL(string:"http://com.decoderdev.vkhig")!,redirect:redirect))
+        XCTAssertTrue(VKIDConfiguration(clientID:"1",redirectURLScheme:"https",redirectHost:"com.decoderdev.vkhig").usesWebRedirect)
+        XCTAssertEqual(VKIDConfiguration(clientID:"1",redirectURLScheme:"https",redirectHost:"com.decoderdev.vkhig").redirectURI,redirect.absoluteString)
+        XCTAssertFalse(VKIDConfiguration(clientID:"1",redirectURLScheme:"vkhig").usesWebRedirect)
+    }
     func testCapabilityRequiresGrantedScope() {
         var caps = CapabilityRegistry(hasVKIDCredentials:true,hasAccessToken:true)
         XCTAssertFalse(caps.canUseLiveAPI(.sendMessage))

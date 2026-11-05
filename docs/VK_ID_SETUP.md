@@ -29,8 +29,11 @@ cp VKHIG/Config/Secrets.example.xcconfig VKHIG/Config/Secrets.xcconfig
 
 ## Redirect URI to register in VK ID cabinet
 
-- URL scheme: `vkhig` (already in `Info.plist` `CFBundleURLSchemes`)
-- Redirect URI: **`vkhig://vkid`**
+- Redirect URI: **`https://com.decoderdev.vkhig`** (`VK_REDIRECT_SCHEME = https`, `VK_REDIRECT_HOST = com.decoderdev.vkhig` in `Shared.xcconfig`)
+- It is not a domain the app owns, so ASWebAuthenticationSession cannot return to it. With an https redirect the
+  app shows the official VK ID page in `VKIDWebLoginController` (WKWebView) and intercepts the final navigation to
+  that address. A custom-scheme redirect such as `vkhig://vkid` (`VK_REDIRECT_SCHEME = vkhig`, `VK_REDIRECT_HOST = vkid`)
+  still uses ASWebAuthenticationSession.
 
 ## Auth model
 

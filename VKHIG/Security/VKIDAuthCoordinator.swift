@@ -7,12 +7,16 @@ import UIKit
 struct VKIDConfiguration: Sendable {
     var clientID: String?
     var redirectURLScheme: String?
+    /// Host of the redirect registered in the VK ID cabinet, e.g. `com.decoderdev.vkhig` for `https://com.decoderdev.vkhig`.
+    var redirectHost: String? = nil
     var isConfigured: Bool {
         guard let id = clientID, !id.isEmpty, id.allSatisfy(\.isNumber),
               let scheme = redirectURLScheme, !scheme.isEmpty else { return false }
         return true
     }
-    var redirectURI: String { "\(redirectURLScheme ?? "vkhig")://vkid" }
+    var redirectURI: String { "\(redirectURLScheme ?? "vkhig")://\(redirectHost ?? "vkid")" }
+    /// An https redirect is not an app-owned domain, so the login page runs in an in-app web view that intercepts it.
+    var usesWebRedirect: Bool { ["https", "http"].contains(redirectURLScheme?.lowercased() ?? "") }
 }
 
 enum VKIDAuthError: Error, LocalizedError, Equatable {
@@ -27,7 +31,8 @@ enum VKIDAuthError: Error, LocalizedError, Equatable {
     }
 }
 
-/// Official VK ID public OAuth 2.1 flow. Uses ASWebAuthenticationSession + S256 PKCE.
+/// Official VK ID public OAuth 2.1 flow with S256 PKCE. Custom-scheme redirects use
+/// ASWebAuthenticationSession; https redirects use `VKIDWebLoginController`.
 /// A confidential client secret is never shipped in the application.
 @MainActor
 final class VKIDAuthCoordinator: NSObject, ASWebAuthenticationPresentationContextProviding {
@@ -36,6 +41,7 @@ final class VKIDAuthCoordinator: NSObject, ASWebAuthenticationPresentationContex
     private let tokenStore: KeychainTokenStore
     private let metadata = KeychainTokenStore(account: "vk-oauth-session")
     private var webSession: ASWebAuthenticationSession?
+    private var webLogin: VKIDWebLoginController?
     private var refreshTask: Task<String?, Never>?
     private(set) var grants: Set<String> = []
     private(set) var userID: Int64?
@@ -57,7 +63,7 @@ final class VKIDAuthCoordinator: NSObject, ASWebAuthenticationPresentationContex
         let scope: String?
         let state: String?
     }
-    init(configuration: VKIDConfiguration = .init(clientID: AppSecrets.vkClientID, redirectURLScheme: AppSecrets.vkRedirectScheme), tokenStore: KeychainTokenStore = .init()) {
+    init(configuration: VKIDConfiguration = .init(clientID: AppSecrets.vkClientID, redirectURLScheme: AppSecrets.vkRedirectScheme, redirectHost: AppSecrets.vkRedirectHost), tokenStore: KeychainTokenStore = .init()) {
         self.configuration = configuration
         self.tokenStore = tokenStore
         super.init()
@@ -68,7 +74,7 @@ final class VKIDAuthCoordinator: NSObject, ASWebAuthenticationPresentationContex
 
     func authorize() async -> Result<Void, VKIDAuthError> {
         guard isConfigured, let clientID = configuration.clientID else { return .failure(.missingCredentials) }
-        guard webSession == nil else { return .failure(.failed("Вход уже выполняется.")) }
+        guard webSession == nil, webLogin == nil else { return .failure(.failed("Вход уже выполняется.")) }
         let ticket = generation
         do {
             let verifier = try Self.randomString()
@@ -82,18 +88,8 @@ final class VKIDAuthCoordinator: NSObject, ASWebAuthenticationPresentationContex
                 .init(name: "scope", value: AppSecrets.requestedScopes)
             ]
             guard let url = components.url else { throw VKIDAuthError.failed("Некорректный адрес входа.") }
-            let callback: URL = try await withCheckedThrowingContinuation { continuation in
-                let session = ASWebAuthenticationSession(url: url, callbackURLScheme: configuration.redirectURLScheme) { callback, error in
-                    if let error { continuation.resume(throwing: error) }
-                    else if let callback { continuation.resume(returning: callback) }
-                    else { continuation.resume(throwing: VKIDAuthError.cancelled) }
-                }
-                session.presentationContextProvider = self
-                session.prefersEphemeralWebBrowserSession = false
-                self.webSession = session
-                if !session.start() { self.webSession = nil; continuation.resume(throwing: VKIDAuthError.failed("Не удалось открыть окно входа.")) }
-            }
-            webSession = nil
+            let callback = try await (configuration.usesWebRedirect ? webCallback(url) : systemCallback(url))
+            webSession = nil; webLogin = nil
             guard ticket == generation else { throw VKIDAuthError.cancelled }
             let values = try Self.validateCallback(callback, redirectURI: redirectURI, state: state)
             let device = values["device_id"]!
@@ -107,14 +103,46 @@ final class VKIDAuthCoordinator: NSObject, ASWebAuthenticationPresentationContex
                               expiration: Date().addingTimeInterval(response.expires_in), userID: response.user_id, scope: response.scope ?? "vkid.personal_info"))
             return .success(())
         } catch {
-            webSession = nil
+            webSession = nil; webLogin = nil
             if (error as? ASWebAuthenticationSessionError)?.code == .canceledLogin { return .failure(.cancelled) }
             return .failure(error as? VKIDAuthError ?? .failed("Не удалось войти. Проверьте сеть и настройки приложения VK ID."))
         }
     }
+    private func systemCallback(_ url: URL) async throws -> URL {
+        try await withCheckedThrowingContinuation { continuation in
+            let session = ASWebAuthenticationSession(url: url, callbackURLScheme: configuration.redirectURLScheme) { callback, error in
+                if let error { continuation.resume(throwing: error) }
+                else if let callback { continuation.resume(returning: callback) }
+                else { continuation.resume(throwing: VKIDAuthError.cancelled) }
+            }
+            session.presentationContextProvider = self
+            session.prefersEphemeralWebBrowserSession = false
+            self.webSession = session
+            if !session.start() { self.webSession = nil; continuation.resume(throwing: VKIDAuthError.failed("Не удалось открыть окно входа.")) }
+        }
+    }
+    private func webCallback(_ url: URL) async throws -> URL {
+        guard let redirect = URL(string: redirectURI), let presenter = Self.topViewController() else {
+            throw VKIDAuthError.failed("Не удалось открыть окно входа.")
+        }
+        return try await withCheckedThrowingContinuation { continuation in
+            let login = VKIDWebLoginController(url: url, redirect: redirect) { result in continuation.resume(with: result) }
+            self.webLogin = login
+            let navigation = UINavigationController(rootViewController: login)
+            navigation.modalPresentationStyle = .pageSheet
+            presenter.present(navigation, animated: true)
+        }
+    }
+    private static func topViewController() -> UIViewController? {
+        let window = UIApplication.shared.connectedScenes.compactMap { $0 as? UIWindowScene }
+            .filter { $0.activationState == .foregroundActive }.flatMap(\.windows).first(where: \.isKeyWindow)
+        var top = window?.rootViewController
+        while let presented = top?.presentedViewController { top = presented }
+        return top
+    }
     static func validateCallback(_ url: URL, redirectURI: String, state: String) throws -> [String: String] {
-        guard let expected = URL(string: redirectURI), url.scheme == expected.scheme, url.host == expected.host,
-              url.path == expected.path, url.port == expected.port, url.user == nil, url.password == nil, url.fragment == nil, let components = URLComponents(url: url, resolvingAgainstBaseURL: false) else {
+        guard let expected = URL(string: redirectURI), url.scheme?.lowercased() == expected.scheme?.lowercased(), url.host?.lowercased() == expected.host?.lowercased(),
+              VKIDWebLoginController.normalizedPath(url.path) == VKIDWebLoginController.normalizedPath(expected.path), url.port == expected.port, url.user == nil, url.password == nil, url.fragment == nil, let components = URLComponents(url: url, resolvingAgainstBaseURL: false) else {
             throw VKIDAuthError.failed("Неверный адрес возврата VK ID.")
         }
         var values: [String: String] = [:]
@@ -170,6 +198,7 @@ final class VKIDAuthCoordinator: NSObject, ASWebAuthenticationPresentationContex
     func restoreSessionIfPossible() -> Bool { savedSession() != nil }
     func clearSession() {
         generation = UUID(); webSession?.cancel(); webSession = nil
+        webLogin?.presentingViewController?.dismiss(animated: false); webLogin = nil
         refreshTask?.cancel(); refreshTask = nil; tokenStore.delete(); metadata.delete(); grants = []; userID = nil
     }
     private func savedSession() -> Session? {

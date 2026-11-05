@@ -48,6 +48,8 @@
 	<string>$(VK_CLIENT_ID)</string>
 	<key>VK_REDIRECT_SCHEME</key>
 	<string>$(VK_REDIRECT_SCHEME)</string>
+	<key>VK_REDIRECT_HOST</key>
+	<string>$(VK_REDIRECT_HOST)</string>
 	<key>VK_API_VERSION</key>
 	<string>$(VK_API_VERSION)</string>
 	<key>CFBundleURLTypes</key>
