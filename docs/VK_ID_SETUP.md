@@ -1,21 +1,11 @@
 # VK ID setup (Jessica)
 
-## GitHub Actions repository secrets
+## Client ID in CI
 
-In GitHub → **Settings → Secrets and variables → Actions**, create:
-
-| Secret name | Purpose |
-|---|---|
-| `VK_ID_CLIENT_ID` | Public VK ID app / client id (safe to inject into the iOS app Info.plist) |
-| `VK_ID_CLIENT_SECRET` | Secure key — **CI/backend only**; do **not** embed in the iOS binary |
-
-The Cloud Agent token cannot create these (API 403). Add them in the GitHub UI if missing.
-
-Verify names only:
-
-```bash
-gh secret list --repo decoder-dev/Ios_vk_Hig_beta
-```
+The public client ID (`54879294`) is committed: `scripts/write_secrets_xcconfig.sh` writes it into
+`Secrets.xcconfig` and the redirect scheme `vk54879294` is derived from it. CI no longer reads the
+`VK_ID_CLIENT_ID` repository secret, which held a stale ID. No secret is needed: the app uses the
+public PKCE flow and never ships the VK client secret.
 
 ## Local Mac (`Secrets.xcconfig`, gitignored)
 

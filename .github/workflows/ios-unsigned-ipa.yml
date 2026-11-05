@@ -44,9 +44,8 @@ jobs:
       - name: Install project generator
         run: brew install xcodegen
 
+      # The public VK ID client ID comes from scripts/write_secrets_xcconfig.sh, not a repository secret.
       - name: Generate Xcode project
-        env:
-          VK_ID_CLIENT_ID: ${{ secrets.VK_ID_CLIENT_ID }}
         run: |
           set -euo pipefail
           bash scripts/write_secrets_xcconfig.sh
