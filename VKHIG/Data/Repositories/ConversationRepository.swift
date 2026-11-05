@@ -13,7 +13,7 @@ actor ConversationRepository {
     func fetchInbox(dataMode: DataMode, capabilities: CapabilityRegistry, isNetworkReachable: Bool, accessToken: String? = nil, offset: Int = 0) async -> Result<[Conversation], AppError> {
         guard isNetworkReachable else { return .failure(.offline) }
         if dataMode == .fixtures { return .success(offset == 0 ? fixtures.conversations : []) }
-        guard capabilities.canUseLiveAPI(.inbox) else { return .failure(.capabilityUnavailable("VK не предоставил право messages.")) }
+        guard capabilities.canUseLiveAPI(.inbox) else { return .failure(.capabilityUnavailable("VK не выдал этому приложению доступ к сообщениям.")) }
         do {
             let response = try await request("messages.getConversations", ["count":"30", "offset":"\(offset)", "extended":"1", "fields":"online"], token:accessToken)
             var names = Dictionary(response["profiles"].items.map { j in (j["id"].int, [j["first_name"].string,j["last_name"].string].joined(separator:" ")) }, uniquingKeysWith:{ a,_ in a })
@@ -29,7 +29,7 @@ actor ConversationRepository {
     func fetchHistory(peerID: PeerID, dataMode: DataMode, capabilities: CapabilityRegistry, isNetworkReachable: Bool, accessToken: String? = nil, offset: Int = 0) async -> Result<[ChatMessage], AppError> {
         guard isNetworkReachable else { return .failure(.offline) }
         if dataMode == .fixtures { return .success(offset == 0 ? (fixtures.messagesByPeer[peerID.raw] ?? []) + (localOutgoing[peerID.raw] ?? []) : []) }
-        guard capabilities.canUseLiveAPI(.conversation) else { return .failure(.capabilityUnavailable("VK не предоставил доступ к истории сообщений.")) }
+        guard capabilities.canUseLiveAPI(.conversation) else { return .failure(.capabilityUnavailable("VK не выдал этому приложению доступ к истории сообщений.")) }
         do {
             let response = try await request("messages.getHistory", ["peer_id":"\(peerID.raw)","count":"50","offset":"\(offset)","rev":"0"], token:accessToken)
             return .success(response.list.reversed().map { j in
@@ -50,7 +50,7 @@ actor ConversationRepository {
             var list = localOutgoing[peerID.raw] ?? []; list.removeAll { $0.id == localID }; list.append(message); localOutgoing[peerID.raw] = list
             return .success(message)
         }
-        guard capabilities.canUseLiveAPI(.sendMessage) else { return .failure(.capabilityUnavailable("VK не предоставил право отправки сообщений.")) }
+        guard capabilities.canUseLiveAPI(.sendMessage) else { return .failure(.capabilityUnavailable("VK не выдал этому приложению доступ к отправке сообщений.")) }
         var parameters = ["peer_id":"\(peerID.raw)","message":trimmed,"random_id":"\(randomID)"]
         if let replyTo { parameters["reply_to"] = "\(replyTo)" }
         if let forward { parameters["forward_messages"] = forward }

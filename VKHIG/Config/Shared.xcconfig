@@ -10,6 +10,8 @@ VK_REDIRECT_SCHEME = vk$(VK_CLIENT_ID)
 VK_REDIRECT_HOST = vk.com
 VK_REDIRECT_PATH = /blank.html
 VK_API_VERSION = 5.199
-VK_REQUESTED_SCOPES = vkid.personal_info
+// VK grants only what it allows for this app; the granted set is shown in Settings → Сессия.
+// If VK rejects the set with invalid_scope, sign-in retries with vkid.personal_info only.
+VK_REQUESTED_SCOPES = vkid.personal_info friends wall photos video groups stories docs status notifications messages audio
 
 #include? "Secrets.xcconfig"

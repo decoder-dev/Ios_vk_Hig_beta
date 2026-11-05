@@ -30,7 +30,8 @@ enum AppSecrets {
         "\(vkRedirectScheme)://\(vkRedirectHost)\(vkRedirectPath)"
     }
 
-    static var requestedScopes: String { string(for: "VK_REQUESTED_SCOPES", fallback: "vkid.personal_info") }
+    static let baseScope = "vkid.personal_info"
+    static var requestedScopes: String { string(for: "VK_REQUESTED_SCOPES", fallback: baseScope) }
 
     static var vkAPIVersion: String {
         string(for: "VK_API_VERSION", fallback: "5.199")

@@ -21,12 +21,13 @@ struct VKIDConfiguration: Sendable {
 }
 
 enum VKIDAuthError: Error, LocalizedError, Equatable {
-    case missingCredentials, sdkNotLinked, cancelled, failed(String)
+    case missingCredentials, sdkNotLinked, cancelled, scopeRejected, failed(String)
     var errorDescription: String? {
         switch self {
         case .missingCredentials: return "Не настроен идентификатор приложения VK ID."
         case .sdkNotLinked: return "Авторизация недоступна в этой сборке."
         case .cancelled: return "Вход отменён."
+        case .scopeRejected: return "VK ID отклонил запрошенные права."
         case .failed(let message): return message
         }
     }
@@ -73,7 +74,17 @@ final class VKIDAuthCoordinator: NSObject, ASWebAuthenticationPresentationContex
     var isConfigured: Bool { configuration.isConfigured }
     var redirectURI: String { configuration.redirectURI }
 
+    /// Requests every configured scope; VK grants only what it allows for this app. If VK rejects the
+    /// scope set outright, sign-in is retried once with identity only so login itself still works.
     func authorize() async -> Result<Void, VKIDAuthError> {
+        let requested = AppSecrets.requestedScopes
+        let result = await authorize(scope: requested)
+        if case .failure(.scopeRejected) = result, requested != AppSecrets.baseScope {
+            return await authorize(scope: AppSecrets.baseScope)
+        }
+        return result
+    }
+    private func authorize(scope: String) async -> Result<Void, VKIDAuthError> {
         guard isConfigured, let clientID = configuration.clientID else { return .failure(.missingCredentials) }
         guard webSession == nil, webLogin == nil else { return .failure(.failed("Вход уже выполняется.")) }
         let ticket = generation
@@ -86,7 +97,7 @@ final class VKIDAuthCoordinator: NSObject, ASWebAuthenticationPresentationContex
                 .init(name: "response_type", value: "code"), .init(name: "client_id", value: clientID),
                 .init(name: "redirect_uri", value: redirectURI), .init(name: "state", value: state),
                 .init(name: "code_challenge", value: challenge), .init(name: "code_challenge_method", value: "S256"),
-                .init(name: "scope", value: AppSecrets.requestedScopes)
+                .init(name: "scope", value: scope)
             ]
             guard let url = components.url else { throw VKIDAuthError.failed("Некорректный адрес входа.") }
             let callback = try await (configuration.usesWebRedirect ? webCallback(url) : systemCallback(url))
@@ -157,6 +168,7 @@ final class VKIDAuthCoordinator: NSObject, ASWebAuthenticationPresentationContex
                 values[key] = value
             }
         }
+        if values["state"] == state, values["error"] == "invalid_scope" { throw VKIDAuthError.scopeRejected }
         guard values["state"] == state, values["error"] == nil,
               !(values["code"] ?? "").isEmpty, !(values["device_id"] ?? "").isEmpty else {
             throw VKIDAuthError.failed("VK ID не подтвердил вход или права доступа.")

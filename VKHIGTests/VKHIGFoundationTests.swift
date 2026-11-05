@@ -330,6 +330,15 @@ final class VKHIGFoundationTests: XCTestCase {
         XCTAssertThrowsError(try VKIDAuthCoordinator.validateCallback(URL(string:"vk54879294://vk.com/other.html?code=c&device_id=d&state=s")!,redirectURI:configuration.redirectURI,state:"s"))
     }
     @MainActor
+    func testOAuthReportsRejectedScopeForRetry() {
+        XCTAssertThrowsError(try VKIDAuthCoordinator.validateCallback(URL(string:"vk54879294://vk.com/blank.html?error=invalid_scope&state=s")!,redirectURI:"vk54879294://vk.com/blank.html",state:"s")) {
+            XCTAssertEqual($0 as? VKIDAuthError,.scopeRejected)
+        }
+        XCTAssertThrowsError(try VKIDAuthCoordinator.validateCallback(URL(string:"vk54879294://vk.com/blank.html?error=invalid_scope&state=x")!,redirectURI:"vk54879294://vk.com/blank.html",state:"s")) {
+            XCTAssertNotEqual($0 as? VKIDAuthError,.scopeRejected)
+        }
+    }
+    @MainActor
     func testWebLoginInterceptsOnlyRegisteredRedirect() {
         let redirect=URL(string:"https://com.decoderdev.vkhig")!
         XCTAssertTrue(VKIDWebLoginController.matches(URL(string:"https://com.decoderdev.vkhig/?code=c")!,redirect:redirect))

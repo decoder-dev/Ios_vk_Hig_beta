@@ -14,7 +14,7 @@ open VKHIG.xcodeproj
 В кабинете **вашего** VK ID приложения указан bundle id `com.decoderdev.vkhig`. Приложение возвращается из VK ID по адресу `vk<ID приложения>://vk.com/blank.html` (сейчас `vk54879294://vk.com/blank.html`): VK принимает его для iOS-приложений без отдельной настройки. Адреса `https://com.decoderdev.vkhig` и `vkhig://vkid` VK ID отклонил как `redirect_uri is missing or invalid`.
 Public client ID: `54879294`. Вход использует официальный публичный OAuth 2.1 через `ASWebAuthenticationSession`, S256 PKCE, проверку state и refresh. Client secret не нужен публичному потоку и не входит в приложение, логи или CI artifacts.
 
-`VK_REQUESTED_SCOPES` в `VKHIG/Config/Shared.xcconfig` содержит только `vkid.personal_info` по умолчанию. Добавляйте лишь права, разрешённые вашему приложению в кабинете VK. Наличие ID/secret само по себе не выдаёт права `messages`, `wall`, `photos` и т. д. Функции с отказом API показывают ошибку и не заменяются демоданными.
+`VK_REQUESTED_SCOPES` в `VKHIG/Config/Shared.xcconfig` запрашивает все права, которые использует приложение. VK выдаёт только разрешённые этому приложению; выданный набор виден в «Настройки → Сессия → Выданные права». Если VK отклонит набор целиком (`invalid_scope`), вход автоматически повторяется только с `vkid.personal_info`. Наличие ID/secret само по себе не выдаёт права `messages`, `wall`, `photos` и т. д. Функции с отказом API показывают ошибку и не заменяются демоданными.
 
 ## Реализованные пути
 
