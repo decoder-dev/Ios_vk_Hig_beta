@@ -21,9 +21,13 @@ enum AppSecrets {
         string(for: "VK_REDIRECT_HOST", fallback: "vkid")
     }
 
+    static var vkRedirectPath: String {
+        string(for: "VK_REDIRECT_PATH")
+    }
+
     /// Must equal the trusted Redirect URL in the VK ID cabinet exactly.
     static var vkRedirectURI: String {
-        "\(vkRedirectScheme)://\(vkRedirectHost)"
+        "\(vkRedirectScheme)://\(vkRedirectHost)\(vkRedirectPath)"
     }
 
     static var requestedScopes: String { string(for: "VK_REQUESTED_SCOPES", fallback: "vkid.personal_info") }

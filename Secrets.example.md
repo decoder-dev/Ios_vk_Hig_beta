@@ -11,4 +11,4 @@ See `docs/VK_ID_SETUP.md`.
 
 Copy `VKHIG/Config/Secrets.example.xcconfig` → `VKHIG/Config/Secrets.xcconfig` (gitignored).
 
-Redirect URI registered in the VK ID cabinet: `https://com.decoderdev.vkhig`
+Redirect URI: `vk<client id>://vk.com/blank.html` (derived from `VK_ID_CLIENT_ID`)

@@ -9,8 +9,9 @@ cat > "$OUT" <<EOF
 // Public application configuration. No client secret is used by this iOS public client.
 VK_CLIENT_ID = $CLIENT_ID
 VK_ID_CLIENT_ID = $CLIENT_ID
-VK_REDIRECT_SCHEME = https
-VK_REDIRECT_HOST = com.decoderdev.vkhig
+VK_REDIRECT_SCHEME = vk$CLIENT_ID
+VK_REDIRECT_HOST = vk.com
+VK_REDIRECT_PATH = /blank.html
 VK_API_VERSION = 5.199
 EOF
 echo 'Public configuration written'

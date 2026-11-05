@@ -445,8 +445,9 @@ app_settings = [
     'SWIFT_EMIT_LOC_STRINGS = YES;',
     'TARGETED_DEVICE_FAMILY = "1,2";',
     'VK_CLIENT_ID = YOUR_VK_ID_CLIENT_ID;',
-    'VK_REDIRECT_SCHEME = https;',
-    'VK_REDIRECT_HOST = com.decoderdev.vkhig;',
+    'VK_REDIRECT_SCHEME = "vk$(VK_CLIENT_ID)";',
+    'VK_REDIRECT_HOST = vk.com;',
+    'VK_REDIRECT_PATH = /blank.html;',
     'VK_API_VERSION = 5.199;',
 ]
 config_block(debug_app, "Debug", app_settings)

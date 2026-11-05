@@ -50,6 +50,8 @@
 	<string>$(VK_REDIRECT_SCHEME)</string>
 	<key>VK_REDIRECT_HOST</key>
 	<string>$(VK_REDIRECT_HOST)</string>
+	<key>VK_REDIRECT_PATH</key>
+	<string>$(VK_REDIRECT_PATH)</string>
 	<key>VK_API_VERSION</key>
 	<string>$(VK_API_VERSION)</string>
 	<key>CFBundleURLTypes</key>
@@ -59,7 +61,7 @@
 			<string>com.decoderdev.vkhig.vkid</string>
 			<key>CFBundleURLSchemes</key>
 			<array>
-				<string>vkhig</string>
+				<string>$(VK_REDIRECT_SCHEME)</string>
 			</array>
 		</dict>
 	</array>

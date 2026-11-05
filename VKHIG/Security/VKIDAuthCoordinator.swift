@@ -7,14 +7,15 @@ import UIKit
 struct VKIDConfiguration: Sendable {
     var clientID: String?
     var redirectURLScheme: String?
-    /// Host of the redirect registered in the VK ID cabinet, e.g. `com.decoderdev.vkhig` for `https://com.decoderdev.vkhig`.
+    /// Host and path of the redirect VK ID accepts, e.g. `vk.com` + `/blank.html` for `vk<client id>://vk.com/blank.html`.
     var redirectHost: String? = nil
+    var redirectPath: String? = nil
     var isConfigured: Bool {
         guard let id = clientID, !id.isEmpty, id.allSatisfy(\.isNumber),
               let scheme = redirectURLScheme, !scheme.isEmpty else { return false }
         return true
     }
-    var redirectURI: String { "\(redirectURLScheme ?? "vkhig")://\(redirectHost ?? "vkid")" }
+    var redirectURI: String { "\(redirectURLScheme ?? "vkhig")://\(redirectHost ?? "vkid")\(redirectPath ?? "")" }
     /// An https redirect is not an app-owned domain, so the login page runs in an in-app web view that intercepts it.
     var usesWebRedirect: Bool { ["https", "http"].contains(redirectURLScheme?.lowercased() ?? "") }
 }
@@ -63,7 +64,7 @@ final class VKIDAuthCoordinator: NSObject, ASWebAuthenticationPresentationContex
         let scope: String?
         let state: String?
     }
-    init(configuration: VKIDConfiguration = .init(clientID: AppSecrets.vkClientID, redirectURLScheme: AppSecrets.vkRedirectScheme, redirectHost: AppSecrets.vkRedirectHost), tokenStore: KeychainTokenStore = .init()) {
+    init(configuration: VKIDConfiguration = .init(clientID: AppSecrets.vkClientID, redirectURLScheme: AppSecrets.vkRedirectScheme, redirectHost: AppSecrets.vkRedirectHost, redirectPath: AppSecrets.vkRedirectPath), tokenStore: KeychainTokenStore = .init()) {
         self.configuration = configuration
         self.tokenStore = tokenStore
         super.init()
@@ -150,11 +151,29 @@ final class VKIDAuthCoordinator: NSObject, ASWebAuthenticationPresentationContex
             guard values[item.name] == nil else { throw VKIDAuthError.failed("Повторяющийся параметр VK ID.") }
             values[item.name] = item.value ?? ""
         }
+        // Mobile VK ID redirects may pack code, state and device_id into base64url JSON.
+        if (values["code"] ?? "").isEmpty, let packed = values["oauth2_params"] ?? values["payload"] {
+            for (key, value) in try Self.decodePackedParameters(packed) where values[key] == nil || key == "code" || key == "state" || key == "device_id" {
+                values[key] = value
+            }
+        }
         guard values["state"] == state, values["error"] == nil,
               !(values["code"] ?? "").isEmpty, !(values["device_id"] ?? "").isEmpty else {
             throw VKIDAuthError.failed("VK ID не подтвердил вход или права доступа.")
         }
         return values
+    }
+    static func decodePackedParameters(_ raw: String) throws -> [String: String] {
+        var base64 = raw.replacingOccurrences(of: "-", with: "+").replacingOccurrences(of: "_", with: "/")
+        base64 += String(repeating: "=", count: (4 - base64.count % 4) % 4)
+        guard let data = Data(base64Encoded: base64), let object = try? JSONSerialization.jsonObject(with: data) as? [String: Any] else {
+            throw VKIDAuthError.failed("VK ID вернул нечитаемый ответ.")
+        }
+        return object.compactMapValues { value in
+            if let string = value as? String { return string }
+            if let number = value as? NSNumber { return number.stringValue }
+            return nil
+        }
     }
     func freshAccessToken() async -> String? {
         if let task = refreshTask { return await task.value }

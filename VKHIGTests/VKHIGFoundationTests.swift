@@ -317,6 +317,19 @@ final class VKHIGFoundationTests: XCTestCase {
         XCTAssertThrowsError(try VKIDAuthCoordinator.validateCallback(URL(string:"https://com.decoderdev.vkhig/other?code=c&device_id=d&state=s")!,redirectURI:redirect,state:"s"))
     }
     @MainActor
+    func testOAuthAcceptsVKMobileRedirectAndPackedParameters() throws {
+        let configuration=VKIDConfiguration(clientID:"54879294",redirectURLScheme:"vk54879294",redirectHost:"vk.com",redirectPath:"/blank.html")
+        XCTAssertEqual(configuration.redirectURI,"vk54879294://vk.com/blank.html")
+        XCTAssertFalse(configuration.usesWebRedirect)
+        let plain=try VKIDAuthCoordinator.validateCallback(URL(string:"vk54879294://vk.com/blank.html?code=c&device_id=d&state=s&type=code_v2")!,redirectURI:configuration.redirectURI,state:"s")
+        XCTAssertEqual(plain["device_id"],"d")
+        let json=try JSONSerialization.data(withJSONObject:["code":"c2","state":"s","device_id":"d2","type":"code_v2"])
+        let packed=json.base64EncodedString().replacingOccurrences(of:"+",with:"-").replacingOccurrences(of:"/",with:"_").replacingOccurrences(of:"=",with:"")
+        let values=try VKIDAuthCoordinator.validateCallback(URL(string:"vk54879294://vk.com/blank.html?oauth2_params="+packed)!,redirectURI:configuration.redirectURI,state:"s")
+        XCTAssertEqual(values["code"],"c2");XCTAssertEqual(values["device_id"],"d2")
+        XCTAssertThrowsError(try VKIDAuthCoordinator.validateCallback(URL(string:"vk54879294://vk.com/other.html?code=c&device_id=d&state=s")!,redirectURI:configuration.redirectURI,state:"s"))
+    }
+    @MainActor
     func testWebLoginInterceptsOnlyRegisteredRedirect() {
         let redirect=URL(string:"https://com.decoderdev.vkhig")!
         XCTAssertTrue(VKIDWebLoginController.matches(URL(string:"https://com.decoderdev.vkhig/?code=c")!,redirect:redirect))
