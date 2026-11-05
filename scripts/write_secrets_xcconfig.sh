@@ -1,7 +1,7 @@
 #!/usr/bin/env bash
 set -euo pipefail
 OUT="${1:-VKHIG/Config/Secrets.xcconfig}"
-CLIENT_ID="${VK_ID_CLIENT_ID:-54707652}"
+CLIENT_ID="${VK_ID_CLIENT_ID:-54879294}"
 [[ "$CLIENT_ID" =~ ^[0-9]+$ ]] || { echo 'Invalid public client ID' >&2; exit 1; }
 mkdir -p "$(dirname "$OUT")"
 umask 077

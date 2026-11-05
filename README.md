@@ -12,7 +12,7 @@ open VKHIG.xcodeproj
 ```
 
 В кабинете **вашего** VK ID приложения зарегистрируйте `vkhig://vkid` и bundle id `com.decoderdev.vkhig`.
-Public client ID: `54707652`. Вход использует официальный публичный OAuth 2.1 через `ASWebAuthenticationSession`, S256 PKCE, проверку state и refresh. Client secret не нужен публичному потоку и не входит в приложение, логи или CI artifacts.
+Public client ID: `54879294`. Вход использует официальный публичный OAuth 2.1 через `ASWebAuthenticationSession`, S256 PKCE, проверку state и refresh. Client secret не нужен публичному потоку и не входит в приложение, логи или CI artifacts.
 
 `VK_REQUESTED_SCOPES` в `VKHIG/Config/Shared.xcconfig` содержит только `vkid.personal_info` по умолчанию. Добавляйте лишь права, разрешённые вашему приложению в кабинете VK. Наличие ID/secret само по себе не выдаёт права `messages`, `wall`, `photos` и т. д. Функции с отказом API показывают ошибку и не заменяются демоданными.
 
