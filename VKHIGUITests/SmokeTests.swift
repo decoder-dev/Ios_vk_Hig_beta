@@ -18,7 +18,7 @@ final class SmokeTests: XCTestCase {
     func testNativeServiceScreens() {
         let app=XCUIApplication();app.launchArguments=["--uitesting"];app.launch()
         app.buttons["Посмотреть демоверсию"].tap()
-        app.tabBars.buttons["Сервисы"].tap()
+        openTab(app,"Сервисы")
         for destination in ["Сохранённое","Истории VK"] {
             app.buttons[destination].tap()
             let title=destination=="Истории VK" ? "Истории" : destination
@@ -39,7 +39,7 @@ final class SmokeTests: XCTestCase {
         app.launchArguments=["--uitesting","--music-fixture","--light"]+(large ? ["--large-type"] : [])
         app.launch()
         app.buttons["Посмотреть демоверсию"].tap()
-        app.tabBars.buttons["Музыка"].tap()
+        openTab(app,"Музыка")
         let playlist=app.buttons.matching(NSPredicate(format:"label BEGINSWITH %@", "В дороге")).firstMatch
         for _ in 0..<6 {if playlist.exists && playlist.isHittable {break};app.swipeUp()}
         XCTAssertTrue(playlist.waitForExistence(timeout:10))
@@ -78,6 +78,16 @@ final class SmokeTests: XCTestCase {
             if !app.buttons["Очередь"].firstMatch.isHittable {app.swipeUp()}
         }
     }
+    // On slower simulators the first tap can land while the demo shell is still appearing.
+    private func openTab(_ app:XCUIApplication,_ name:String) {
+        let tab=app.tabBars.buttons[name]
+        XCTAssertTrue(tab.waitForExistence(timeout:10))
+        for _ in 0..<3 where !tab.isSelected {
+            if tab.isHittable {tab.tap()}
+            _=XCTWaiter.wait(for:[XCTNSPredicateExpectation(predicate:NSPredicate(format:"isSelected == true"),object:tab)],timeout:3)
+        }
+        XCTAssertTrue(tab.isSelected,"Tab \(name) did not open")
+    }
     private func capture(_ app:XCUIApplication,_ name:String,large:Bool) {
         let attachment=XCTAttachment(screenshot:app.screenshot())
         attachment.name=(large ? "large-" : "")+name
@@ -89,8 +99,7 @@ final class SmokeTests: XCTestCase {
         app.launch()
         app.buttons["Посмотреть демоверсию"].tap()
         for tab in ["Сообщения","Лента","Сервисы","Музыка","Профиль"] {
-            XCTAssertTrue(app.tabBars.buttons[tab].waitForExistence(timeout:10))
-            app.tabBars.buttons[tab].tap()
+            openTab(app,tab)
             let attachment = XCTAttachment(screenshot:app.screenshot())
             attachment.name = "\(large ? "large" : dark ? "dark" : "light")-\(tab)"; attachment.lifetime = .keepAlways
             add(attachment)

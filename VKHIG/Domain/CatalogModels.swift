@@ -145,7 +145,7 @@ struct VKAction:Equatable,Sendable {
             if !item.linkID.isEmpty {return VKAction(method:"fave.removeLink",parameters:["link_id":item.linkID])}
             guard let url=item.targetURL, url.scheme=="https" else {throw AppError.decoding}
             return VKAction(method:"fave.removeLink",parameters:["link":url.absoluteString])
-        default:throw AppError.capabilityUnavailable("Удаление этого типа сохранённого")
+        default:throw AppError.capabilityUnavailable("Удаление этого типа сохранённого недоступно.")
         }
     }
     static func allows(_ policy:String,isOwner:Bool,isAdmin:Bool) -> Bool {

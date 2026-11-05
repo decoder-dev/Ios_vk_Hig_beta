@@ -41,12 +41,12 @@ struct ComposePostView: View {
             .navigationBarTitleDisplayMode(.inline)
             .toolbar {
                 ToolbarItem(placement: .cancellationAction) {
-                    Button("Cancel") {
+                    Button("Отмена") {
                         if text.isEmpty { dismiss() } else { showDiscard = true }
                     }
                 }
                 ToolbarItem(placement: .confirmationAction) {
-                    Button("Publish") {
+                    Button("Опубликовать") {
                         Task {
                             guard env.isLiveVKSession else { notice = "Деморежим: запись не опубликована. Черновик сохранён."; return }
                             sending = true; defer { sending = false }
@@ -70,9 +70,9 @@ struct ComposePostView: View {
                     photoData = jpeg; attachment = nil
                 } catch { notice = "Не удалось открыть фотографию." }
             }
-            .confirmationDialog("Discard draft?", isPresented: $showDiscard) {
+            .confirmationDialog("Удалить черновик?", isPresented: $showDiscard) {
                 Button("Удалить черновик", role: .destructive) { text = ""; dismiss() }
-                Button("Keep editing", role: .cancel) {}
+                Button("Продолжить редактирование", role: .cancel) {}
             }
         }
     }

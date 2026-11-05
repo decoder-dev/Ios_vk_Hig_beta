@@ -74,7 +74,7 @@ enum AppError: Error, LocalizedError, Equatable, Sendable {
         case .notAuthenticated:
             return "Войдите в аккаунт VK ID."
         case .capabilityUnavailable(let feature):
-            return "\(feature) is unavailable for this app configuration"
+            return feature
         case .offline:
             return "Нет подключения к сети."
         case .network(let message):

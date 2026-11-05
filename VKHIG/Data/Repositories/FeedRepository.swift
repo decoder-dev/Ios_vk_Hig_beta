@@ -34,7 +34,7 @@ actor FeedRepository {
             if accessToken == nil || accessToken?.isEmpty == true {
                 return .failure(.notAuthenticated)
             }
-            return .failure(.capabilityUnavailable("Feed requires verified newsfeed/wall scope"))
+            return .failure(.capabilityUnavailable("VK не предоставил доступ к ленте."))
         }
     }
 }

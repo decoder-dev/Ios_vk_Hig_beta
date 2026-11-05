@@ -33,7 +33,7 @@ actor ProfileRepository {
             if accessToken == nil || accessToken?.isEmpty == true {
                 return .failure(.notAuthenticated)
             }
-            return .failure(.capabilityUnavailable("Profile requires VK ID session + users scope"))
+            return .failure(.capabilityUnavailable("VK не предоставил доступ к профилю."))
         }
     }
 }

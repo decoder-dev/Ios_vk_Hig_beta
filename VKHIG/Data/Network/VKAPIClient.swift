@@ -21,11 +21,11 @@ enum VKAPITransportError: Error, LocalizedError, Sendable {
 
     var errorDescription: String? {
         switch self {
-        case .authorizationRequired: "Authorization required"
-        case .invalidMethod: "Invalid method name"
-        case .httpStatus(let status): "HTTP status: \(status)"
-        case .remote(let code, _): "VK API error: \(code)"
-        case .missingResponse: "Empty VK response"
+        case .authorizationRequired: "Требуется вход в VK"
+        case .invalidMethod: "Неверный метод VK API"
+        case .httpStatus(let status): "Ошибка сервера: HTTP \(status)"
+        case .remote(let code, _): "Ошибка VK API: \(code)"
+        case .missingResponse: "VK вернул пустой ответ"
         }
     }
 }

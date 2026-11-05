@@ -15,7 +15,7 @@ struct PostDetailView: View {
             resourceID: postID,
             emptyTitle: "Запись не найдена",
             emptySymbol: "doc",
-            emptyDetails: "wall.getById will resolve this after scopes are verified.",
+            emptyDetails: "Данные появятся, когда VK выдаст приложению доступ.",
             loadValue: {
                 let feed = try await env.feedRepository.fetchFeed(
                     dataMode: env.dataMode,
@@ -25,7 +25,7 @@ struct PostDetailView: View {
                 switch feed {
                 case .success(let posts):
                     guard let post = posts.first(where: { $0.id == postID }) else {
-                        throw AppError.fixtureOnly("No fixture post")
+                        throw AppError.fixtureOnly("Запись не найдена")
                     }
                     return post
                 case .failure(let error):
@@ -60,7 +60,7 @@ struct PostDetailView: View {
                             else {env.catalog.notice="Деморежим: запись не добавлена в VK."}
                         }} label:{Image(systemName:"bookmark").frame(width:44,height:44)}.accessibilityLabel("Сохранить запись")
                         Button { showShare = true } label: {
-                            Label("Share", systemImage: "square.and.arrow.up")
+                            Label("Поделиться", systemImage: "square.and.arrow.up")
                         }
                     }
                     .font(.subheadline)
@@ -68,9 +68,9 @@ struct PostDetailView: View {
                 }
                 .padding(16)
             }
-            .confirmationDialog("Share", isPresented: $showShare) {
+            .confirmationDialog("Поделиться", isPresented: $showShare) {
                 Button("Копировать ссылку") { UIPasteboard.general.string = "https://vk.com/wall\(post.ownerID)_\(post.nativeID ?? post.id)" }
-                Button("Cancel", role: .cancel) {}
+                Button("Отмена", role: .cancel) {}
             }
         }
         .withAppRoutes()

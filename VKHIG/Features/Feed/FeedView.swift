@@ -103,7 +103,7 @@ struct FeedView: View {
             }
             .padding(.horizontal, 16)
         }
-        .accessibilityLabel("Stories entry — official API gated")
+        .accessibilityLabel("Истории")
     }
 }
 

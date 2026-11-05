@@ -4,7 +4,7 @@ import SwiftUI
 struct SettingsHubView: View {
     var body: some View {
         List {
-            Section("S34 · Аккаунт") {
+            Section("Аккаунт") {
                 NavigationLink(value: AppRoute.accountSettings) {
                     Label("Аккаунт и безопасность", systemImage: "person.crop.circle")
                 }
@@ -20,15 +20,17 @@ struct SettingsHubView: View {
                     Label("Данные и память", systemImage: "externaldrive")
                 }
             }
+            #if DEBUG
             Section("Разработка") {
                 NavigationLink(value: AppRoute.onboarding) {
                     Label("Онбординг", systemImage: "sparkles")
                 }
                 LabeledContent("VK client id") {
-                    Text(AppSecrets.hasVKIDCredentials ? "Configured" : "Placeholder")
+                    Text(AppSecrets.hasVKIDCredentials ? "Настроен" : "Не настроен")
                         .foregroundStyle(.secondary)
                 }
             }
+            #endif
         }
         .navigationTitle("Настройки")
         .withAppRoutes()
@@ -107,10 +109,10 @@ struct AccountSettingsView: View {
 
     var body: some View {
         Form {
-            Section("S39 · Сессия") {
+            Section("Сессия") {
                 NavigationLink("Проверить доступ к VK") {VKConnectionCheckView()}
                 LabeledContent("Режим") {
-                    Text(env.isLiveVKSession ? "VK ID" : "Fixture shell")
+                    Text(env.isLiveVKSession ? "VK ID" : "Демоверсия")
                 }
                 LabeledContent("VK ID client") {
                     Text(AppSecrets.hasVKIDCredentials ? "Настроен" : "Не настроен")
@@ -118,7 +120,7 @@ struct AccountSettingsView: View {
                 }
                 LabeledContent("Redirect URI", value: AppSecrets.vkRedirectURI)
                 LabeledContent("Выданные права",value:env.capabilities.grantedScopes.sorted().joined(separator:", "))
-                LabeledContent("Client secret in app") {
+                LabeledContent("Секретный ключ") {
                     Text("Не используется (PKCE)")
                         .foregroundStyle(.secondary)
                 }

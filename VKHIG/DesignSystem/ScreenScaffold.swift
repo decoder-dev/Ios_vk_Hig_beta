@@ -99,9 +99,11 @@ struct FixtureScreen<Value: Equatable, Content: View>: View {
                 HStack {
                     FixtureBanner()
                     Spacer()
+                    #if DEBUG
                     Text(screenID)
                         .font(.caption2)
                         .foregroundStyle(.secondary)
+                    #endif
                 }
                 .padding(.horizontal, 16)
                 .padding(.vertical, 6)

@@ -226,7 +226,7 @@ private struct MessageBubble: View {
         .accessibilityElement(children: .combine)
         .contextMenu {
             // S13 — message actions; destructive paths need confirmation when live.
-            Button("Copy") { UIPasteboard.general.string = message.text }
+            Button("Копировать") { UIPasteboard.general.string = message.text }
             Button("Ответить",action:onReply)
             if canPin && message.serverID != nil {Button("Закрепить",action:onPin)}
             if message.isOutgoing,message.serverID != nil { Button("Редактировать",action:onEdit) }

@@ -13,7 +13,7 @@ struct PhotoAlbumsView: View {
             screenID: "S26",
             emptyTitle: "Нет альбомов",
             emptySymbol: "rectangle.stack",
-            emptyDetails: "photos.getAlbums when scoped.",
+            emptyDetails: "Данные появятся, когда VK выдаст приложению доступ.",
             isEmpty: { $0.isEmpty },
             loadValue: { CatalogFixtures.albums }
         ) { albums in
@@ -48,7 +48,7 @@ struct PhotosGridView: View {
             resourceID:albumID,
             emptyTitle: "Нет фотографий",
             emptySymbol: "photo",
-            emptyDetails: "photos.get when scoped.",
+            emptyDetails: "Данные появятся, когда VK выдаст приложению доступ.",
             isEmpty: { $0.isEmpty },
             loadValue: { CatalogFixtures.photos }
         ) { photos in
@@ -107,7 +107,7 @@ struct VideoListView: View {
             screenID: "S29",
             emptyTitle: "Нет видео",
             emptySymbol: "play.rectangle",
-            emptyDetails: "video.get when scoped.",
+            emptyDetails: "Данные появятся, когда VK выдаст приложению доступ.",
             isEmpty: { $0.isEmpty },
             loadValue: { CatalogFixtures.videos }
         ) { videos in

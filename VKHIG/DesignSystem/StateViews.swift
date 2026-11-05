@@ -11,7 +11,7 @@ struct LoadableContainer<Value: Equatable, Content: View>: View {
     var body: some View {
         switch state {
         case .idle, .loading:
-            VKLoadingState(title: "Loading…")
+            VKLoadingState(title: "Загрузка…")
         case .loaded(let value):
             content(value)
         case .empty:
@@ -20,7 +20,7 @@ struct LoadableContainer<Value: Equatable, Content: View>: View {
             VKErrorState(message: error.localizedDescription, onRetry: onRetry)
         case .offline:
             VKErrorState(
-                message: "You appear to be offline. Check the connection and retry.",
+                message: "Нет подключения к интернету. Проверьте сеть и повторите.",
                 symbol: "wifi.slash",
                 onRetry: onRetry
             )
@@ -44,7 +44,7 @@ struct VKErrorState: View {
                 .multilineTextAlignment(.center)
                 .padding(.horizontal, VKStyle.Spacing.lg)
             if let onRetry {
-                Button("Retry", action: onRetry)
+                Button("Повторить", action: onRetry)
                     .buttonStyle(.borderedProminent)
                     .tint(VKStyle.accent)
                     .frame(minHeight: VKStyle.Size.tapTargetMin)
@@ -57,12 +57,12 @@ struct VKErrorState: View {
 
 struct FixtureBanner: View {
     var body: some View {
-        Text("Fixture data — not a live VK response")
+        Text("Демоданные — не ответ VK")
             .font(.caption2.weight(.semibold))
             .foregroundStyle(.white)
             .padding(.horizontal, 10)
             .padding(.vertical, 5)
             .background(Color.orange.gradient, in: Capsule())
-            .accessibilityLabel("Fixture data banner")
+            .accessibilityLabel("Демоданные")
     }
 }

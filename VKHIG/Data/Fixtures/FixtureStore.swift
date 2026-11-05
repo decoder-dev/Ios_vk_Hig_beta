@@ -50,10 +50,10 @@ struct FixtureStore: Sendable {
         ]
         let profile = UserProfile(
             id: 1,
-            displayName: "Preview User",
-            initials: "PU",
+            displayName: "Демо-пользователь",
+            initials: "ДП",
             city: "Москва",
-            statusText: "Fixture profile — not a live VK account"
+            statusText: "Демо-профиль, не аккаунт VK"
         )
         return FixtureStore(
             conversations: conversations,
@@ -77,6 +77,7 @@ private struct FixtureDTO: Decodable {
         let unread_count: Int
         let last_message: String
         let online: Bool
+        let last_updated: String?
     }
 
     struct MessageDTO: Decodable {
@@ -91,6 +92,7 @@ private struct FixtureDTO: Decodable {
         let author: String
         let text: String
         let media_kind: String?
+        let date_label: String?
     }
 
     func asDomain() -> FixtureStore {
@@ -101,7 +103,7 @@ private struct FixtureDTO: Decodable {
                 displayName: dto.name,
                 initials: initials,
                 lastMessagePreview: dto.last_message,
-                lastUpdatedLabel: "—",
+                lastUpdatedLabel: dto.last_updated ?? "",
                 unreadCount: dto.unread_count,
                 isOnline: dto.online
             )
@@ -126,7 +128,7 @@ private struct FixtureDTO: Decodable {
                 id: dto.id,
                 authorName: dto.author,
                 authorInitials: String(dto.author.prefix(2)).uppercased(),
-                dateLabel: "fixture",
+                dateLabel: dto.date_label ?? "",
                 text: dto.text,
                 hasMedia: dto.media_kind != nil,
                 reactionCount: 0,

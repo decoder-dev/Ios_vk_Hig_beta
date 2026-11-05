@@ -58,7 +58,7 @@ struct ProfileView: View {
 
                 Section("Разделы") {
                     NavigationLink(value: AppRoute.editProfile) {
-                        Label("Редактировать профиль", systemImage: "pencil")
+                        Label("Изменить профиль", systemImage: "pencil")
                     }
                     NavigationLink(value: AppRoute.friends) {
                         Label("Друзья", systemImage: "person.2")
@@ -84,7 +84,7 @@ struct ProfileView: View {
                     Button(role: .destructive) {
                         env.signOut()
                     } label: {
-                        Text(env.isLiveVKSession ? "Sign out" : "Leave UI shell")
+                        Text(env.isLiveVKSession ? "Выйти" : "Выйти из демоверсии")
                     }
                 }
             }

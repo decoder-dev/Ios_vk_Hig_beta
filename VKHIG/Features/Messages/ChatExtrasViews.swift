@@ -357,9 +357,9 @@ struct ChatSearchView: View {
             screenID: "S14",
             resourceID:peerID,
             query:query,
-            emptyTitle: "No matches",
+            emptyTitle: "Совпадений нет",
             emptySymbol: "magnifyingglass",
-            emptyDetails: "messages.search when available.",
+            emptyDetails: "Данные появятся, когда VK выдаст приложению доступ.",
             isEmpty: { $0.isEmpty },
             loadValue: { FixtureStore.embedded.messagesByPeer[peerID] ?? [] }
         ) { messages in

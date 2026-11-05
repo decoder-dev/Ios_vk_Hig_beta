@@ -43,7 +43,7 @@ struct AuthStubView: View {
                 .tint(VKStyle.accent)
                 .disabled(isAuthorizing)
                 .padding(.horizontal, VKStyle.Spacing.md)
-                .accessibilityHint("Starts official VK ID when credentials and SDK are configured")
+                .accessibilityHint("Открывает официальный вход VK ID")
 
                 Button {
                     env.enterShellWithoutAuth()
@@ -54,7 +54,7 @@ struct AuthStubView: View {
                 }
                 .buttonStyle(.bordered)
                 .padding(.horizontal, VKStyle.Spacing.md)
-                .accessibilityHint("Opens tabs with fixture repositories; does not contact VK")
+                .accessibilityHint("Открывает приложение с демоданными без подключения к VK")
 
                 if let authError {
                     Text(authError)

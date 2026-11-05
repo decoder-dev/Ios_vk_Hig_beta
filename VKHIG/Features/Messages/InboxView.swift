@@ -28,9 +28,9 @@ struct InboxView: View {
         @Bindable var model = model
         LoadableContainer(
             state: model.state,
-            titleForEmpty: "No conversations",
+            titleForEmpty: "Нет диалогов",
             emptySymbol: "bubble.left.and.bubble.right",
-            emptyDetails: "Inbox is empty, or messages scope is not granted yet.",
+            emptyDetails: "Диалогов нет или доступ к сообщениям ещё не выдан.",
             onRetry: { Task { await model.load() } }
         ) { _ in
             List {
@@ -42,7 +42,7 @@ struct InboxView: View {
                     }
                 }
 
-                Picker("Filter", selection: $model.unreadOnly) {
+                Picker("Фильтр", selection: $model.unreadOnly) {
                     Text("Все").tag(false)
                     Text("Непрочитанные").tag(true)
                 }
@@ -71,14 +71,14 @@ struct InboxView: View {
                 if model.visibleConversations.isEmpty, case .loaded = model.state {
                     VKEmptyState(
                         symbol: "magnifyingglass",
-                        title: "Nothing found",
-                        details: "Try another search or filter."
+                        title: "Ничего не найдено",
+                        details: "Попробуйте другой запрос или фильтр."
                     )
                     .allowsHitTesting(false)
                 }
             }
         }
-        .searchable(text: $model.searchText, prompt: "Search conversations")
+        .searchable(text: $model.searchText, prompt: "Поиск по диалогам")
         .navigationDestination(for: Conversation.self) { conversation in
             ConversationView(conversation: conversation)
         }
@@ -88,7 +88,7 @@ struct InboxView: View {
                     Image(systemName: "square.and.pencil")
                         .frame(minWidth: VKStyle.Size.tapTargetMin, minHeight: VKStyle.Size.tapTargetMin)
                 }
-                .accessibilityLabel("New message")
+                .accessibilityLabel("Новое сообщение")
                 .disabled(true)
             }
         }

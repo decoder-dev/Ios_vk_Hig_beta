@@ -105,7 +105,7 @@ struct NotificationsView: View {
             screenID: "S24",
             emptyTitle: "Нет уведомлений",
             emptySymbol: "bell",
-            emptyDetails: "notifications.get when scoped.",
+            emptyDetails: "Данные появятся, когда VK выдаст приложению доступ.",
             isEmpty: { $0.isEmpty },
             loadValue: { CatalogFixtures.notifications }
         ) { items in
@@ -136,7 +136,7 @@ struct NotificationsView: View {
 struct ServicesHubView: View {
     var body: some View {
         List {
-            Section("S25 · Сервисы") {
+            Section("Сервисы") {
                 NavigationLink("Истории VK") {StoriesListView()}
                 NavigationLink(value:AppRoute.incomingCall) {Label("Звонки VK",systemImage:"phone")}
                 NavigationLink(value: AppRoute.videoList) {
@@ -169,6 +169,7 @@ struct ServicesHubView: View {
                     Label("Музыка", systemImage: "music.note")
                 }
             }
+            #if DEBUG
             Section("Диагностика UI") {
                 NavigationLink(value: AppRoute.errorDemo) {
                     Label("Состояния ошибок", systemImage: "exclamationmark.triangle")
@@ -180,6 +181,7 @@ struct ServicesHubView: View {
                     Label("Онбординг", systemImage: "sparkles")
                 }
             }
+            #endif
             Section {
                 Text("Доступность разделов зависит от разрешений VK.")
                     .font(.footnote).foregroundStyle(.secondary)

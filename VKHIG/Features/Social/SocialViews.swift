@@ -11,9 +11,9 @@ struct UserProfileView: View {
             title: "Профиль",
             screenID: "S15",
             resourceID: userID,
-            emptyTitle: "User not found",
+            emptyTitle: "Пользователь не найден",
             emptySymbol: "person.crop.circle",
-            emptyDetails: "users.get when scoped.",
+            emptyDetails: "Данные появятся, когда VK выдаст приложению доступ.",
             loadValue: {
                 CatalogFixtures.friends.first(where: { $0.id == userID })
                     ?? Friend(id: userID, displayName: "User \(userID)", initials: "U", isOnline: false, city: nil)
@@ -228,7 +228,7 @@ struct FriendsView: View {
             query:query,
             emptyTitle: "Нет друзей",
             emptySymbol: "person.2",
-            emptyDetails: "friends.get when scoped.",
+            emptyDetails: "Данные появятся, когда VK выдаст приложению доступ.",
             isEmpty: { $0.isEmpty },
             loadValue: { CatalogFixtures.friends }
         ) { friends in
@@ -275,7 +275,7 @@ struct FriendRequestsView: View {
             screenID: "S19",
             emptyTitle: "Нет заявок",
             emptySymbol: "person.badge.plus",
-            emptyDetails: "friends.getRequests when scoped.",
+            emptyDetails: "Данные появятся, когда VK выдаст приложению доступ.",
             isEmpty: { $0.isEmpty },
             loadValue: { CatalogFixtures.friendRequests }
         ) { requests in
@@ -328,9 +328,9 @@ struct CommunityView: View {
             title: "Сообщество",
             screenID: "S20",
             resourceID: communityID,
-            emptyTitle: "Not found",
+            emptyTitle: "Сообщество не найдено",
             emptySymbol: "person.3",
-            emptyDetails: "groups.getById when scoped.",
+            emptyDetails: "Данные появятся, когда VK выдаст приложению доступ.",
             loadValue: {
                 CatalogFixtures.communities.first(where: { $0.id == communityID })
                     ?? CatalogFixtures.communities[0]
@@ -384,7 +384,7 @@ struct CommunitiesListView: View {
             screenID: "S21",
             emptyTitle: "Нет сообществ",
             emptySymbol: "person.3",
-            emptyDetails: "groups.get when scoped.",
+            emptyDetails: "Данные появятся, когда VK выдаст приложению доступ.",
             isEmpty: { $0.isEmpty },
             loadValue: {
                 CatalogFixtures.communities
@@ -420,7 +420,7 @@ struct CommunityMembersView: View {
             resourceID: communityID,
             emptyTitle: "Нет участников",
             emptySymbol: "person.2",
-            emptyDetails: "groups.getMembers when scoped.",
+            emptyDetails: "Данные появятся, когда VK выдаст приложению доступ.",
             isEmpty: { $0.isEmpty },
             loadValue: {
                 return CatalogFixtures.friends

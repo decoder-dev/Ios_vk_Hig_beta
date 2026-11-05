@@ -77,7 +77,7 @@ struct MusicLibraryView:View {
             }
             if let error=library.error {Section {Text(error).foregroundStyle(.red);Button("Скрыть сообщение") {library.error=nil}}}
         }.navigationTitle("Музыка").withAppRoutes()
-        .searchable(text:$query,prompt:"Треки и исполнители")
+        .searchable(text:$query,placement:.navigationBarDrawer(displayMode:.always),prompt:"Треки и исполнители")
         .fileImporter(isPresented:$importing,allowedContentTypes:[.audio],allowsMultipleSelection:true) {result in
             switch result {case .success(let urls):Task {await library.importFiles(urls)};case .failure(let error):library.error=error.localizedDescription}
         }
@@ -339,8 +339,11 @@ struct MusicLyricsView:View {
                         LazyVStack(alignment:.leading,spacing:22) {
                             ForEach(Array(lyrics.lines.enumerated()),id:\.element.id) {entry in
                                 Button {library.seek(entry.element.time)} label:{
+                                    // Weight changes must not cross-fade two wrapped layouts on top of each other.
                                     Text(entry.element.text).font(.title2.weight(entry.offset==active ? .bold : .medium))
                                         .foregroundStyle(entry.offset==active ? Color.primary : Color.secondary)
+                                        .multilineTextAlignment(.leading).fixedSize(horizontal:false,vertical:true)
+                                        .contentTransition(.identity).transaction {$0.animation=nil}
                                         .frame(maxWidth:.infinity,alignment:.leading).padding(.vertical,6)
                                 }.buttonStyle(.plain).id(entry.offset)
                             }

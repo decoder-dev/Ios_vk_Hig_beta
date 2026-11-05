@@ -11,7 +11,7 @@ struct VKAvatar: View {
             .foregroundStyle(.white)
             .frame(width: size, height: size)
             .background(tint.gradient, in: Circle())
-            .accessibilityLabel("Avatar")
+            .accessibilityLabel("Аватар")
     }
 }
 
