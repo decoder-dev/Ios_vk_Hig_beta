@@ -19,12 +19,14 @@ struct RootTabView: View {
                 FeedView()
                     .withAppRoutes()
             }
+            .modifier(MusicMiniPlayerTabInset())
             .tabItem { Label("Лента", systemImage: "house") }
             .tag(AppTab.feed)
 
             NavigationStack(path:$servicesPath) {
                 ServicesHubView()
             }
+            .modifier(MusicMiniPlayerTabInset())
             .tabItem { Label("Сервисы", systemImage: "square.grid.2x2") }
             .tag(AppTab.services)
 
@@ -32,12 +34,14 @@ struct RootTabView: View {
                 InboxView()
                     .withAppRoutes()
             }
+            .modifier(MusicMiniPlayerTabInset())
             .tabItem { Label("Сообщения", systemImage: "bubble.left.and.bubble.right") }
             .tag(AppTab.messages)
 
             NavigationStack(path:$musicPath) {
                 MusicLibraryView()
             }
+            .modifier(MusicMiniPlayerTabInset())
             .tabItem { Label("Музыка", systemImage: "music.note") }
             .tag(AppTab.music)
 
@@ -45,6 +49,7 @@ struct RootTabView: View {
                 ProfileView()
                     .withAppRoutes()
             }
+            .modifier(MusicMiniPlayerTabInset())
             .tabItem { Label("Профиль", systemImage: "person.crop.circle") }
             .tag(AppTab.profile)
         }

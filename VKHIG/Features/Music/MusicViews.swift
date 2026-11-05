@@ -391,26 +391,42 @@ struct MusicMiniPlayer:View {
         .dynamicTypeSize(...DynamicTypeSize.xxxLarge)
     }
 }
+/// Applied to the TabView: owns the full-player sheet and, on iOS 27, the system tab accessory.
 struct MusicMiniPlayerModifier:ViewModifier {
     @Environment(\.dynamicTypeSize) private var typeSize
     @State private var library=AudioLibrary.shared
-    @State private var presented=false
     private var visible:Bool {library.current != nil && !library.playerPresented}
     @ViewBuilder func body(content:Content) -> some View {
-        adapted(content).sheet(isPresented:$presented) {
-            NavigationStack {AudioPlayerView().toolbar {ToolbarItem(placement:.cancellationAction) {Button("Закрыть") {presented=false}}}}.dynamicTypeSize(typeSize)
+        @Bindable var library=self.library
+        adapted(content).sheet(isPresented:$library.playerSheetRequested) {
+            NavigationStack {AudioPlayerView().toolbar {ToolbarItem(placement:.cancellationAction) {Button("Закрыть") {library.playerSheetRequested=false}}}}.dynamicTypeSize(typeSize)
         }
     }
     @ViewBuilder private func adapted(_ content:Content) -> some View {
         #if compiler(>=6.2)
         if #available(iOS 27.0,*) {
-            content.tabViewBottomAccessory(isEnabled:visible) {MusicMiniPlayer {presented=true}}
-        } else {legacy(content)}
+            content.tabViewBottomAccessory(isEnabled:visible) {MusicMiniPlayer {library.playerSheetRequested=true}}
+        } else {content}
+        #else
+        content
+        #endif
+    }
+}
+/// Applied to each tab's root. Before iOS 27 an inset on the TabView itself covers the tab bar,
+/// so the mini-player is inset inside every tab, directly above the bar.
+struct MusicMiniPlayerTabInset:ViewModifier {
+    @State private var library=AudioLibrary.shared
+    private var visible:Bool {library.current != nil && !library.playerPresented}
+    @ViewBuilder func body(content:Content) -> some View {
+        #if compiler(>=6.2)
+        if #available(iOS 27.0,*) {content} else {legacy(content)}
         #else
         legacy(content)
         #endif
     }
     private func legacy(_ content:Content) -> some View {
-        content.safeAreaInset(edge:.bottom) {if visible {MusicMiniPlayer {presented=true}.background(.regularMaterial)}}
+        content.safeAreaInset(edge:.bottom,spacing:0) {
+            if visible {MusicMiniPlayer {library.playerSheetRequested=true}.background(.regularMaterial).overlay(alignment:.top) {Divider()}}
+        }
     }
 }

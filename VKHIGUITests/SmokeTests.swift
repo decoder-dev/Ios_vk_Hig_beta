@@ -49,7 +49,7 @@ final class SmokeTests: XCTestCase {
         capture(app,"music-playlist",large:large)
         app.navigationBars.buttons.element(boundBy:0).tap()
         // The global mini-player has one stable accessibility label.
-        app.buttons["music-mini-player-open"].tap()
+        app.buttons["music-mini-player-open"].firstMatch.tap()
         XCTAssertTrue(app.navigationBars["Плеер"].waitForExistence(timeout:5))
         capture(app,"music-player",large:large)
         app.swipeUp()

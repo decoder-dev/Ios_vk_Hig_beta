@@ -22,6 +22,7 @@ final class AudioLibrary {
     private(set) var importing=false
     private(set) var downloading=Set<String>()
     var playerPresented=false
+    var playerSheetRequested=false
     var error:String?
     @ObservationIgnored private let directory:URL
     @ObservationIgnored private let playbackEnabled:Bool
