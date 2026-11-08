@@ -507,7 +507,7 @@ final class CommunityAdministrationModel {
         return await execute("groups.editManager",params)
     }
     func remove(_ user:Friend) async {
-        guard adminLevel>=1,user.id != VKIDAuthCoordinator.shared.userID else {error="Недостаточно прав.";return}
+        guard adminLevel>=1,user.id != VKSession.currentUserID else {error="Недостаточно прав.";return}
         if await execute("groups.removeUser",["group_id":String(groupID),"user_id":String(user.id)]) {members.removeAll {$0.id==user.id}}
     }
     private func execute(_ method:String,_ params:[String:String]) async -> Bool {

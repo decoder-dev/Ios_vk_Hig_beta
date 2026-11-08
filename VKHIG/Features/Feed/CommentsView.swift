@@ -28,7 +28,7 @@ final class CommentsViewModel {
     private var draftKey: String
     init(postID:Int64,environment:AppEnvironment) {
         self.postID = postID; self.environment = environment
-        draftKey = "vkhig.comment.draft.\(VKIDAuthCoordinator.shared.userID ?? 0).\(postID)"
+        draftKey = "vkhig.comment.draft.\(VKSession.currentUserID ?? 0).\(postID)"
         draft = UserDefaults.standard.string(forKey:draftKey) ?? ""
     }
     func saveDraft() { UserDefaults.standard.set(draft,forKey:draftKey) }
@@ -214,7 +214,7 @@ struct CommentsView:View {
         }.padding(.vertical,4).contextMenu {
             Button("Копировать") {UIPasteboard.general.string=comment.text}
             Button("Ответить") {model.replyTo=comment}
-            if !env.isLiveVKSession || comment.authorID == VKIDAuthCoordinator.shared.userID {
+            if !env.isLiveVKSession || comment.authorID == VKSession.currentUserID {
                 Button("Изменить") {editedText=comment.text;editing=comment;model.error=nil}
                 Button("Удалить",role:.destructive) {deleting=comment}
             }

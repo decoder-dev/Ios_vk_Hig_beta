@@ -21,7 +21,7 @@ actor ProfileRepository {
             guard let accessToken, !accessToken.isEmpty else {
                 return .failure(.notAuthenticated)
             }
-            do { return .success(try await VKIDAuthCoordinator.shared.fetchIdentity()) }
+            do { return .success(try await VKSession.fetchIdentity()) }
             catch let error as AppError { return .failure(error) }
             catch { return .failure(.network(error.localizedDescription)) }
         }

@@ -57,3 +57,27 @@ Keychain для credentials. UserDefaults только для non-sensitive UI p
 ## Разделение демо и production
 
 Fixture mocks можно использовать только в Preview/Test targets. Никаких user-facing «реальных» переписок из сгенерированных данных в релизной сборке.
+
+## Авторизация и мультиаккаунт (`VKHIG/Accounts`)
+
+```
+UI: AuthStubView ─▶ AddAccountHubView ─▶ DirectAuthView | WebLoginScreen | TokenEntryView | QRTokenLoginView
+                                   │
+                                   ▼  addAccount(token…): users.get → Keychain → active
+                          AccountManager (CurrentValueSubject accounts / activeAccount)
+                           │  KeychainAccountStorage        │ VKAPISession.adapter (token, v, User-Agent)
+                           │                                │ onSessionExpired (error 5, payload = token)
+                           ▼                                ▼
+                   post .vkActiveAccountDidChange ─▶ AppEnvironment.activeAccountDidChange()
+                                                      (SessionStore.reconcile, catalog.clear, AudioLibrary reset,
+                                                       capabilities + real scopes via account.getAppPermissions)
+
+VKSession (мост): currentUserID / accessToken() / grants
+   аккаунт из AccountManager имеет приоритет, иначе — сессия VK ID (VKIDAuthCoordinator, PKCE)
+```
+
+- Все чтения «кто вошёл» и «какой токен» идут через `VKSession`; прямых обращений к `VKIDAuthCoordinator.shared.userID` вне `Security/` нет.
+- Выход (`AppEnvironment.signOut`) удаляет только активный аккаунт; остальные подхватываются автоматически. Сессия VK ID не затрагивается, пока активен аккаунт.
+- Права токенов аккаунта берутся из ответа `account.getAppPermissions`, а не из списка запрошенных; при ошибке запроса список пуст и функции остаются закрытыми.
+- LongPoll: в проекте нет постоянного LongPoll-цикла (`messages.getLongPollServer` вызывается из `ConversationViewModel`); он пересоздаётся по смене владельца (`owner`). Новые долгоживущие слушатели должны подписываться на `.vkActiveAccountDidChange`.
+- API-версия: собственные запросы `Accounts/` используют `5.131` (по ТЗ), каталог и остальной код — `AppSecrets.vkAPIVersion` (5.199).

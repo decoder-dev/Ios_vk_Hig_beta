@@ -70,6 +70,7 @@ actor VKAPIClient {
         }
         let envelope = try decoder.decode(VKAPIEnvelope<T>.self, from: data)
         if let error = envelope.error {
+            if error.error_code == 5 { VKAPISession.shared.onSessionExpired.send(accessToken) }
             throw VKAPITransportError.remote(error.error_code, error.error_msg)
         }
         guard let response = envelope.response else { throw VKAPITransportError.missingResponse }

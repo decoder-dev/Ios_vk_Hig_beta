@@ -203,7 +203,7 @@ final class AudioLibrary {
     }
     func play(_ track:LocalAudioTrack) {playQueue(visibleTracks.contains(where:{$0.id==track.id}) ? visibleTracks : [track],startingAt:track.id)}
     func playRemote(_ track:LocalAudioTrack,queue:[LocalAudioTrack]) {
-        guard let account=activeAccountID ?? VKIDAuthCoordinator.shared.userID else {error="Войдите в VK для воспроизведения каталога.";return}
+        guard let account=activeAccountID ?? VKSession.currentUserID else {error="Войдите в VK для воспроизведения каталога.";return}
         if activeAccountID==nil {setAccount(account)}
         let items=queue.map {item -> LocalAudioTrack in var value=item;value.accountID=account;return resolved(value)}
         let selected=items.first {$0.sourceID==track.id || $0.id==track.id}

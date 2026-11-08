@@ -1,5 +1,6 @@
 import Foundation
 import Observation
+import Combine
 
 /// Controls whether repositories may serve Preview/Test fixtures.
 /// Production UI must never present fixtures as a successful live VK session.
@@ -29,6 +30,7 @@ final class AppEnvironment {
     let apiClient: VKAPIClient
     let tokenProvider: KeychainVKTokenProvider
     let liveAPIGate: LiveAPIGate
+    @ObservationIgnored private var accountObserver: AnyCancellable?
 
     init(
         session: SessionStore? = nil,
@@ -57,6 +59,21 @@ final class AppEnvironment {
         )
         syncAuthFromSession()
         Task { await refreshTokenCapability() }
+        accountObserver = NotificationCenter.default.publisher(for: .vkActiveAccountDidChange)
+            .receive(on: DispatchQueue.main)
+            .sink { [weak self] _ in self?.activeAccountDidChange() }
+    }
+
+    /// Account added / switched / removed / expired: drop per-account caches and rebuild capabilities.
+    private func activeAccountDidChange() {
+        session.reconcileWithAccounts()
+        catalog.clear()
+        AudioLibrary.shared.resetRemoteSession()
+        capabilities.hasAccessToken = false
+        capabilities.grantedScopes = []
+        if !session.isLiveVKSession { dataMode = .fixtures }
+        syncAuthFromSession()
+        Task { await refreshTokenCapability(); syncAuthFromSession() }
     }
 
     func enterShellWithoutAuth() {
@@ -82,12 +99,17 @@ final class AppEnvironment {
     }
 
     private func finishSignOut() {
-        let owner = String(VKIDAuthCoordinator.shared.userID ?? 0)
+        let owner = String(VKSession.currentUserID ?? 0)
         for key in UserDefaults.standard.dictionaryRepresentation().keys where (key.hasPrefix("vkhig.draft.\(owner).") || key.hasPrefix("vkhig.comment.draft.\(owner).")) { UserDefaults.standard.removeObject(forKey:key) }
         UserDefaults.standard.removeObject(forKey:"vkhig.post.draft")
         let directory = FileManager.default.urls(for:.applicationSupportDirectory,in:.userDomainMask)[0].appendingPathComponent("VKOutbox")
         for file in (try? FileManager.default.contentsOfDirectory(at:directory,includingPropertiesForKeys:nil)) ?? [] where file.lastPathComponent.hasPrefix("\(owner)_") { try? FileManager.default.removeItem(at:file) }
-        session.signOut()
+        if let account = VKSession.activeAccount {
+            // Only this account signs out; remaining accounts (if any) take over via activeAccountDidChange().
+            AccountManager.shared.removeAccount(userId: account.userId)
+        } else {
+            session.signOut()
+        }
         dataMode = .fixtures
         catalog.clear()
         AudioLibrary.shared.resetRemoteSession()
@@ -98,11 +120,13 @@ final class AppEnvironment {
     func refreshTokenCapability() async {
         let token = await tokenProvider.accessToken()
         capabilities.hasAccessToken = !(token ?? "").isEmpty
-        capabilities.grantedScopes = VKIDAuthCoordinator.shared.grants
+        capabilities.hasVKIDCredentials = AppSecrets.hasVKIDCredentials || VKSession.activeAccount != nil
+        await VKSession.refreshAccountGrants()
+        capabilities.grantedScopes = VKSession.grants
         if capabilities.hasAccessToken {
             // Rights come from the actual OAuth response, never from a guessed allow-list.
             dataMode = .live
-            AudioLibrary.shared.setAccount(VKIDAuthCoordinator.shared.userID)
+            AudioLibrary.shared.setAccount(VKSession.currentUserID)
         } else if session.isLiveVKSession {
             AudioLibrary.shared.resetRemoteSession()
             session.signOut()

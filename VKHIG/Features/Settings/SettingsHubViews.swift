@@ -8,6 +8,11 @@ struct SettingsHubView: View {
                 NavigationLink(value: AppRoute.accountSettings) {
                     Label("Аккаунт и безопасность", systemImage: "person.crop.circle")
                 }
+                NavigationLink {
+                    AccountSwitcherView()
+                } label: {
+                    Label("Аккаунты", systemImage: "person.2")
+                }
                 NavigationLink(value: AppRoute.privacySettings) {
                     Label("Конфиденциальность", systemImage: "lock.shield")
                 }
@@ -112,7 +117,7 @@ struct AccountSettingsView: View {
             Section("Сессия") {
                 NavigationLink("Проверить доступ к VK") {VKConnectionCheckView()}
                 LabeledContent("Режим") {
-                    Text(env.isLiveVKSession ? "VK ID" : "Демоверсия")
+                    Text(env.isLiveVKSession ? (VKSession.activeAccount != nil ? "Аккаунт VK" : "VK ID") : "Демоверсия")
                 }
                 LabeledContent("VK ID client") {
                     Text(AppSecrets.hasVKIDCredentials ? "Настроен" : "Не настроен")

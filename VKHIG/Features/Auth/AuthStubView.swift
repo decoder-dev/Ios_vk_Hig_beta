@@ -5,6 +5,7 @@ struct AuthStubView: View {
     @Environment(AppEnvironment.self) private var env
     @State private var authError: String?
     @State private var isAuthorizing = false
+    @State private var showOtherMethods = false
 
     var body: some View {
         NavigationStack {
@@ -56,6 +57,9 @@ struct AuthStubView: View {
                 .padding(.horizontal, VKStyle.Spacing.md)
                 .accessibilityHint("Открывает приложение с демоданными без подключения к VK")
 
+                Button("Другие способы входа") { showOtherMethods = true }
+                    .frame(minHeight: VKStyle.Size.tapTargetMin)
+
                 if let authError {
                     Text(authError)
                         .font(.footnote)
@@ -79,6 +83,9 @@ struct AuthStubView: View {
             .navigationTitle("Вход")
             .navigationBarTitleDisplayMode(.inline)
             .withAppRoutes()
+        }
+        .sheet(isPresented: $showOtherMethods) {
+            AddAccountHubView { showOtherMethods = false }
         }
     }
 

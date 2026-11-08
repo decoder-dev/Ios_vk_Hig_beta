@@ -130,11 +130,11 @@ final class VKCatalogService {
     init(api: VKAPIClient = VKAPIClient()) { self.api = api }
     func clear() { offsets=[:];buffers=[:];morePages=[:];pageCursors=[:];feedCursor = nil; feedFinished = false; posts = [:]; photos = [:]; videos = [:]; people = [:]; stories=[:]; notice = nil }
     func request(_ method: String, _ parameters: [String: String] = [:]) async throws -> VKJSON {
-        let owner = VKIDAuthCoordinator.shared.userID
-        guard let token = await VKIDAuthCoordinator.shared.freshAccessToken() else { throw AppError.notAuthenticated }
+        let owner = VKSession.currentUserID
+        guard let token = await VKSession.accessToken() else { throw AppError.notAuthenticated }
         do {
             let response: VKJSON = try await api.call(method:method,parameters:parameters,accessToken:token,apiVersion:AppSecrets.vkAPIVersion)
-            guard owner == VKIDAuthCoordinator.shared.userID else { throw AppError.notAuthenticated }
+            guard owner == VKSession.currentUserID else { throw AppError.notAuthenticated }
             return response
         }
         catch let error as VKAPITransportError {

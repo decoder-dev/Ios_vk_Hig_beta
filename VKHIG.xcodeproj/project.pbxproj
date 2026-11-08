@@ -6,6 +6,14 @@
 	objects = {
 
 /* Begin PBXBuildFile section */
+		506BA2833D6995168C41D87B /* AccountManager.swift in Sources */ = {isa = PBXBuildFile; fileRef = 429B9686E3A3B4F1B14D167E /* AccountManager.swift */; };
+		68AB689A08949DF5322600C8 /* KeychainAccountStorage.swift in Sources */ = {isa = PBXBuildFile; fileRef = F47790D5001B6B448A83D6C6 /* KeychainAccountStorage.swift */; };
+		8F70312829238F27CE3732D1 /* VKAccountModels.swift in Sources */ = {isa = PBXBuildFile; fileRef = 06FB320E1385DD5334F8DD0B /* VKAccountModels.swift */; };
+		DE48ED4658893D63699AE382 /* VKClientPresets.swift in Sources */ = {isa = PBXBuildFile; fileRef = 95D352B3AAD62C6A2B782A5B /* VKClientPresets.swift */; };
+		61B92E1D50985C9028B4418A /* VKDirectAuthService.swift in Sources */ = {isa = PBXBuildFile; fileRef = 6F5461E24B30048B82E5763A /* VKDirectAuthService.swift */; };
+		AFB505F44B7DEA84EFCE7262 /* VKRequestAdapter.swift in Sources */ = {isa = PBXBuildFile; fileRef = E012F69006BDE42998B63605 /* VKRequestAdapter.swift */; };
+		51D707A1B072701437CB1211 /* VKSession.swift in Sources */ = {isa = PBXBuildFile; fileRef = 08FD9B7FFEC5E2A117409DDB /* VKSession.swift */; };
+		65CD4414EA8371094F196833 /* VKTokenParser.swift in Sources */ = {isa = PBXBuildFile; fileRef = 5AD68707A9EAF738410F43F1 /* VKTokenParser.swift */; };
 		D826A345F83EF811F2367505 /* RootTabView.swift in Sources */ = {isa = PBXBuildFile; fileRef = E5301B12B8B1178A85D9FBFB /* RootTabView.swift */; };
 		018923455F8EDD60CB95B90D /* VKHIGApp.swift in Sources */ = {isa = PBXBuildFile; fileRef = 1D1B533B1A2BE4FEE725D8B4 /* VKHIGApp.swift */; };
 		E671BEC73B3918FD0986A6CD /* AppSecrets.swift in Sources */ = {isa = PBXBuildFile; fileRef = 14F24554B7ED85927FFEAC1E /* AppSecrets.swift */; };
@@ -27,6 +35,10 @@
 		40B9EF9084069F72B8E46607 /* MessageReconciler.swift in Sources */ = {isa = PBXBuildFile; fileRef = 512B3CB60F142EDECC65A552 /* MessageReconciler.swift */; };
 		998E89F9600A366DF34E6F97 /* Models.swift in Sources */ = {isa = PBXBuildFile; fileRef = 9AB24B54EBFB873156F6F9C2 /* Models.swift */; };
 		4A778F8029A355FE9BDAC832 /* AuthStubView.swift in Sources */ = {isa = PBXBuildFile; fileRef = 72E479918D0B9857793E0879 /* AuthStubView.swift */; };
+		E1D85F1D9A5D050180CDECA1 /* DirectAuthView.swift in Sources */ = {isa = PBXBuildFile; fileRef = FFD278B01FB3D8FFB60E96FA /* DirectAuthView.swift */; };
+		C337AD45D742C4BF42AFB61F /* QRScannerViewController.swift in Sources */ = {isa = PBXBuildFile; fileRef = 159E77F6FB5C1B1955A98CF0 /* QRScannerViewController.swift */; };
+		886E6B2B5C2548CC449CA361 /* TokenLoginViews.swift in Sources */ = {isa = PBXBuildFile; fileRef = 2752611B0367E25CEA8417A0 /* TokenLoginViews.swift */; };
+		EEE4FDDDBEA05E4854E2D603 /* VKWebAuthViewController.swift in Sources */ = {isa = PBXBuildFile; fileRef = D0E3DB42A784C5E22979B7E2 /* VKWebAuthViewController.swift */; };
 		F2350177B032CF9E53014E14 /* OnboardingView.swift in Sources */ = {isa = PBXBuildFile; fileRef = 76FB00FD111CDB30002C2DEF /* OnboardingView.swift */; };
 		03D776871C4E5F8146592127 /* ExploreViews.swift in Sources */ = {isa = PBXBuildFile; fileRef = A80D0413BE99C1674AE11B53 /* ExploreViews.swift */; };
 		A848450038F7AEC5678BDB1A /* ExtrasViews.swift in Sources */ = {isa = PBXBuildFile; fileRef = AE1F80DA63C2A74B8D223126 /* ExtrasViews.swift */; };
@@ -41,7 +53,11 @@
 		913312A77E89BB465AB5A2C5 /* ConversationViewModel.swift in Sources */ = {isa = PBXBuildFile; fileRef = 7D514F2B8CB0FF061F4A068A /* ConversationViewModel.swift */; };
 		0BAC762A4159B8C674CAAAA7 /* InboxView.swift in Sources */ = {isa = PBXBuildFile; fileRef = C7773B9BCEB1363047898149 /* InboxView.swift */; };
 		94A0942FE9AE6AEDE684F1D7 /* InboxViewModel.swift in Sources */ = {isa = PBXBuildFile; fileRef = 3886BEB8E46FEFE7261EEE1E /* InboxViewModel.swift */; };
+		DFBF8AABC4124783FF947FCC /* MusicCatalog.swift in Sources */ = {isa = PBXBuildFile; fileRef = 9B433DE7586A1831517E68E6 /* MusicCatalog.swift */; };
+		01D8455FFD9A36311C8AB200 /* MusicCore.swift in Sources */ = {isa = PBXBuildFile; fileRef = C1F92EA56E86FE75F5437F5A /* MusicCore.swift */; };
+		9F7C20D0CCB78D9903A218C1 /* MusicLibrary.swift in Sources */ = {isa = PBXBuildFile; fileRef = 6CD44ED78528D004602EAB35 /* MusicLibrary.swift */; };
 		F288174E68992515345E4D25 /* MusicPlaceholderView.swift in Sources */ = {isa = PBXBuildFile; fileRef = 683D1E7C474FF30E68BF5E61 /* MusicPlaceholderView.swift */; };
+		A48707E73D46454009D7FA5B /* MusicViews.swift in Sources */ = {isa = PBXBuildFile; fileRef = 60AD2CA9BCF0F6B2237EB7FC /* MusicViews.swift */; };
 		09D5889B581BDAB68B8AE5B9 /* ProfileView.swift in Sources */ = {isa = PBXBuildFile; fileRef = 270D5447658DC44836E98FCA /* ProfileView.swift */; };
 		FD8C722B17DC688744FB9AF5 /* ProfileViewModel.swift in Sources */ = {isa = PBXBuildFile; fileRef = 39A195218019783564F975AC /* ProfileViewModel.swift */; };
 		D9D11467FE20CD60772EC58B /* ServicesPlaceholderView.swift in Sources */ = {isa = PBXBuildFile; fileRef = EE28BAC7E1E7863E4F6A1689 /* ServicesPlaceholderView.swift */; };
@@ -52,21 +68,26 @@
 		EDBDEE820882675B0055549F /* KeychainTokenStore.swift in Sources */ = {isa = PBXBuildFile; fileRef = C4E5C5FAD3C9F56A824047BD /* KeychainTokenStore.swift */; };
 		E6AF2CA3943B3AF60B777194 /* SessionStore.swift in Sources */ = {isa = PBXBuildFile; fileRef = BFDF9C5BE0779E2F92CA6A6B /* SessionStore.swift */; };
 		0A7009C19ED621816E4D5B36 /* VKIDAuthCoordinator.swift in Sources */ = {isa = PBXBuildFile; fileRef = 91BF5AA0707A2B450580E489 /* VKIDAuthCoordinator.swift */; };
+		610C058400176EA6332192D3 /* VKIDWebLoginController.swift in Sources */ = {isa = PBXBuildFile; fileRef = A038B95E889DC146E271DB9A /* VKIDWebLoginController.swift */; };
 		7E9054F348CEB8B1401D1044 /* VKTokenProvider.swift in Sources */ = {isa = PBXBuildFile; fileRef = A9904AE8ED9874BC5301748A /* VKTokenProvider.swift */; };
 		172ED6F51C2BDD061EA017D7 /* PrivacyInfo.xcprivacy in Resources */ = {isa = PBXBuildFile; fileRef = 32DEBFEC513FC30CC7B235A8 /* PrivacyInfo.xcprivacy */; };
 		918ECD417C5A11D3677E76EB /* preview_data.json in Resources */ = {isa = PBXBuildFile; fileRef = A126A0DE6FE5715D0B29F984 /* preview_data.json */; };
 		9EAE55B157EDE6A583E6BD6A /* Assets.xcassets in Resources */ = {isa = PBXBuildFile; fileRef = CD73FA17883C14233FC5D66E /* Assets.xcassets */; };
+		615F4F1FB611A4E750096451 /* VKAccountsTests.swift in Sources */ = {isa = PBXBuildFile; fileRef = C51A7559B80BCCB9320B74C8 /* VKAccountsTests.swift */; };
 		2C80D30550A376ADD38E405B /* VKHIGFoundationTests.swift in Sources */ = {isa = PBXBuildFile; fileRef = 88133A961E36795FA834DB54 /* VKHIGFoundationTests.swift */; };
-		ABD69E70846E648234D4F3DF /* MusicCore.swift in Sources */ = {isa = PBXBuildFile; fileRef = AE17C3A902D0D5DC984869C8 /* MusicCore.swift */; };
-		A7E96F2369E7DDA361256C9D /* MusicLibrary.swift in Sources */ = {isa = PBXBuildFile; fileRef = 2E6C0A170DFDDF66BBEF53EB /* MusicLibrary.swift */; };
-		355381B31C1D1AA0CB768AF0 /* MusicCatalog.swift in Sources */ = {isa = PBXBuildFile; fileRef = 4BA065E4FBCE5BF7A5C1FA77 /* MusicCatalog.swift */; };
-		7F243544E7B2D6D9F4C759DB /* MusicViews.swift in Sources */ = {isa = PBXBuildFile; fileRef = 5AA7504C36AD1180E2C5F408 /* MusicViews.swift */; };
 /* End PBXBuildFile section */
 
 /* Begin PBXFileReference section */
-		AA0000000000000000000001 /* Shared.xcconfig */ = {isa = PBXFileReference; lastKnownFileType = text.xcconfig; path = VKHIG/Config/Shared.xcconfig; sourceTree = SOURCE_ROOT; };
 		8E42256A89ABABDDA8DEA8F9 /* VK HIG.app */ = {isa = PBXFileReference; explicitFileType = wrapper.application; includeInIndex = 0; path = "VK HIG.app"; sourceTree = BUILT_PRODUCTS_DIR; };
 		789695E3F2B97A651F49D58C /* VKHIGTests.xctest */ = {isa = PBXFileReference; explicitFileType = wrapper.cfbundle; includeInIndex = 0; path = VKHIGTests.xctest; sourceTree = BUILT_PRODUCTS_DIR; };
+		429B9686E3A3B4F1B14D167E /* AccountManager.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = AccountManager.swift; sourceTree = "<group>"; };
+		F47790D5001B6B448A83D6C6 /* KeychainAccountStorage.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = KeychainAccountStorage.swift; sourceTree = "<group>"; };
+		06FB320E1385DD5334F8DD0B /* VKAccountModels.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = VKAccountModels.swift; sourceTree = "<group>"; };
+		95D352B3AAD62C6A2B782A5B /* VKClientPresets.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = VKClientPresets.swift; sourceTree = "<group>"; };
+		6F5461E24B30048B82E5763A /* VKDirectAuthService.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = VKDirectAuthService.swift; sourceTree = "<group>"; };
+		E012F69006BDE42998B63605 /* VKRequestAdapter.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = VKRequestAdapter.swift; sourceTree = "<group>"; };
+		08FD9B7FFEC5E2A117409DDB /* VKSession.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = VKSession.swift; sourceTree = "<group>"; };
+		5AD68707A9EAF738410F43F1 /* VKTokenParser.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = VKTokenParser.swift; sourceTree = "<group>"; };
 		E5301B12B8B1178A85D9FBFB /* RootTabView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = RootTabView.swift; sourceTree = "<group>"; };
 		1D1B533B1A2BE4FEE725D8B4 /* VKHIGApp.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = VKHIGApp.swift; sourceTree = "<group>"; };
 		14F24554B7ED85927FFEAC1E /* AppSecrets.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = AppSecrets.swift; sourceTree = "<group>"; };
@@ -88,6 +109,10 @@
 		512B3CB60F142EDECC65A552 /* MessageReconciler.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = MessageReconciler.swift; sourceTree = "<group>"; };
 		9AB24B54EBFB873156F6F9C2 /* Models.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = Models.swift; sourceTree = "<group>"; };
 		72E479918D0B9857793E0879 /* AuthStubView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = AuthStubView.swift; sourceTree = "<group>"; };
+		FFD278B01FB3D8FFB60E96FA /* DirectAuthView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = DirectAuthView.swift; sourceTree = "<group>"; };
+		159E77F6FB5C1B1955A98CF0 /* QRScannerViewController.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = QRScannerViewController.swift; sourceTree = "<group>"; };
+		2752611B0367E25CEA8417A0 /* TokenLoginViews.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = TokenLoginViews.swift; sourceTree = "<group>"; };
+		D0E3DB42A784C5E22979B7E2 /* VKWebAuthViewController.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = VKWebAuthViewController.swift; sourceTree = "<group>"; };
 		76FB00FD111CDB30002C2DEF /* OnboardingView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = OnboardingView.swift; sourceTree = "<group>"; };
 		A80D0413BE99C1674AE11B53 /* ExploreViews.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = ExploreViews.swift; sourceTree = "<group>"; };
 		AE1F80DA63C2A74B8D223126 /* ExtrasViews.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = ExtrasViews.swift; sourceTree = "<group>"; };
@@ -102,7 +127,11 @@
 		7D514F2B8CB0FF061F4A068A /* ConversationViewModel.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = ConversationViewModel.swift; sourceTree = "<group>"; };
 		C7773B9BCEB1363047898149 /* InboxView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = InboxView.swift; sourceTree = "<group>"; };
 		3886BEB8E46FEFE7261EEE1E /* InboxViewModel.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = InboxViewModel.swift; sourceTree = "<group>"; };
+		9B433DE7586A1831517E68E6 /* MusicCatalog.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = MusicCatalog.swift; sourceTree = "<group>"; };
+		C1F92EA56E86FE75F5437F5A /* MusicCore.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = MusicCore.swift; sourceTree = "<group>"; };
+		6CD44ED78528D004602EAB35 /* MusicLibrary.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = MusicLibrary.swift; sourceTree = "<group>"; };
 		683D1E7C474FF30E68BF5E61 /* MusicPlaceholderView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = MusicPlaceholderView.swift; sourceTree = "<group>"; };
+		60AD2CA9BCF0F6B2237EB7FC /* MusicViews.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = MusicViews.swift; sourceTree = "<group>"; };
 		270D5447658DC44836E98FCA /* ProfileView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = ProfileView.swift; sourceTree = "<group>"; };
 		39A195218019783564F975AC /* ProfileViewModel.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = ProfileViewModel.swift; sourceTree = "<group>"; };
 		EE28BAC7E1E7863E4F6A1689 /* ServicesPlaceholderView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = ServicesPlaceholderView.swift; sourceTree = "<group>"; };
@@ -113,16 +142,14 @@
 		C4E5C5FAD3C9F56A824047BD /* KeychainTokenStore.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = KeychainTokenStore.swift; sourceTree = "<group>"; };
 		BFDF9C5BE0779E2F92CA6A6B /* SessionStore.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = SessionStore.swift; sourceTree = "<group>"; };
 		91BF5AA0707A2B450580E489 /* VKIDAuthCoordinator.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = VKIDAuthCoordinator.swift; sourceTree = "<group>"; };
+		A038B95E889DC146E271DB9A /* VKIDWebLoginController.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = VKIDWebLoginController.swift; sourceTree = "<group>"; };
 		A9904AE8ED9874BC5301748A /* VKTokenProvider.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = VKTokenProvider.swift; sourceTree = "<group>"; };
+		C51A7559B80BCCB9320B74C8 /* VKAccountsTests.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = VKAccountsTests.swift; sourceTree = "<group>"; };
 		88133A961E36795FA834DB54 /* VKHIGFoundationTests.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = VKHIGFoundationTests.swift; sourceTree = "<group>"; };
 		32DEBFEC513FC30CC7B235A8 /* PrivacyInfo.xcprivacy */ = {isa = PBXFileReference; lastKnownFileType = text.plist.xml; path = PrivacyInfo.xcprivacy; sourceTree = "<group>"; };
 		A126A0DE6FE5715D0B29F984 /* preview_data.json */ = {isa = PBXFileReference; lastKnownFileType = text.json; path = preview_data.json; sourceTree = "<group>"; };
 		CD73FA17883C14233FC5D66E /* Assets.xcassets */ = {isa = PBXFileReference; lastKnownFileType = folder.assetcatalog; path = Assets.xcassets; sourceTree = "<group>"; };
 		CCA0C063EE80C8259F07D1FA /* Info.plist */ = {isa = PBXFileReference; lastKnownFileType = text.plist.xml; path = Info.plist; sourceTree = "<group>"; };
-		AE17C3A902D0D5DC984869C8 /* MusicCore.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = MusicCore.swift; sourceTree = "<group>"; };
-		2E6C0A170DFDDF66BBEF53EB /* MusicLibrary.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = MusicLibrary.swift; sourceTree = "<group>"; };
-		4BA065E4FBCE5BF7A5C1FA77 /* MusicCatalog.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = MusicCatalog.swift; sourceTree = "<group>"; };
-		5AA7504C36AD1180E2C5F408 /* MusicViews.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = MusicViews.swift; sourceTree = "<group>"; };
 /* End PBXFileReference section */
 
 /* Begin PBXGroup section */
@@ -151,6 +178,7 @@
 				1D90F37789557A58AEEE6383 /* App */,
 				21117F27899D8A82A7F41FA3 /* Features */,
 				35F20CE10EA65AE477828425 /* Domain */,
+				649BDA031F82970207242233 /* Accounts */,
 				6765DB019231CC8A49EF1730 /* Config */,
 				A659C8A735D0222EE4D2856E /* DesignSystem */,
 				AD4BC0E7E0D3B7B15AA09061 /* Navigation */,
@@ -158,6 +186,21 @@
 				E3D025893E06481DD5BAC831 /* Data */,
 			);
 			path = VKHIG;
+			sourceTree = "<group>";
+		};
+		649BDA031F82970207242233 /* Accounts */ = {
+			isa = PBXGroup;
+			children = (
+				06FB320E1385DD5334F8DD0B /* VKAccountModels.swift */,
+				08FD9B7FFEC5E2A117409DDB /* VKSession.swift */,
+				429B9686E3A3B4F1B14D167E /* AccountManager.swift */,
+				5AD68707A9EAF738410F43F1 /* VKTokenParser.swift */,
+				6F5461E24B30048B82E5763A /* VKDirectAuthService.swift */,
+				95D352B3AAD62C6A2B782A5B /* VKClientPresets.swift */,
+				E012F69006BDE42998B63605 /* VKRequestAdapter.swift */,
+				F47790D5001B6B448A83D6C6 /* KeychainAccountStorage.swift */,
+			);
+			path = Accounts;
 			sourceTree = "<group>";
 		};
 		1D90F37789557A58AEEE6383 /* App */ = {
@@ -261,10 +304,22 @@
 		10442E69753913A3F34A3248 /* Auth */ = {
 			isa = PBXGroup;
 			children = (
+				5ABA0023914FFBF3A8FE8973 /* MultiAccount */,
 				72E479918D0B9857793E0879 /* AuthStubView.swift */,
 				76FB00FD111CDB30002C2DEF /* OnboardingView.swift */,
 			);
 			path = Auth;
+			sourceTree = "<group>";
+		};
+		5ABA0023914FFBF3A8FE8973 /* MultiAccount */ = {
+			isa = PBXGroup;
+			children = (
+				159E77F6FB5C1B1955A98CF0 /* QRScannerViewController.swift */,
+				2752611B0367E25CEA8417A0 /* TokenLoginViews.swift */,
+				D0E3DB42A784C5E22979B7E2 /* VKWebAuthViewController.swift */,
+				FFD278B01FB3D8FFB60E96FA /* DirectAuthView.swift */,
+			);
+			path = MultiAccount;
 			sourceTree = "<group>";
 		};
 		463975185CFD5905939773F4 /* Explore */ = {
@@ -326,11 +381,11 @@
 		E936FF628E7C8CF62F24567D /* Music */ = {
 			isa = PBXGroup;
 			children = (
-				AE17C3A902D0D5DC984869C8 /* MusicCore.swift */,
-				2E6C0A170DFDDF66BBEF53EB /* MusicLibrary.swift */,
-				4BA065E4FBCE5BF7A5C1FA77 /* MusicCatalog.swift */,
-				5AA7504C36AD1180E2C5F408 /* MusicViews.swift */,
+				60AD2CA9BCF0F6B2237EB7FC /* MusicViews.swift */,
 				683D1E7C474FF30E68BF5E61 /* MusicPlaceholderView.swift */,
+				6CD44ED78528D004602EAB35 /* MusicLibrary.swift */,
+				9B433DE7586A1831517E68E6 /* MusicCatalog.swift */,
+				C1F92EA56E86FE75F5437F5A /* MusicCore.swift */,
 			);
 			path = Music;
 			sourceTree = "<group>";
@@ -391,6 +446,7 @@
 			isa = PBXGroup;
 			children = (
 				91BF5AA0707A2B450580E489 /* VKIDAuthCoordinator.swift */,
+				A038B95E889DC146E271DB9A /* VKIDWebLoginController.swift */,
 				A9904AE8ED9874BC5301748A /* VKTokenProvider.swift */,
 				BFDF9C5BE0779E2F92CA6A6B /* SessionStore.swift */,
 				C4E5C5FAD3C9F56A824047BD /* KeychainTokenStore.swift */,
@@ -402,6 +458,7 @@
 			isa = PBXGroup;
 			children = (
 				88133A961E36795FA834DB54 /* VKHIGFoundationTests.swift */,
+				C51A7559B80BCCB9320B74C8 /* VKAccountsTests.swift */,
 			);
 			path = VKHIGTests;
 			sourceTree = "<group>";
@@ -430,6 +487,14 @@
 			isa = PBXSourcesBuildPhase;
 			buildActionMask = 2147483647;
 			files = (
+				506BA2833D6995168C41D87B /* AccountManager.swift in Sources */,
+				68AB689A08949DF5322600C8 /* KeychainAccountStorage.swift in Sources */,
+				8F70312829238F27CE3732D1 /* VKAccountModels.swift in Sources */,
+				DE48ED4658893D63699AE382 /* VKClientPresets.swift in Sources */,
+				61B92E1D50985C9028B4418A /* VKDirectAuthService.swift in Sources */,
+				AFB505F44B7DEA84EFCE7262 /* VKRequestAdapter.swift in Sources */,
+				51D707A1B072701437CB1211 /* VKSession.swift in Sources */,
+				65CD4414EA8371094F196833 /* VKTokenParser.swift in Sources */,
 				D826A345F83EF811F2367505 /* RootTabView.swift in Sources */,
 				018923455F8EDD60CB95B90D /* VKHIGApp.swift in Sources */,
 				E671BEC73B3918FD0986A6CD /* AppSecrets.swift in Sources */,
@@ -451,6 +516,10 @@
 				40B9EF9084069F72B8E46607 /* MessageReconciler.swift in Sources */,
 				998E89F9600A366DF34E6F97 /* Models.swift in Sources */,
 				4A778F8029A355FE9BDAC832 /* AuthStubView.swift in Sources */,
+				E1D85F1D9A5D050180CDECA1 /* DirectAuthView.swift in Sources */,
+				C337AD45D742C4BF42AFB61F /* QRScannerViewController.swift in Sources */,
+				886E6B2B5C2548CC449CA361 /* TokenLoginViews.swift in Sources */,
+				EEE4FDDDBEA05E4854E2D603 /* VKWebAuthViewController.swift in Sources */,
 				F2350177B032CF9E53014E14 /* OnboardingView.swift in Sources */,
 				03D776871C4E5F8146592127 /* ExploreViews.swift in Sources */,
 				A848450038F7AEC5678BDB1A /* ExtrasViews.swift in Sources */,
@@ -465,11 +534,11 @@
 				913312A77E89BB465AB5A2C5 /* ConversationViewModel.swift in Sources */,
 				0BAC762A4159B8C674CAAAA7 /* InboxView.swift in Sources */,
 				94A0942FE9AE6AEDE684F1D7 /* InboxViewModel.swift in Sources */,
-				ABD69E70846E648234D4F3DF /* MusicCore.swift in Sources */,
-				A7E96F2369E7DDA361256C9D /* MusicLibrary.swift in Sources */,
-				355381B31C1D1AA0CB768AF0 /* MusicCatalog.swift in Sources */,
-				7F243544E7B2D6D9F4C759DB /* MusicViews.swift in Sources */,
+				DFBF8AABC4124783FF947FCC /* MusicCatalog.swift in Sources */,
+				01D8455FFD9A36311C8AB200 /* MusicCore.swift in Sources */,
+				9F7C20D0CCB78D9903A218C1 /* MusicLibrary.swift in Sources */,
 				F288174E68992515345E4D25 /* MusicPlaceholderView.swift in Sources */,
+				A48707E73D46454009D7FA5B /* MusicViews.swift in Sources */,
 				09D5889B581BDAB68B8AE5B9 /* ProfileView.swift in Sources */,
 				FD8C722B17DC688744FB9AF5 /* ProfileViewModel.swift in Sources */,
 				D9D11467FE20CD60772EC58B /* ServicesPlaceholderView.swift in Sources */,
@@ -480,6 +549,7 @@
 				EDBDEE820882675B0055549F /* KeychainTokenStore.swift in Sources */,
 				E6AF2CA3943B3AF60B777194 /* SessionStore.swift in Sources */,
 				0A7009C19ED621816E4D5B36 /* VKIDAuthCoordinator.swift in Sources */,
+				610C058400176EA6332192D3 /* VKIDWebLoginController.swift in Sources */,
 				7E9054F348CEB8B1401D1044 /* VKTokenProvider.swift in Sources */,
 			);
 			runOnlyForDeploymentPostprocessing = 0;
@@ -488,6 +558,7 @@
 			isa = PBXSourcesBuildPhase;
 			buildActionMask = 2147483647;
 			files = (
+				615F4F1FB611A4E750096451 /* VKAccountsTests.swift in Sources */,
 				2C80D30550A376ADD38E405B /* VKHIGFoundationTests.swift in Sources */,
 			);
 			runOnlyForDeploymentPostprocessing = 0;
@@ -602,7 +673,6 @@
 /* Begin XCBuildConfiguration section */
 		05B7079B775F6BBBC8F79A32 /* Debug */ = {
 			isa = XCBuildConfiguration;
-			baseConfigurationReference = AA0000000000000000000001 /* Shared.xcconfig */;
 			buildSettings = {
 				ALWAYS_SEARCH_USER_PATHS = NO;
 				CLANG_ENABLE_MODULES = YES;
@@ -626,7 +696,6 @@
 		};
 		670C2C4F94D8962351A64ECD /* Release */ = {
 			isa = XCBuildConfiguration;
-			baseConfigurationReference = AA0000000000000000000001 /* Shared.xcconfig */;
 			buildSettings = {
 				ALWAYS_SEARCH_USER_PATHS = NO;
 				CLANG_ENABLE_MODULES = YES;
@@ -646,12 +715,11 @@
 		};
 		6E92B82BCA384B4C03A9B7F0 /* Debug */ = {
 			isa = XCBuildConfiguration;
-			baseConfigurationReference = AA0000000000000000000001 /* Shared.xcconfig */;
 			buildSettings = {
 				ASSETCATALOG_COMPILER_APPICON_NAME = AppIcon;
 				ASSETCATALOG_COMPILER_GLOBAL_ACCENT_COLOR_NAME = AccentColor;
 				CODE_SIGN_STYLE = Automatic;
-				CURRENT_PROJECT_VERSION = 5;
+				CURRENT_PROJECT_VERSION = 1;
 				GENERATE_INFOPLIST_FILE = NO;
 				INFOPLIST_EXPAND_BUILD_SETTINGS = YES;
 				INFOPLIST_FILE = VKHIG/Resources/Info.plist;
@@ -662,12 +730,11 @@
 				MARKETING_VERSION = 0.1.0;
 				PRODUCT_BUNDLE_IDENTIFIER = com.decoderdev.vkhig;
 				PRODUCT_NAME = "VK HIG";
-				PRODUCT_MODULE_NAME = VKHIG;
 				SUPPORTED_PLATFORMS = "iphoneos iphonesimulator";
 				SUPPORTS_MACCATALYST = NO;
 				SWIFT_EMIT_LOC_STRINGS = YES;
 				TARGETED_DEVICE_FAMILY = "1,2";
-				VK_CLIENT_ID = 54879294;
+				VK_CLIENT_ID = YOUR_VK_ID_CLIENT_ID;
 				VK_REDIRECT_SCHEME = "vk$(VK_CLIENT_ID)";
 				VK_REDIRECT_HOST = vk.com;
 				VK_REDIRECT_PATH = /blank.html;
@@ -677,12 +744,11 @@
 		};
 		3AC1E242FB825F2580238A4F /* Release */ = {
 			isa = XCBuildConfiguration;
-			baseConfigurationReference = AA0000000000000000000001 /* Shared.xcconfig */;
 			buildSettings = {
 				ASSETCATALOG_COMPILER_APPICON_NAME = AppIcon;
 				ASSETCATALOG_COMPILER_GLOBAL_ACCENT_COLOR_NAME = AccentColor;
 				CODE_SIGN_STYLE = Automatic;
-				CURRENT_PROJECT_VERSION = 5;
+				CURRENT_PROJECT_VERSION = 1;
 				GENERATE_INFOPLIST_FILE = NO;
 				INFOPLIST_EXPAND_BUILD_SETTINGS = YES;
 				INFOPLIST_FILE = VKHIG/Resources/Info.plist;
@@ -693,12 +759,11 @@
 				MARKETING_VERSION = 0.1.0;
 				PRODUCT_BUNDLE_IDENTIFIER = com.decoderdev.vkhig;
 				PRODUCT_NAME = "VK HIG";
-				PRODUCT_MODULE_NAME = VKHIG;
 				SUPPORTED_PLATFORMS = "iphoneos iphonesimulator";
 				SUPPORTS_MACCATALYST = NO;
 				SWIFT_EMIT_LOC_STRINGS = YES;
 				TARGETED_DEVICE_FAMILY = "1,2";
-				VK_CLIENT_ID = 54879294;
+				VK_CLIENT_ID = YOUR_VK_ID_CLIENT_ID;
 				VK_REDIRECT_SCHEME = "vk$(VK_CLIENT_ID)";
 				VK_REDIRECT_HOST = vk.com;
 				VK_REDIRECT_PATH = /blank.html;
@@ -708,11 +773,10 @@
 		};
 		05D962DA822C141339D7480F /* Debug */ = {
 			isa = XCBuildConfiguration;
-			baseConfigurationReference = AA0000000000000000000001 /* Shared.xcconfig */;
 			buildSettings = {
 				BUNDLE_LOADER = "$(TEST_HOST)";
 				CODE_SIGN_STYLE = Automatic;
-				CURRENT_PROJECT_VERSION = 5;
+				CURRENT_PROJECT_VERSION = 1;
 				GENERATE_INFOPLIST_FILE = YES;
 				MARKETING_VERSION = 0.1.0;
 				PRODUCT_BUNDLE_IDENTIFIER = com.decoderdev.vkhig.tests;
@@ -720,17 +784,16 @@
 				SUPPORTED_PLATFORMS = "iphoneos iphonesimulator";
 				SWIFT_EMIT_LOC_STRINGS = NO;
 				TARGETED_DEVICE_FAMILY = "1,2";
-				TEST_HOST = "$(BUILT_PRODUCTS_DIR)/VK HIG.app/VK HIG";
+				TEST_HOST = "$(BUILT_PRODUCTS_DIR)/VK HIG.app/$(BUNDLE_EXECUTABLE_FOLDER_PATH)/VK HIG";
 			};
 			name = Debug;
 		};
 		A6FBD5830DBF0ADBB1DB5EE9 /* Release */ = {
 			isa = XCBuildConfiguration;
-			baseConfigurationReference = AA0000000000000000000001 /* Shared.xcconfig */;
 			buildSettings = {
 				BUNDLE_LOADER = "$(TEST_HOST)";
 				CODE_SIGN_STYLE = Automatic;
-				CURRENT_PROJECT_VERSION = 5;
+				CURRENT_PROJECT_VERSION = 1;
 				GENERATE_INFOPLIST_FILE = YES;
 				MARKETING_VERSION = 0.1.0;
 				PRODUCT_BUNDLE_IDENTIFIER = com.decoderdev.vkhig.tests;
@@ -738,7 +801,7 @@
 				SUPPORTED_PLATFORMS = "iphoneos iphonesimulator";
 				SWIFT_EMIT_LOC_STRINGS = NO;
 				TARGETED_DEVICE_FAMILY = "1,2";
-				TEST_HOST = "$(BUILT_PRODUCTS_DIR)/VK HIG.app/VK HIG";
+				TEST_HOST = "$(BUILT_PRODUCTS_DIR)/VK HIG.app/$(BUNDLE_EXECUTABLE_FOLDER_PATH)/VK HIG";
 			};
 			name = Release;
 		};

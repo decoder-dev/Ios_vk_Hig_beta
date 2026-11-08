@@ -10,3 +10,8 @@
 - После каждой функциональной части запускай реально доступные проверки; всё, что не запускалось, маркируй `NOT RUN`.
 - Веди `output/IMPLEMENTATION_STATUS.md`, `output/API_CAPABILITIES.md`, `output/TEST_RESULTS.md`, `output/BLOCKERS.md`.
 - Приоритеты: P0 end-to-end > P1 целые фичи > P2 > визуальные эффекты.
+
+## Исключение: мультиаккаунт (VKHIG/Accounts)
+По явному решению владельца репозитория `VKClientPresets.swift` содержит публичные client_id/client_secret
+(Kate Mobile, официальные Android/iPhone) для password grant (`DirectAuthView`). Исключение действует только
+для этого файла; токены и пароли не логировать.

@@ -51,3 +51,9 @@
 ## Запись в `output/API_CAPABILITIES.md`
 
 Каждая строка: ID функции, feature, endpoint, doc URL, SDK version, iOS app type, granted scope, проверенный HTTP result (redacted), state (enabled/blocked/unavailable), ответственный screen, дата проверки.
+
+## Дополнительные способы входа (мультиаккаунт)
+
+Помимо VK ID (OAuth 2.1 + PKCE) поддержаны: password grant (`oauth.vk.com/token`, пресеты Kate/Android/iPhone с 2FA и капчей), implicit-flow в `WKWebView`, ручной токен и QR. Токены хранятся в Keychain (`KeychainAccountStorage`), токен валидируется `users.get` до сохранения, ошибка 5 снимает аккаунт.
+
+**Исключение из правил репозитория:** по решению владельца `VKClientPresets.swift` содержит публичные client_id/client_secret сторонних клиентов (запрет на hardcoded secrets из AGENTS.md на этот файл не распространяется). Пароль и токены не логируются. Реальное поведение VK для этих клиентов (в т. ч. «VK ID капча») не проверялось: NOT RUN.

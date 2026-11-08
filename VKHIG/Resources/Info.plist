@@ -72,7 +72,7 @@
 		<string>audio</string>
 	</array>
 	<key>NSCameraUsageDescription</key>
-	<string>Камера используется для выбранной вами фотографии в сообщении.</string>
+	<string>Камера используется для фотографии в сообщении и для сканирования QR-кода с токеном входа.</string>
 	<key>NSLocationWhenInUseUsageDescription</key>
 	<string>Геопозиция определяется только по вашему запросу для отправки в выбранный диалог.</string>
 </dict>

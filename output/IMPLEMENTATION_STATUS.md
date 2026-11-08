@@ -37,3 +37,9 @@ local playlists, persistent paused queue, global mini-player, account-isolated d
 LRC/LRCLIB lyrics and a real local ten-band equalizer. See docs/MUSIC_ADAPTATION.md for precise scope.
 New simulator build/unit/UI checks: NOT RUN yet. Live VK music approval and device audio checks:
 NOT RUN. Calls deferred; push remains disabled.
+
+## Multi-account auth (validation pending)
+Added `VKHIG/Accounts` + `Features/Auth/MultiAccount`: Keychain multi-account storage, request adapter with error-5 handling,
+password grant (2FA/captcha), WKWebView flow, token paste, QR scanner, `AccountManager`, `VKSession` bridge, account switcher in
+Settings. Wired into `AppEnvironment`/`SessionStore`/token provider. Build, unit tests (`VKAccountsTests`) and live VK checks: NOT RUN
+(no Swift toolchain in authoring environment).

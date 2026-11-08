@@ -22,7 +22,7 @@ final class SessionStore {
     init(authCoordinator: VKIDAuthCoordinator? = nil) {
         let authCoordinator = authCoordinator ?? .shared
         self.authCoordinator = authCoordinator
-        if authCoordinator.restoreSessionIfPossible() {
+        if authCoordinator.restoreSessionIfPossible() || AccountManager.shared.activeAccount.value != nil {
             // Token present but scopes unverified — still mark authenticated for routing;
             // repositories stay capability-gated.
             mode = .authenticated
@@ -32,6 +32,12 @@ final class SessionStore {
     /// Opens TabView with fixture-backed repositories. Does not contact VK.
     func enterShellWithoutAuth() {
         mode = .shellPreview
+    }
+
+    /// Called when the multi-account state changed (account added, switched, removed or expired).
+    func reconcileWithAccounts() {
+        if VKSession.hasLiveSession { mode = .authenticated }
+        else if mode == .authenticated { mode = nil }
     }
 
     func signInWithVKID() async -> Result<Void, VKIDAuthError> {

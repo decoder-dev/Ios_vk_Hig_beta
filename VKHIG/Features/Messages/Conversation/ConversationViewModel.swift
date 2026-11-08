@@ -33,7 +33,7 @@ final class ConversationViewModel {
     }
     init(conversation: Conversation, environment: AppEnvironment) {
         self.conversation = conversation; self.environment = environment
-        self.owner = String(VKIDAuthCoordinator.shared.userID ?? 0)
+        self.owner = String(VKSession.currentUserID ?? 0)
         draft = UserDefaults.standard.string(forKey:draftKey) ?? ""
         if let data = try? Data(contentsOf:outboxURL), let saved = try? JSONDecoder().decode([Pending].self,from:data) { pending = saved }
     }
@@ -109,7 +109,7 @@ final class ConversationViewModel {
         let token = await environment.liveAPIGate.accessTokenIfLiveReady()
         let result = await environment.conversationRepository.enqueueOutgoing(peerID:conversation.peerID,text:request.text,dataMode:environment.dataMode,
             capabilities:environment.capabilities,accessToken:token,randomID:request.randomID,localID:request.id,replyTo:request.replyTo)
-        guard environment.isAuthenticated, owner == String(VKIDAuthCoordinator.shared.userID ?? 0) else { return }
+        guard environment.isAuthenticated, owner == String(VKSession.currentUserID ?? 0) else { return }
         switch result {
         case .success(let message):
             upsert(message)

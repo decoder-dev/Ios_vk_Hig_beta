@@ -48,7 +48,7 @@ final class ChatAdministrationModel {
     var error:String?
     var notice:String?
     private var offset=0
-    private var selfID:Int64 {VKIDAuthCoordinator.shared.userID ?? 0}
+    private var selfID:Int64 {VKSession.currentUserID ?? 0}
     private let request:(String,[String:String]) async throws -> VKJSON
     init(peerID:Int64,request:((String,[String:String]) async throws -> VKJSON)?=nil) {
         self.peerID=peerID;self.request=request ?? {try await VKCatalogService.shared.request($0,$1)}
@@ -294,7 +294,7 @@ struct ChatAttachmentsView:View {
     }
     private func send() async {
         guard env.isLiveVKSession,!busy else {return};busy=true;notice=nil;defer {busy=false}
-        let owner=VKIDAuthCoordinator.shared.userID
+        let owner=VKSession.currentUserID
         let coordinate=location.value,message=caption
         do {
             if let data,attachment==nil {
@@ -302,7 +302,7 @@ struct ChatAttachmentsView:View {
                 else {attachment=try await env.catalog.upload(data,photo:kind=="photo",peerID:peerID,documentType:kind=="audio_message" ? "audio_message" : "doc",title:filename)}
             }
             try Task.checkCancellation()
-            guard env.isLiveVKSession,owner==VKIDAuthCoordinator.shared.userID else {throw AppError.notAuthenticated}
+            guard env.isLiveVKSession,owner==VKSession.currentUserID else {throw AppError.notAuthenticated}
             var params=["peer_id":String(peerID),"random_id":String(randomID),"message":message]
             if let attachment {params["attachment"]=attachment}
             if let value=coordinate {params["lat"]=String(value.latitude);params["long"]=String(value.longitude)}
@@ -315,7 +315,7 @@ struct ChatAttachmentsView:View {
 
 extension VKCatalogService {
     func upload(_ data:Data,photo:Bool,peerID:Int64,wall:Bool = false,documentType:String = "doc",title:String = "Документ") async throws -> String {
-        let owner=VKIDAuthCoordinator.shared.userID
+        let owner=VKSession.currentUserID
         guard data.count <= 20_000_000 else { throw AppError.network("Максимальный размер — 20 МБ.") }
         let server = try await request(wall ? "photos.getWallUploadServer" : (photo ? "photos.getMessagesUploadServer" : "docs.getMessagesUploadServer"),wall ? [:] : (photo ? ["peer_id":"\(peerID)"] : ["peer_id":"\(peerID)","type":documentType]))
         guard let url = server["upload_url"].url else { throw AppError.decoding }
@@ -330,10 +330,10 @@ extension VKCatalogService {
         guard let http = http as? HTTPURLResponse,(200...299).contains(http.statusCode) else { throw AppError.network("Загрузка вложения не завершена.") }
         let payload = try JSONDecoder().decode(VKJSON.self,from:response)
         try Task.checkCancellation()
-        guard owner==VKIDAuthCoordinator.shared.userID else {throw AppError.notAuthenticated}
+        guard owner==VKSession.currentUserID else {throw AppError.notAuthenticated}
         if photo {
             var parameters = ["photo":payload["photo"].string,"server":"\(payload["server"].int)","hash":payload["hash"].string]
-            if wall,let userID = VKIDAuthCoordinator.shared.userID { parameters["user_id"] = "\(userID)" }
+            if wall,let userID = VKSession.currentUserID { parameters["user_id"] = "\(userID)" }
             let saved = try await request(wall ? "photos.saveWallPhoto" : "photos.saveMessagesPhoto",parameters)
             guard let first = saved.items.first, first["id"].int != 0 else { throw AppError.decoding }
             return "photo\(first["owner_id"].int)_\(first["id"].int)"
@@ -495,7 +495,7 @@ struct VKUserPicker:View {
 extension VKCatalogService {
     func uploadVideo(_ data:Data,name:String) async throws -> String {
         guard data.count<=100_000_000 else {throw AppError.network("Видео больше 100 МБ.")}
-        let owner=VKIDAuthCoordinator.shared.userID
+        let owner=VKSession.currentUserID
         let saved=try await request("video.save",["name":name,"is_private":"1","wallpost":"0"])
         guard let url=saved["upload_url"].url else {throw AppError.decoding}
         let boundary="VKVideo-"+UUID().uuidString
@@ -505,7 +505,7 @@ extension VKCatalogService {
         var request=URLRequest(url:url);request.httpMethod="POST";request.timeoutInterval=180
         request.setValue("multipart/form-data; boundary=\(boundary)",forHTTPHeaderField:"Content-Type")
         let (payload,response)=try await URLSession.shared.upload(for:request,from:body)
-        guard let response=response as? HTTPURLResponse,(200...299).contains(response.statusCode),owner==VKIDAuthCoordinator.shared.userID else {throw AppError.network("Загрузка видео не завершена.")}
+        guard let response=response as? HTTPURLResponse,(200...299).contains(response.statusCode),owner==VKSession.currentUserID else {throw AppError.network("Загрузка видео не завершена.")}
         let result=try JSONDecoder().decode(VKJSON.self,from:payload)
         try Task.checkCancellation()
         switch result["error"] {

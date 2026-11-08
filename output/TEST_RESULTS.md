@@ -56,3 +56,7 @@ Run: https://github.com/decoder-dev/Ios_vk_Hig_beta/actions/runs/41541746765
 - Xcode 16.4 / iOS 18 simulator job `125607374988`: **FAIL** overall. All 42 unit tests passed (0 failures); 5 of 7 UI tests passed. `testMusicPlayerLargeText` and `testMusicPlayerQueueLyricsAndEqualizer` failed at `VKHIGUITests/SmokeTests.swift:45`.
 - Unsigned device IPA export: **PASS**, workflow run https://github.com/decoder-dev/Ios_vk_Hig_beta/actions/runs/41544690143. Asset `VKHIG-v0.1.0-beta.1-unsigned.ipa`, SHA-256 `c33c3368d56d0e173acf30d731400f036dc88750be11892f46a63e14d14de9a1`. Bundle ID `com.decoderdev.vkhig`, version `0.1.0` (build `2`); no `_CodeSignature` or embedded provisioning profile is present.
 - This IPA must be signed with an Apple-issued certificate and a matching provisioning profile for device installation. Repository signing secrets are not configured.
+
+## Multi-account auth
+`VKHIGTests/VKAccountsTests.swift` (token parser, adapter, auth-challenge parsing, scopes): NOT RUN. Camera QR, WKWebView flow,
+password grant against VK, account switching on device: NOT RUN.
