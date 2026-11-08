@@ -1,44 +1,137 @@
 import SwiftUI
 
-/// S34 — settings hub (replaces/extends simple settings).
+/// S34 — settings hub, board 02 / 04: profile card, accent glyph rows with trailing values, search.
 struct SettingsHubView: View {
+    @Environment(AppEnvironment.self) private var env
+    @AppStorage("vkhig.appearance.mode") private var appearance = "system"
+    @State private var query = ""
+    @State private var profile: UserProfile?
+
+    private struct Entry: Identifiable {
+        let title: String
+        let symbol: String
+        var value: String? = nil
+        let route: AppRoute?
+        var id: String { title }
+    }
+
+    private var appearanceLabel: String {
+        switch appearance {
+        case "light": return "Светлая"
+        case "dark": return "Тёмная"
+        default: return "Системная"
+        }
+    }
+
+    private var cacheLabel: String {
+        ByteCountFormatter.string(fromByteCount: Int64(URLCache.shared.currentDiskUsage + URLCache.shared.currentMemoryUsage), countStyle: .file)
+    }
+
+    private var accountEntries: [Entry] {[
+        Entry(title: "Аккаунт и безопасность", symbol: "person.crop.circle", value: env.isLiveVKSession ? "VK ID" : "Демо", route: .accountSettings),
+        Entry(title: "Конфиденциальность", symbol: "lock.shield", route: .privacySettings),
+        Entry(title: "Уведомления", symbol: "bell", value: "Выкл.", route: .notificationSettings)
+    ]}
+
+    private var appEntries: [Entry] {[
+        Entry(title: "Оформление", symbol: "circle.lefthalf.filled", value: appearanceLabel, route: .appearanceSettings),
+        Entry(title: "Данные и память", symbol: "externaldrive", value: cacheLabel, route: .storageSettings)
+    ]}
+
+    private func matches(_ title: String) -> Bool {
+        query.isEmpty || title.localizedCaseInsensitiveContains(query)
+    }
+
     var body: some View {
         List {
-            Section("Аккаунт") {
-                NavigationLink(value: AppRoute.accountSettings) {
-                    Label("Аккаунт и безопасность", systemImage: "person.crop.circle")
-                }
-                NavigationLink {
-                    AccountSwitcherView()
-                } label: {
-                    Label("Аккаунты", systemImage: "person.2")
-                }
-                NavigationLink(value: AppRoute.privacySettings) {
-                    Label("Конфиденциальность", systemImage: "lock.shield")
-                }
-            }
-            Section("Приложение") {
-                NavigationLink(value: AppRoute.appearanceSettings) {
-                    Label("Оформление", systemImage: "paintbrush")
-                }
-                NavigationLink(value: AppRoute.storageSettings) {
-                    Label("Данные и память", systemImage: "externaldrive")
+            if query.isEmpty {
+                Section {
+                    NavigationLink(value: AppRoute.editProfile) {
+                        HStack(spacing: VKStyle.Spacing.sm) {
+                            VKAvatar(initials: profile?.initials ?? "VK", url: profile?.avatarURL, size: 60)
+                            VStack(alignment: .leading, spacing: 2) {
+                                Text(profile?.displayName ?? (env.isLiveVKSession ? "Аккаунт VK" : "Демо-пользователь"))
+                                    .font(.title3.weight(.semibold))
+                                    .lineLimit(1)
+                                Text("Мой профиль")
+                                    .font(.subheadline)
+                                    .foregroundStyle(.secondary)
+                            }
+                        }
+                        .padding(.vertical, 4)
+                    }
                 }
             }
+
+            let account = accountEntries.filter { matches($0.title) }
+            let showsSwitcher = matches("Аккаунты")
+            if !account.isEmpty || showsSwitcher {
+                Section {
+                    ForEach(account) { entry($0) }
+                    if showsSwitcher {
+                        NavigationLink {
+                            AccountSwitcherView()
+                        } label: {
+                            VKIconRow(title: "Аккаунты", symbol: "person.2")
+                        }
+                    }
+                }
+            }
+
+            let app = appEntries.filter { matches($0.title) }
+            if !app.isEmpty {
+                Section { ForEach(app) { entry($0) } }
+            }
+
+            if matches("Проверка доступа VK") {
+                Section {
+                    NavigationLink {
+                        VKConnectionCheckView()
+                    } label: {
+                        VKIconRow(title: "Проверка доступа VK", symbol: "checkmark.shield")
+                    }
+                }
+            }
+
             #if DEBUG
-            Section("Разработка") {
-                NavigationLink(value: AppRoute.onboarding) {
-                    Label("Онбординг", systemImage: "sparkles")
-                }
-                LabeledContent("VK client id") {
-                    Text(AppSecrets.hasVKIDCredentials ? "Настроен" : "Не настроен")
-                        .foregroundStyle(.secondary)
+            if query.isEmpty {
+                Section("Разработка") {
+                    NavigationLink(value: AppRoute.onboarding) {
+                        VKIconRow(title: "Онбординг", symbol: "sparkles")
+                    }
+                    LabeledContent("VK client id") {
+                        Text(AppSecrets.hasVKIDCredentials ? "Настроен" : "Не настроен")
+                            .foregroundStyle(.secondary)
+                    }
                 }
             }
             #endif
         }
+        .listStyle(.insetGrouped)
+        .searchable(text: $query, prompt: "Поиск в настройках")
         .navigationTitle("Настройки")
         .withAppRoutes()
+        .task {
+            guard profile == nil else { return }
+            let token = await env.tokenProvider.accessToken()
+            if case .success(let value) = await env.profileRepository.fetchProfile(
+                dataMode: env.dataMode,
+                capabilities: env.capabilities,
+                isNetworkReachable: env.isNetworkReachable,
+                accessToken: token
+            ) {
+                profile = value
+            }
+        }
+    }
+
+    @ViewBuilder
+    private func entry(_ entry: Entry) -> some View {
+        if let route = entry.route {
+            NavigationLink(value: route) {
+                VKIconRow(title: entry.title, symbol: entry.symbol, value: entry.value)
+            }
+        }
     }
 }
 

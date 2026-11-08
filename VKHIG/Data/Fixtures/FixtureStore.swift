@@ -53,7 +53,10 @@ struct FixtureStore: Sendable {
             displayName: "Демо-пользователь",
             initials: "ДП",
             city: "Москва",
-            statusText: "Демо-профиль, не аккаунт VK"
+            statusText: "Демо-профиль, не аккаунт VK",
+            isOnline: true,
+            counters: ProfileCounters(friends: 342, communities: 28, photos: 1247, videos: 126),
+            university: "МГУ"
         )
         return FixtureStore(
             conversations: conversations,
@@ -78,6 +81,7 @@ private struct FixtureDTO: Decodable {
         let last_message: String
         let online: Bool
         let last_updated: String?
+        let muted: Bool?
     }
 
     struct MessageDTO: Decodable {
@@ -85,6 +89,7 @@ private struct FixtureDTO: Decodable {
         let peer_id: Int64
         let text: String
         let outgoing: Bool
+        let minutes_ago: Int?
     }
 
     struct FeedDTO: Decodable {
@@ -93,12 +98,17 @@ private struct FixtureDTO: Decodable {
         let text: String
         let media_kind: String?
         let date_label: String?
+        let owner_id: Int64?
+        let likes: Int?
+        let comments: Int?
+        let reposts: Int?
+        let views: Int?
     }
 
     func asDomain() -> FixtureStore {
         let convs: [Conversation] = conversations.map { dto in
-            let initials = String(dto.name.prefix(2)).uppercased()
-            return Conversation(
+            let initials = VKCatalogService.initials(dto.name)
+            var conversation = Conversation(
                 peerID: PeerID(raw: dto.peer_id),
                 displayName: dto.name,
                 initials: initials,
@@ -107,6 +117,8 @@ private struct FixtureDTO: Decodable {
                 unreadCount: dto.unread_count,
                 isOnline: dto.online
             )
+            conversation.isMuted = dto.muted ?? false
+            return conversation
         }
         var byPeer: [Int64: [ChatMessage]] = [:]
         let base = Date()
@@ -116,7 +128,7 @@ private struct FixtureDTO: Decodable {
                 serverID: dto.id,
                 peerID: PeerID(raw: dto.peer_id),
                 text: dto.text,
-                timestamp: base.addingTimeInterval(TimeInterval(index * 60)),
+                timestamp: base.addingTimeInterval(-TimeInterval((dto.minutes_ago ?? (messages.count - index)) * 60)),
                 isOutgoing: dto.outgoing,
                 state: dto.outgoing ? .sent : .received,
                 randomID: nil
@@ -127,12 +139,15 @@ private struct FixtureDTO: Decodable {
             FeedPost(
                 id: dto.id,
                 authorName: dto.author,
-                authorInitials: String(dto.author.prefix(2)).uppercased(),
+                authorInitials: VKCatalogService.initials(dto.author),
                 dateLabel: dto.date_label ?? "",
                 text: dto.text,
                 hasMedia: dto.media_kind != nil,
-                reactionCount: 0,
-                commentCount: 0
+                reactionCount: dto.likes ?? 0,
+                commentCount: dto.comments ?? 0,
+                ownerID: dto.owner_id ?? 0,
+                repostCount: dto.reposts ?? 0,
+                viewCount: dto.views
             )
         }
         return FixtureStore(

@@ -224,7 +224,7 @@ final class VKIDAuthCoordinator: NSObject, ASWebAuthenticationPresentationContex
         let value = try JSONDecoder().decode(VKJSON.self,from:data)["user"]
         let name = [value["first_name"].string,value["last_name"].string].filter { !$0.isEmpty }.joined(separator:" ")
         guard !name.isEmpty else { throw AppError.decoding }
-        return UserProfile(id:session.userID,displayName:name,initials:VKCatalogService.initials(name),city:nil,statusText:nil)
+        return UserProfile(id:session.userID,displayName:name,initials:VKCatalogService.initials(name),city:nil,statusText:nil,avatarURL:value["avatar"].url)
     }
     func restoreSessionIfPossible() -> Bool { savedSession() != nil }
     func clearSession() {

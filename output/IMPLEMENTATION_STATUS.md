@@ -52,3 +52,17 @@ transparent error 14/17 retry via `VKChallengeResolving` (not wired to any UI ye
 User-Agent and `sig` for every call made with that account, fixing Kate/Android/iOS/VK Me/VK Admin tokens
 being treated as a generic "official" session after login. Build, tests, device/live-VK checks: NOT RUN.
 Declined: WebView captcha bypass with CoreMotion sensor spoofing (bot-detection evasion).
+
+## Board alignment — design/boards (validation pending)
+Screens restyled to `design/boards/01–04`: shared components in `DesignSystem/HIGComponents.swift`
+(filter chips, pill segments, unread badge, section header with «Все ›», stat/action tiles, accent icon rows,
+row button style without chevrons, story ring, cover background) and `VKAvatar` with real photo + online dot.
+Feed (source chips Для вас/Друзья/Сообщества split by owner sign, story rings, post sections with counters/views,
+share menu), inbox (chips Все/Непрочитанные/Личные/Беседы/Сообщества, mute glyph, muted badge), chat (avatar header,
+inline time/delivery glyph in bubbles, capsule composer), profile (cover, avatar, counters from `users.get counters`,
+education/city), settings (profile card, values, search), friends (Все/Онлайн, last seen, message shortcut),
+community (cover/verified/activity, subscribe via `groups.join`, action tiles, wall as post cards), notifications
+(category chips/badges), global search (chips, grouped sections), services grid, photo grid/albums, video cards.
+Live mapping now reads `photo_100/200`, `last_seen`, `push_settings`, group `cover/activity/verified`, video previews/views,
+album covers and post reposts/views. Music screens and the player are not restyled yet.
+Build, unit/UI tests and screenshot review: NOT RUN (no Swift toolchain in authoring environment).

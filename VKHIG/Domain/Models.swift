@@ -15,6 +15,11 @@ struct Conversation: Identifiable, Hashable, Sendable {
     let lastUpdatedLabel: String
     let unreadCount: Int
     let isOnline: Bool
+    var avatarURL: URL? = nil
+    var isMuted = false
+
+    enum Kind: Hashable, Sendable { case user, chat, community }
+    var kind: Kind { peerID.raw >= 2_000_000_000 ? .chat : peerID.raw < 0 ? .community : .user }
 }
 
 struct ChatMessage: Identifiable, Hashable, Sendable {
@@ -51,6 +56,14 @@ struct FeedPost: Identifiable, Hashable, Sendable {
     var nativeID: Int64? = nil
     var mediaURL: URL? = nil
     var attachments:[ChatAttachment] = []
+    var avatarURL: URL? = nil
+    var repostCount = 0
+    var viewCount: Int? = nil
+
+    var webURL: URL? {
+        guard ownerID != 0, let nativeID else { return nil }
+        return URL(string: "https://vk.com/wall\(ownerID)_\(nativeID)")
+    }
 }
 
 struct UserProfile: Identifiable, Hashable, Sendable {
@@ -59,6 +72,17 @@ struct UserProfile: Identifiable, Hashable, Sendable {
     let initials: String
     let city: String?
     let statusText: String?
+    var avatarURL: URL? = nil
+    var isOnline = false
+    var counters: ProfileCounters? = nil
+    var university: String? = nil
+}
+
+struct ProfileCounters: Hashable, Sendable {
+    var friends: Int?
+    var communities: Int?
+    var photos: Int?
+    var videos: Int?
 }
 
 enum AppError: Error, LocalizedError, Equatable, Sendable {

@@ -5,6 +5,14 @@ struct InboxView: View {
     @Environment(AppEnvironment.self) private var env
     @State private var model: InboxViewModel?
 
+    private let filters: [VKChip<InboxViewModel.Filter>] = [
+        VKChip(value: .all, title: "Все"),
+        VKChip(value: .unread, title: "Непрочитанные"),
+        VKChip(value: .personal, title: "Личные"),
+        VKChip(value: .chats, title: "Беседы"),
+        VKChip(value: .communities, title: "Сообщества")
+    ]
+
     var body: some View {
         Group {
             if let model {
@@ -33,52 +41,55 @@ struct InboxView: View {
             emptyDetails: "Диалогов нет или доступ к сообщениям ещё не выдан.",
             onRetry: { Task { await model.load() } }
         ) { _ in
-            List {
-                if model.usesFixtures {
-                    Section {
+            ScrollView {
+                LazyVStack(alignment: .leading, spacing: 0) {
+                    if model.usesFixtures {
                         FixtureBanner()
-                            .listRowBackground(Color.clear)
-                            .listRowInsets(EdgeInsets())
+                            .padding(.horizontal, VKStyle.Size.contentMargin)
+                            .padding(.bottom, VKStyle.Spacing.xs)
+                    }
+
+                    VKChipBar(chips: filters, selection: $model.filter)
+                        .padding(.bottom, VKStyle.Spacing.xxs)
+
+                    let conversations = model.visibleConversations
+                    if conversations.isEmpty {
+                        VKEmptyState(
+                            symbol: "magnifyingglass",
+                            title: "Ничего не найдено",
+                            details: "Попробуйте другой запрос или фильтр."
+                        )
+                        .padding(.top, VKStyle.Spacing.xxl)
+                    }
+                    ForEach(conversations) { conversation in
+                        Group {
+                            if conversation.kind == .chat {
+                                NavigationLink(value: AppRoute.groupChat(conversation.peerID.raw)) {
+                                    ConversationRow(conversation: conversation)
+                                }
+                            } else {
+                                NavigationLink(value: conversation) {
+                                    ConversationRow(conversation: conversation)
+                                }
+                            }
+                        }
+                        .buttonStyle(VKRowButtonStyle())
+                    }
+                    if let error = model.pageError {
+                        Text(error).font(.footnote).foregroundStyle(.red)
+                            .padding(.horizontal, VKStyle.Size.contentMargin)
+                    }
+                    if !model.reachedEnd {
+                        Button("Загрузить ещё") { Task { await model.loadMore() } }
+                            .disabled(model.isLoadingMore)
+                            .frame(maxWidth: .infinity, minHeight: 44)
                     }
                 }
-
-                Picker("Фильтр", selection: $model.unreadOnly) {
-                    Text("Все").tag(false)
-                    Text("Непрочитанные").tag(true)
-                }
-                .pickerStyle(.segmented)
-                .listRowBackground(Color.clear)
-
-                ForEach(model.visibleConversations) { conversation in
-                    if conversation.peerID.raw >= 2_000_000_000 {
-                        NavigationLink(value: AppRoute.groupChat(conversation.peerID.raw)) {
-                            ConversationRow(conversation: conversation)
-                        }
-                    } else {
-                        NavigationLink(value: conversation) {
-                            ConversationRow(conversation: conversation)
-                        }
-                    }
-                }
-                if !model.reachedEnd {
-                    Button("Загрузить ещё") { Task { await model.loadMore() } }
-                        .disabled(model.isLoadingMore)
-                        .frame(minHeight:44)
-                }
+                .padding(.bottom, VKStyle.Spacing.md)
             }
-            .listStyle(.plain)
-            .overlay {
-                if model.visibleConversations.isEmpty, case .loaded = model.state {
-                    VKEmptyState(
-                        symbol: "magnifyingglass",
-                        title: "Ничего не найдено",
-                        details: "Попробуйте другой запрос или фильтр."
-                    )
-                    .allowsHitTesting(false)
-                }
-            }
+            .background(VKStyle.canvas)
         }
-        .searchable(text: $model.searchText, prompt: "Поиск по диалогам")
+        .searchable(text: $model.searchText, prompt: "Поиск")
         .navigationDestination(for: Conversation.self) { conversation in
             ConversationView(conversation: conversation)
         }
@@ -96,44 +107,55 @@ struct InboxView: View {
     }
 }
 
+/// Inbox row from board 01: 52pt avatar, name with mute glyph, time, one-line preview and badge.
 private struct ConversationRow: View {
     let conversation: Conversation
 
     var body: some View {
         HStack(spacing: VKStyle.Spacing.sm) {
-            ZStack(alignment: .bottomTrailing) {
-                VKAvatar(initials: conversation.initials, size: VKStyle.Size.avatarListLarge, tint: .indigo)
-                if conversation.isOnline {
-                    Circle()
-                        .fill(Color.green)
-                        .frame(width: 12, height: 12)
-                        .overlay(Circle().stroke(VKStyle.canvas, lineWidth: 2))
-                }
-            }
-            VStack(alignment: .leading, spacing: 5) {
-                HStack {
-                    Text(conversation.displayName).font(.headline).lineLimit(1)
+            VKAvatar(
+                initials: conversation.initials,
+                url: conversation.avatarURL,
+                size: VKStyle.Size.avatarRow,
+                isOnline: conversation.isOnline
+            )
+            VStack(alignment: .leading, spacing: 3) {
+                HStack(spacing: 4) {
+                    Text(conversation.displayName)
+                        .font(.body.weight(.semibold))
+                        .foregroundStyle(.primary)
+                        .lineLimit(1)
+                    if conversation.isMuted {
+                        Image(systemName: "bell.slash.fill")
+                            .font(.caption2)
+                            .foregroundStyle(.secondary)
+                            .accessibilityLabel("Без звука")
+                    }
                     Spacer(minLength: 6)
-                    Text(conversation.lastUpdatedLabel).font(.caption).foregroundStyle(.secondary)
+                    Text(conversation.lastUpdatedLabel)
+                        .font(.caption)
+                        .foregroundStyle(.secondary)
                 }
-                HStack {
+                HStack(alignment: .top, spacing: 6) {
                     Text(conversation.lastMessagePreview)
                         .font(.subheadline)
                         .foregroundStyle(.secondary)
                         .lineLimit(1)
                     Spacer(minLength: 4)
                     if conversation.unreadCount > 0 {
-                        Text(conversation.unreadCount.formatted())
-                            .font(.caption2.weight(.bold))
-                            .foregroundStyle(.white)
-                            .padding(.horizontal, 7)
-                            .padding(.vertical, 3)
-                            .background(VKStyle.accent, in: Capsule())
+                        VKBadge(count: conversation.unreadCount, muted: conversation.isMuted)
                     }
                 }
             }
         }
-        .padding(.vertical, 4)
+        .padding(.horizontal, VKStyle.Size.contentMargin)
+        .padding(.vertical, VKStyle.Spacing.xs)
+        .overlay(alignment: .bottom) {
+            Rectangle()
+                .fill(VKStyle.separator)
+                .frame(height: 0.5)
+                .padding(.leading, VKStyle.Size.contentMargin + VKStyle.Size.avatarRow + VKStyle.Spacing.sm)
+        }
         .accessibilityElement(children: .combine)
     }
 }

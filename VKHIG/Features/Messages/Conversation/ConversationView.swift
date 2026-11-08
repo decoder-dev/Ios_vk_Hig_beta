@@ -27,14 +27,40 @@ struct ConversationView: View {
         .navigationTitle(conversation.displayName)
         .navigationBarTitleDisplayMode(.inline)
         .toolbar {
+            ToolbarItem(placement: .principal) {
+                NavigationLink(value: AppRoute.chatInfo(conversation.peerID.raw)) {
+                    HStack(spacing: 8) {
+                        VKAvatar(initials: conversation.initials, url: conversation.avatarURL, size: 34)
+                        VStack(alignment: .leading, spacing: 0) {
+                            Text(conversation.displayName)
+                                .font(.subheadline.weight(.semibold))
+                                .foregroundStyle(.primary)
+                                .lineLimit(1)
+                            if let status = headerStatus {
+                                Text(status)
+                                    .font(.caption)
+                                    .foregroundStyle(.secondary)
+                                    .lineLimit(1)
+                            }
+                        }
+                    }
+                    .frame(minHeight: 44)
+                }
+                .buttonStyle(.plain)
+                .accessibilityLabel("\(conversation.displayName), информация о диалоге")
+            }
             ToolbarItemGroup(placement: .topBarTrailing) {
                 NavigationLink(value: AppRoute.chatSearch(conversation.peerID.raw)) {
                     Image(systemName: "magnifyingglass")
                         .frame(minWidth: 44, minHeight: 44)
                 }
-                NavigationLink(value: AppRoute.chatInfo(conversation.peerID.raw)) {
-                    Image(systemName: "info.circle")
-                        .frame(minWidth: 44, minHeight: 44)
+                .accessibilityLabel("Поиск по диалогу")
+                if conversation.kind == .user {
+                    NavigationLink(value: AppRoute.incomingCall) {
+                        Image(systemName: "phone")
+                            .frame(minWidth: 44, minHeight: 44)
+                    }
+                    .accessibilityLabel("Звонок VK")
                 }
             }
         }
@@ -88,6 +114,14 @@ struct ConversationView: View {
         }
     }
 
+    private var headerStatus: String? {
+        switch conversation.kind {
+        case .user: return conversation.isOnline ? "онлайн" : nil
+        case .chat: return "беседа"
+        case .community: return "сообщество"
+        }
+    }
+
     @ViewBuilder
     private func conversationBody(_ model: ConversationViewModel) -> some View {
         @Bindable var model = model
@@ -113,7 +147,7 @@ struct ConversationView: View {
             ) { messages in
                 ScrollViewReader { proxy in
                     ScrollView {
-                        LazyVStack(spacing: 9) {
+                        LazyVStack(spacing: 6) {
                             if !model.reachedStart { Button("Загрузить предыдущие") { Task { await model.loadOlder() } }.disabled(model.loadingOlder).frame(minHeight:44) }
                             ForEach(messages) { message in
                                 MessageBubble(message: message, onReply:{model.replyingTo = message; composerFocused = true}, onForward:{forwarding = message}, onDelete:{deleting = message}, onRetry:{Task { await model.retry(message) }},onEdit:{editedText = message.text; editing = message},canPin:canPin,onPin:{pinning=message})
@@ -121,6 +155,7 @@ struct ConversationView: View {
                             }
                         }
                         .padding(.horizontal, 12)
+                        .padding(.top, 8)
                         .padding(.bottom, 14)
                     }
                     .onAppear { if let id = messages.last?.id { proxy.scrollTo(id,anchor:.bottom) } }
@@ -133,7 +168,21 @@ struct ConversationView: View {
             }
 
             if let reply = model.replyingTo {
-                HStack { Text("Ответ: \(reply.text)").font(.caption).lineLimit(2); Spacer(); Button("Отмена") { model.replyingTo = nil } }.padding(.horizontal)
+                HStack(spacing: 10) {
+                    Rectangle().fill(VKStyle.accent).frame(width: 3).clipShape(Capsule())
+                    VStack(alignment: .leading, spacing: 2) {
+                        Text("Ответ").font(.caption.weight(.semibold)).foregroundStyle(VKStyle.accent)
+                        Text(reply.text).font(.caption).foregroundStyle(.secondary).lineLimit(1)
+                    }
+                    Spacer()
+                    Button { model.replyingTo = nil } label: {
+                        Image(systemName: "xmark.circle.fill").foregroundStyle(.secondary).frame(width: 44, height: 44)
+                    }
+                    .accessibilityLabel("Отменить ответ")
+                }
+                .frame(height: 44)
+                .padding(.leading, 16)
+                .background(.bar)
             }
             composer(model)
         }
@@ -142,34 +191,41 @@ struct ConversationView: View {
 
     private func composer(_ model: ConversationViewModel) -> some View {
         @Bindable var model = model
-        return HStack(alignment: .bottom, spacing: 10) {
+        let canSend = !model.isSending && !model.draft.trimmingCharacters(in: .whitespacesAndNewlines).isEmpty
+        return HStack(alignment: .bottom, spacing: 6) {
             NavigationLink(value: AppRoute.chatAttachments(model.conversation.peerID.raw)) {
-                Image(systemName: "plus.circle.fill")
-                    .font(.system(size: 28))
+                Image(systemName: "plus")
+                    .font(.title2.weight(.regular))
                     .frame(minWidth: 44, minHeight: 44)
             }
             .accessibilityLabel("Добавить вложение")
 
             TextField("Сообщение", text: $model.draft, axis: .vertical)
                 .lineLimit(1...5)
-                .textFieldStyle(.roundedBorder)
                 .focused($composerFocused)
+                .padding(.horizontal, 14)
+                .padding(.vertical, 9)
+                .frame(minHeight: 38)
+                .background(VKStyle.chipFill, in: RoundedRectangle(cornerRadius: 19, style: .continuous))
+                .padding(.vertical, 3)
                 .onChange(of:model.draft) { _,_ in model.persistDraft() }
 
             Button {
                 Task { await model.send() }
             } label: {
                 Image(systemName: "arrow.up.circle.fill")
-                    .font(.system(size: 28))
+                    .font(.system(size: 32))
+                    .symbolRenderingMode(.hierarchical)
                     .frame(minWidth: 44, minHeight: 44)
             }
-            .disabled(model.isSending || model.draft.trimmingCharacters(in: .whitespacesAndNewlines).isEmpty)
+            .disabled(!canSend)
+            .opacity(canSend ? 1 : 0.45)
             .accessibilityLabel("Отправить сообщение")
         }
         .tint(VKStyle.accent)
-        .padding(.horizontal, 10)
-        .padding(.vertical, 6)
-        .background(.regularMaterial)
+        .padding(.horizontal, 8)
+        .padding(.vertical, 4)
+        .background(.bar)
     }
 }
 
@@ -187,41 +243,61 @@ private struct MessageBubble: View {
         message.timestamp.formatted(date: .omitted, time: .shortened)
     }
 
+    private var bubbleColor: Color { message.isOutgoing ? VKStyle.accent : Color(uiColor: .secondarySystemBackground) }
+    private var metaColor: Color { message.isOutgoing ? Color.white.opacity(0.78) : Color.secondary }
+
+    /// Time + delivery glyph shown inside the bubble's bottom-trailing corner.
+    private var meta: Text {
+        var text = Text(timeLabel)
+        if message.isOutgoing {
+            switch message.state {
+            case .pending: text = text + Text(" ") + Text(Image(systemName: "clock"))
+            case .failed: text = text + Text(" ") + Text(Image(systemName: "exclamationmark.circle.fill"))
+            case .sent, .received: text = text + Text(" ") + Text(Image(systemName: "checkmark"))
+            }
+        }
+        return text
+    }
+
     var body: some View {
-        HStack {
-            if message.isOutgoing { Spacer(minLength: 58) }
-            VStack(alignment: .trailing, spacing: 5) {
-                Text(message.text)
-                    .font(.body)
-                    .foregroundStyle(message.isOutgoing ? Color.white : Color.primary)
-                    .frame(maxWidth: 296, alignment: .leading)
-                    .padding(.horizontal, 13)
-                    .padding(.vertical, 10)
-                    .background(
-                        message.isOutgoing ? VKStyle.accent : VKStyle.cell,
-                        in: RoundedRectangle(cornerRadius: VKStyle.Radius.bubble)
-                    )
+        HStack(alignment: .bottom) {
+            if message.isOutgoing { Spacer(minLength: 52) }
+            VStack(alignment: message.isOutgoing ? .trailing : .leading, spacing: 4) {
                 ForEach(message.quotes) {quote in
-                    VStack(alignment:.leading,spacing:4) {
-                        Text(quote.title).font(.caption.bold()).foregroundStyle(.secondary)
-                        if !quote.text.isEmpty {Text(quote.text).font(.callout)}
-                        ForEach(quote.attachments) {AttachmentPreview(attachment:$0)}
-                    }.padding(10).frame(maxWidth:280,alignment:.leading).background(VKStyle.cell,in:RoundedRectangle(cornerRadius:10))
+                    HStack(spacing: 8) {
+                        Rectangle().fill(VKStyle.accent).frame(width: 3).clipShape(Capsule())
+                        VStack(alignment:.leading,spacing:4) {
+                            Text(quote.title).font(.caption.bold()).foregroundStyle(VKStyle.accent)
+                            if !quote.text.isEmpty {Text(quote.text).font(.callout).lineLimit(4)}
+                            ForEach(quote.attachments) {AttachmentPreview(attachment:$0)}
+                        }
+                    }
+                    .padding(10).frame(maxWidth:280,alignment:.leading)
+                    .background(Color(uiColor: .secondarySystemBackground),in:RoundedRectangle(cornerRadius:14,style:.continuous))
                 }
                 ForEach(message.attachments) {AttachmentPreview(attachment:$0)}
-                HStack(spacing: 4) {
-                    Text(timeLabel)
-                    if message.state == .pending { Image(systemName: "clock") }
-                    if message.state == .failed {
-                        Image(systemName: "exclamationmark.circle.fill")
-                            .foregroundStyle(.red)
-                    }
+                if !message.text.isEmpty {
+                    // The clear copy of `meta` reserves room so the visible time sits on the last line when it fits.
+                    (Text(message.text) + Text("   ") + meta.foregroundColor(.clear))
+                        .font(.body)
+                        .foregroundColor(message.isOutgoing ? Color.white : Color.primary)
+                        .padding(.horizontal, 12)
+                        .padding(.vertical, 8)
+                        .overlay(alignment: .bottomTrailing) {
+                            meta
+                                .font(.caption2)
+                                .foregroundColor(message.state == .failed ? Color.red : metaColor)
+                                .padding(.trailing, 10)
+                                .padding(.bottom, 6)
+                        }
+                        .background(bubbleColor, in: RoundedRectangle(cornerRadius: VKStyle.Radius.bubble, style: .continuous))
+                        .frame(maxWidth: 300, alignment: message.isOutgoing ? .trailing : .leading)
+                } else {
+                    meta.font(.caption2).foregroundColor(message.state == .failed ? Color.red : Color.secondary)
                 }
-                .font(.caption2)
-                .foregroundStyle(.secondary)
             }
             .fixedSize(horizontal: false, vertical: true)
-            if !message.isOutgoing { Spacer(minLength: 58) }
+            if !message.isOutgoing { Spacer(minLength: 52) }
         }
         .accessibilityElement(children: .combine)
         .contextMenu {

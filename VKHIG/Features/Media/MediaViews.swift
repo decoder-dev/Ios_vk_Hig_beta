@@ -5,8 +5,9 @@ import MediaPlayer
 import Observation
 import UniformTypeIdentifiers
 
-/// S26 — photo albums.
+/// S26 — photo albums: two-column cover grid.
 struct PhotoAlbumsView: View {
+    private let columns = [GridItem(.flexible(), spacing: VKStyle.Spacing.sm), GridItem(.flexible(), spacing: VKStyle.Spacing.sm)]
     var body: some View {
         FixtureScreen(
             title: "Альбомы",
@@ -17,31 +18,69 @@ struct PhotoAlbumsView: View {
             isEmpty: { $0.isEmpty },
             loadValue: { CatalogFixtures.albums }
         ) { albums in
-            List(albums) { album in
-                NavigationLink(value: AppRoute.albumPhotos(album.id)) {
-                    HStack {
-                        RoundedRectangle(cornerRadius: 8)
-                            .fill(VKStyle.cell)
-                            .frame(width: 56, height: 56)
-                            .overlay { Image(systemName: "photo") }
-                        VStack(alignment: .leading) {
-                            Text(album.title)
-                            Text("\(album.count) фото").font(.caption).foregroundStyle(.secondary)
+            ScrollView {
+                LazyVGrid(columns: columns, spacing: VKStyle.Spacing.md) {
+                    ForEach(albums) { album in
+                        NavigationLink(value: AppRoute.albumPhotos(album.id)) {
+                            VStack(alignment: .leading, spacing: 6) {
+                                Color.clear
+                                    .aspectRatio(1, contentMode: .fit)
+                                    .overlay {
+                                        if let url = album.coverURL {
+                                            AsyncImage(url: url) { phase in
+                                                if let image = phase.image { image.resizable().scaledToFill() }
+                                                else { VKMediaPlaceholder(symbol: "photo.on.rectangle", seed: album.title) }
+                                            }
+                                        } else {
+                                            VKMediaPlaceholder(symbol: "photo.on.rectangle", seed: album.title)
+                                        }
+                                    }
+                                    .clipShape(RoundedRectangle(cornerRadius: VKStyle.Radius.medium, style: .continuous))
+                                Text(album.title)
+                                    .font(.subheadline.weight(.semibold))
+                                    .foregroundStyle(.primary)
+                                    .lineLimit(1)
+                                Text(VKFormat.plural(album.count, "фотография", "фотографии", "фотографий"))
+                                    .font(.caption)
+                                    .foregroundStyle(.secondary)
+                            }
+                            .accessibilityElement(children: .combine)
                         }
+                        .buttonStyle(.plain)
                     }
                 }
+                .padding(VKStyle.Size.contentMargin)
             }
             .withAppRoutes()
         }
     }
 }
 
-/// S27 — photos grid.
+/// S27 — photos grid, board 03: "Все фото / Альбомы" pills and a dense three-column grid.
 struct PhotosGridView: View {
     var albumID: Int64? = nil
-    private let columns = [GridItem(.adaptive(minimum: 100), spacing: 4)]
+    @State private var showsAlbums = false
+    private let columns = Array(repeating: GridItem(.flexible(), spacing: 3), count: 3)
 
     var body: some View {
+        Group {
+            if albumID == nil && showsAlbums {
+                PhotoAlbumsView()
+            } else {
+                grid
+            }
+        }
+        .safeAreaInset(edge: .top, spacing: 0) {
+            if albumID == nil {
+                VKPillPicker(chips: [VKChip(value: false, title: "Все фото"), VKChip(value: true, title: "Альбомы")], selection: $showsAlbums)
+                    .padding(.horizontal, VKStyle.Size.contentMargin)
+                    .padding(.vertical, VKStyle.Spacing.xs)
+                    .background(.bar)
+            }
+        }
+    }
+
+    private var grid: some View {
         FixtureScreen(
             title: "Фотографии",
             screenID: "S27",
@@ -53,17 +92,26 @@ struct PhotosGridView: View {
             loadValue: { CatalogFixtures.photos }
         ) { photos in
             ScrollView {
-                LazyVGrid(columns: columns, spacing: 4) {
+                LazyVGrid(columns: columns, spacing: 3) {
                     ForEach(photos) { photo in
                         NavigationLink(value: AppRoute.photoViewer(photo.id)) {
-                            AsyncImage(url:photo.url) { image in image.resizable().scaledToFill() } placeholder: { Rectangle().fill(VKStyle.cell).overlay { Image(systemName:"photo") } }
-                                .frame(height:110).clipped().accessibilityLabel(photo.caption.isEmpty ? "Фотография" : photo.caption)
+                            Color.clear
+                                .aspectRatio(1, contentMode: .fit)
+                                .overlay {
+                                    AsyncImage(url:photo.url) { phase in
+                                        if let image = phase.image { image.resizable().scaledToFill() }
+                                        else { VKMediaPlaceholder(seed: "\(photo.id)") }
+                                    }
+                                }
+                                .clipShape(RoundedRectangle(cornerRadius: VKStyle.Radius.thumbnail, style: .continuous))
+                                .contentShape(Rectangle())
+                                .accessibilityLabel(photo.caption.isEmpty ? "Фотография" : photo.caption)
                         }
                         .buttonStyle(.plain)
-                        .frame(minHeight: 44)
                     }
                 }
-                .padding(4)
+                .padding(.horizontal, VKStyle.Spacing.xs)
+                .padding(.vertical, VKStyle.Spacing.xs)
             }
             .withAppRoutes()
         }
@@ -99,7 +147,7 @@ struct PhotoViewerView: View {
     }
 }
 
-/// S29 — video list.
+/// S29 — video list, board 02: 16:9 previews with play glyph and duration, title and stats.
 struct VideoListView: View {
     var body: some View {
         FixtureScreen(
@@ -111,23 +159,74 @@ struct VideoListView: View {
             isEmpty: { $0.isEmpty },
             loadValue: { CatalogFixtures.videos }
         ) { videos in
-            List(videos) { video in
-                NavigationLink(value: AppRoute.videoPlayer(video.id)) {
-                    HStack(spacing: 12) {
-                        RoundedRectangle(cornerRadius: 8)
-                            .fill(VKStyle.cell)
-                            .frame(width: 96, height: 56)
-                            .overlay { Image(systemName: "play.fill") }
-                        VStack(alignment: .leading) {
-                            Text(video.title)
-                            Text("\(video.author) · \(video.durationLabel)")
-                                .font(.caption).foregroundStyle(.secondary)
+            ScrollView {
+                LazyVStack(spacing: VKStyle.Spacing.lg) {
+                    ForEach(videos) { video in
+                        NavigationLink(value: AppRoute.videoPlayer(video.id)) {
+                            VideoCard(video: video)
                         }
+                        .buttonStyle(.plain)
                     }
                 }
+                .padding(VKStyle.Size.contentMargin)
             }
             .withAppRoutes()
         }
+    }
+}
+
+private struct VideoCard: View {
+    let video: VideoItem
+
+    private var subtitle: String {
+        var parts = [video.author]
+        if let views = video.views { parts.append("\(VKFormat.compact(views)) просмотров") }
+        if let date = video.dateLabel { parts.append(date) }
+        return parts.joined(separator: " · ")
+    }
+
+    var body: some View {
+        VStack(alignment: .leading, spacing: VKStyle.Spacing.xs) {
+            Color.clear
+                .aspectRatio(16.0 / 9.0, contentMode: .fit)
+                .overlay {
+                    if let url = video.previewURL {
+                        AsyncImage(url: url) { phase in
+                            if let image = phase.image { image.resizable().scaledToFill() }
+                            else { VKMediaPlaceholder(symbol: "play.rectangle", seed: video.title) }
+                        }
+                    } else {
+                        VKMediaPlaceholder(symbol: "mountain.2.fill", seed: video.title)
+                    }
+                }
+                .overlay {
+                    Image(systemName: "play.fill")
+                        .font(.title2)
+                        .foregroundStyle(.white)
+                        .frame(width: 56, height: 56)
+                        .background(.black.opacity(0.35), in: Circle())
+                }
+                .overlay(alignment: .bottomTrailing) {
+                    Text(video.durationLabel)
+                        .font(.caption.weight(.semibold))
+                        .monospacedDigit()
+                        .foregroundStyle(.white)
+                        .padding(.horizontal, 6).padding(.vertical, 3)
+                        .background(.black.opacity(0.6), in: RoundedRectangle(cornerRadius: 6, style: .continuous))
+                        .padding(8)
+                }
+                .clipShape(RoundedRectangle(cornerRadius: VKStyle.Radius.card, style: .continuous))
+            Text(video.title)
+                .font(.headline)
+                .foregroundStyle(.primary)
+                .lineLimit(2)
+            Text(subtitle)
+                .font(.subheadline)
+                .foregroundStyle(.secondary)
+                .lineLimit(2)
+        }
+        .accessibilityElement(children: .combine)
+        .accessibilityHint("Открыть видео")
     }
 }
 
@@ -175,6 +274,7 @@ struct AttachmentPreview:View {
                         else if phase.error != nil {Label("Не удалось загрузить",systemImage:"photo")}
                         else {ProgressView()}
                     }.frame(maxWidth:280,maxHeight:240)
+                    .clipShape(RoundedRectangle(cornerRadius:VKStyle.Radius.bubble,style:.continuous))
                 }.buttonStyle(.plain).accessibilityLabel(attachment.title)
             case .audio,.voice,.video:
                 Button {showing=true} label:{Label(attachment.title,systemImage:attachment.symbol)}.frame(minHeight:44)

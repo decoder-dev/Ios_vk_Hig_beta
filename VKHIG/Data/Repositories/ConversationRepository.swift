@@ -15,14 +15,27 @@ actor ConversationRepository {
         if dataMode == .fixtures { return .success(offset == 0 ? fixtures.conversations : []) }
         guard capabilities.canUseLiveAPI(.inbox) else { return .failure(.capabilityUnavailable("VK не выдал этому приложению доступ к сообщениям.")) }
         do {
-            let response = try await request("messages.getConversations", ["count":"30", "offset":"\(offset)", "extended":"1", "fields":"online"], token:accessToken)
+            let response = try await request("messages.getConversations", ["count":"30", "offset":"\(offset)", "extended":"1", "fields":"online,photo_100"], token:accessToken)
             var names = Dictionary(response["profiles"].items.map { j in (j["id"].int, [j["first_name"].string,j["last_name"].string].joined(separator:" ")) }, uniquingKeysWith:{ a,_ in a })
-            for group in response["groups"].items { names[-group["id"].int] = group["name"].string }
+            var avatars: [Int64: URL] = [:]
+            var online = Set<Int64>()
+            for profile in response["profiles"].items {
+                if let url = profile["photo_100"].url { avatars[profile["id"].int] = url }
+                if profile["online"].flag { online.insert(profile["id"].int) }
+            }
+            for group in response["groups"].items {
+                names[-group["id"].int] = group["name"].string
+                if let url = group["photo_100"].url { avatars[-group["id"].int] = url }
+            }
             return .success(response.list.map { item in
                 let c = item["conversation"], id = c["peer"]["id"].int
-                let name = c["chat_settings"]["title"].string.isEmpty ? names[id] ?? "VK \(id)" : c["chat_settings"]["title"].string
-                return Conversation(peerID:PeerID(raw:id), displayName:name, initials:String(name.prefix(2)).uppercased(), lastMessagePreview:item["last_message"]["text"].string,
-                    lastUpdatedLabel:Date(timeIntervalSince1970:Double(item["last_message"]["date"].int)).formatted(date:.omitted,time:.shortened), unreadCount:Int(c["unread_count"].int), isOnline:false)
+                let settings = c["chat_settings"]
+                let name = settings["title"].string.isEmpty ? names[id] ?? "VK \(id)" : settings["title"].string
+                let lastDate = Date(timeIntervalSince1970:Double(item["last_message"]["date"].int))
+                let push = c["push_settings"]
+                return Conversation(peerID:PeerID(raw:id), displayName:name, initials:VKCatalogService.initials(name), lastMessagePreview:Self.preview(item["last_message"]),
+                    lastUpdatedLabel:Self.dateLabel(lastDate), unreadCount:Int(c["unread_count"].int), isOnline:online.contains(id),
+                    avatarURL:settings["photo"]["photo_100"].url ?? avatars[id], isMuted:push["disabled_forever"].flag || push["no_sound"].flag)
             })
         } catch { return .failure(Self.map(error)) }
     }
@@ -62,6 +75,24 @@ actor ConversationRepository {
             message = ChatMessage(id:localID,serverID:response.int,peerID:peerID,text:trimmed,timestamp:message.timestamp,isOutgoing:true,state:.sent,randomID:randomID)
             return .success(message)
         } catch { return .failure(Self.map(error)) }
+    }
+    /// Text or a short attachment label, so photo-only messages do not show an empty line.
+    static func preview(_ message: VKJSON) -> String {
+        let text = message["text"].string
+        if !text.isEmpty { return text }
+        let labels = ["photo":"Фотография","video":"Видео","audio":"Аудиозапись","doc":"Документ","sticker":"Стикер","audio_message":"Голосовое сообщение","wall":"Запись","link":"Ссылка","graffiti":"Граффити"]
+        if let type = message["attachments"].items.first?["type"].string { return labels[type] ?? "Вложение" }
+        if !message["fwd_messages"].items.isEmpty { return "Пересланные сообщения" }
+        return ""
+    }
+    /// "09:40" today, "Вчера", weekday within a week, otherwise a short date — like the boards.
+    static func dateLabel(_ date: Date, now: Date = Date(), calendar: Calendar = .current) -> String {
+        if calendar.isDate(date, inSameDayAs: now) { return date.formatted(date: .omitted, time: .shortened) }
+        if calendar.isDateInYesterday(date) { return "Вчера" }
+        if let days = calendar.dateComponents([.day], from: date, to: now).day, days < 7 {
+            return date.formatted(.dateTime.weekday(.abbreviated))
+        }
+        return date.formatted(.dateTime.day().month(.abbreviated))
     }
     static func map(_ error: Error) -> AppError {
         if let app = error as? AppError { return app }

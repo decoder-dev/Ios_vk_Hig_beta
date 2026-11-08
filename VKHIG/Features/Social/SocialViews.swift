@@ -24,7 +24,7 @@ struct UserProfileView: View {
                     profileHeader(friend)
                 }
                 Section {
-                    Label(friend.isOnline ? "В сети (fixture flag)" : "Не в сети", systemImage: "circle.fill")
+                    Label(friend.lastSeen ?? (friend.isOnline ? "Онлайн" : "Не в сети"), systemImage: "circle.fill")
                         .foregroundStyle(friend.isOnline ? .green : .secondary)
                     if let city = friend.city {
                         Label(city, systemImage: "mappin.and.ellipse")
@@ -44,12 +44,14 @@ struct UserProfileView: View {
 
     private func profileHeader(_ friend: Friend) -> some View {
         VStack(spacing: 12) {
-            RoundedRectangle(cornerRadius: 12)
-                .fill(LinearGradient(colors: [.blue.opacity(0.5), .teal.opacity(0.4)], startPoint: .topLeading, endPoint: .bottomTrailing))
+            VKCoverBackground(seed: friend.displayName)
                 .frame(height: 120)
-            VKAvatar(initials: friend.initials, size: 72, tint: VKStyle.accent)
-                .offset(y: -36)
-                .padding(.bottom, -36)
+                .clipShape(RoundedRectangle(cornerRadius: VKStyle.Radius.card, style: .continuous))
+            VKAvatar(initials: friend.initials, url: friend.avatarURL, size: 88, isOnline: friend.isOnline)
+                .padding(4)
+                .background(VKStyle.groupedCanvas, in: Circle())
+                .offset(y: -48)
+                .padding(.bottom, -48)
             Text(friend.displayName).font(.title2.bold())
         }
         .frame(maxWidth: .infinity)
@@ -217,9 +219,10 @@ struct LocationPickerView:View {
     }
 }
 
-/// S18 — friends list.
+/// S18 — friends list, board 03: Все/Онлайн pills, rows with presence and a message shortcut.
 struct FriendsView: View {
     @State private var query = ""
+    @State private var onlineOnly = false
 
     var body: some View {
         FixtureScreen(
@@ -232,35 +235,81 @@ struct FriendsView: View {
             isEmpty: { $0.isEmpty },
             loadValue: { CatalogFixtures.friends }
         ) { friends in
-            let visible = query.isEmpty ? friends : friends.filter { $0.displayName.localizedCaseInsensitiveContains(query) }
-            List(visible) { friend in
-                NavigationLink(value: AppRoute.userProfile(friend.id)) {
-                    HStack(spacing: 12) {
-                        ZStack(alignment: .bottomTrailing) {
-                            VKAvatar(initials: friend.initials, size: 44, tint: .indigo)
-                            if friend.isOnline {
-                                Circle().fill(.green).frame(width: 10, height: 10)
-                            }
-                        }
-                        VStack(alignment: .leading) {
-                            Text(friend.displayName)
-                            if let city = friend.city {
-                                Text(city).font(.caption).foregroundStyle(.secondary)
-                            }
-                        }
+            let matching = query.isEmpty ? friends : friends.filter { $0.displayName.localizedCaseInsensitiveContains(query) }
+            let visible = onlineOnly ? matching.filter(\.isOnline) : matching
+            ScrollView {
+                LazyVStack(spacing: 0) {
+                    VKPillPicker(chips: [VKChip(value: false, title: "Все"), VKChip(value: true, title: "Онлайн")], selection: $onlineOnly)
+                        .padding(.horizontal, VKStyle.Size.contentMargin)
+                        .padding(.vertical, VKStyle.Spacing.xs)
+                    if visible.isEmpty {
+                        Text(onlineOnly ? "Среди загруженных друзей никого нет в сети." : "Никого не найдено.")
+                            .font(.subheadline).foregroundStyle(.secondary)
+                            .padding(VKStyle.Spacing.xl)
+                    }
+                    ForEach(visible) { friend in
+                        FriendRow(friend: friend)
                     }
                 }
             }
-            .searchable(text: $query, prompt: "Поиск друзей")
+            .background(VKStyle.canvas)
+            .searchable(text: $query, prompt: "Поиск среди друзей")
             .toolbar {
                 ToolbarItem(placement: .topBarTrailing) {
                     NavigationLink(value: AppRoute.friendRequests) {
                         Image(systemName: "person.badge.plus")
                             .frame(minWidth: 44, minHeight: 44)
                     }
+                    .accessibilityLabel("Заявки в друзья")
                 }
             }
             .withAppRoutes()
+        }
+    }
+}
+
+/// Person row shared by friends, members and search.
+struct FriendRow: View {
+    let friend: Friend
+    var showsMessage = true
+
+    var body: some View {
+        HStack(spacing: VKStyle.Spacing.sm) {
+            NavigationLink(value: AppRoute.userProfile(friend.id)) {
+                HStack(spacing: VKStyle.Spacing.sm) {
+                    VKAvatar(initials: friend.initials, url: friend.avatarURL, size: VKStyle.Size.avatarRow, isOnline: friend.isOnline)
+                    VStack(alignment: .leading, spacing: 2) {
+                        Text(friend.displayName)
+                            .font(.body.weight(.semibold))
+                            .foregroundStyle(.primary)
+                            .lineLimit(1)
+                        if let subtitle = friend.lastSeen ?? (friend.isOnline ? "Онлайн" : friend.city) {
+                            Text(subtitle)
+                                .font(.subheadline)
+                                .foregroundStyle(.secondary)
+                                .lineLimit(1)
+                        }
+                    }
+                    Spacer(minLength: 0)
+                }
+                .contentShape(Rectangle())
+            }
+            .buttonStyle(.plain)
+            if showsMessage {
+                NavigationLink(value: AppRoute.conversation(friend.id)) {
+                    Image(systemName: "bubble.left")
+                        .font(.title3)
+                        .foregroundStyle(VKStyle.accent)
+                        .frame(width: 44, height: 44)
+                }
+                .accessibilityLabel("Написать \(friend.displayName)")
+            }
+        }
+        .padding(.horizontal, VKStyle.Size.contentMargin)
+        .padding(.vertical, 6)
+        .overlay(alignment: .bottom) {
+            Rectangle().fill(VKStyle.separator).frame(height: 0.5)
+                .padding(.leading, VKStyle.Size.contentMargin + VKStyle.Size.avatarRow + VKStyle.Spacing.sm)
         }
     }
 }
@@ -296,7 +345,7 @@ struct FriendRequestsView: View {
 
     private func requestRow(_ req: FriendRequest) -> some View {
         HStack {
-            VKAvatar(initials: req.user.initials, size: 40, tint: .blue)
+            VKAvatar(initials: req.user.initials, url: req.user.avatarURL, size: 44)
             VStack(alignment: .leading) {
                 Text(req.user.displayName)
                 Text(req.subtitle).font(.caption).foregroundStyle(.secondary)
@@ -316,12 +365,14 @@ struct FriendRequestsView: View {
     }
 }
 
-/// S20 — community page.
+/// S20 — community page, board 02: cover, identity card, subscribe, action tiles, wall.
 struct CommunityView: View {
     let communityID: Int64
     @Environment(AppEnvironment.self) private var env
     @State private var wallPosts: [FeedPost] = []
     @State private var wallError: String?
+    @State private var memberOverride: Bool?
+    @State private var joining = false
 
     var body: some View {
         FixtureScreen(
@@ -336,32 +387,35 @@ struct CommunityView: View {
                     ?? CatalogFixtures.communities[0]
             }
         ) { community in
-            List {
-                Section {
-                    VStack(alignment: .leading, spacing: 8) {
-                        Text(community.name).font(.title2.bold())
-                        Text(community.description).foregroundStyle(.secondary)
-                        Text("\(community.membersCount.formatted()) участников")
-                            .font(.caption)
+            ScrollView {
+                VStack(spacing: VKStyle.Spacing.sm) {
+                    header(community)
+                    actions(community)
+                        .padding(.horizontal, VKStyle.Size.contentMargin)
+
+                    VStack(alignment: .leading, spacing: VKStyle.Spacing.xs) {
+                        VKSectionHeader(title: "Записи")
+                            .padding(.top, VKStyle.Spacing.xs)
+                        if let wallError {
+                            Text(wallError).font(.footnote).foregroundStyle(.red)
+                                .padding(.horizontal, VKStyle.Size.contentMargin)
+                        }
+                        if !env.isLiveVKSession {
+                            Text("Демонстрационная страница сообщества")
+                                .font(.footnote).foregroundStyle(.secondary)
+                                .padding(.horizontal, VKStyle.Size.contentMargin)
+                        }
+                        LazyVStack(spacing: VKStyle.Spacing.xs) {
+                            ForEach(wallPosts) { post in
+                                NavigationLink(value: AppRoute.postDetail(post.id)) { PostCard(post: post) }
+                                    .buttonStyle(.plain)
+                            }
+                        }
                     }
-                    .padding(.vertical, 4)
                 }
-                Section {
-                    Button("Сохранить сообщество") {Task {if env.isLiveVKSession {_ = await env.catalog.perform("fave.addPage",["group_id":String(communityID)])}}}.disabled(!env.isLiveVKSession)
-                    NavigationLink("Подписка и управление") {CommunityManagementView(communityID:communityID)}
-                    NavigationLink(value: AppRoute.communityMembers(community.id)) {
-                        Label("Участники", systemImage: "person.2")
-                    }
-                    NavigationLink(value: AppRoute.photos) {
-                        Label("Фото", systemImage: "photo")
-                    }
-                }
-                Section("Записи") {
-                    ForEach(wallPosts) { post in NavigationLink(value:AppRoute.postDetail(post.id)) { VStack(alignment:.leading) { Text(post.text).lineLimit(5); Text(post.dateLabel).font(.caption).foregroundStyle(.secondary) } } }
-                    if let wallError { Text(wallError).font(.footnote).foregroundStyle(.red) }
-                    if !env.isLiveVKSession { Text("Демонстрационная страница сообщества").font(.footnote) }
-                }
+                .padding(.bottom, VKStyle.Spacing.xl)
             }
+            .background(VKStyle.groupedCanvas)
             .withAppRoutes()
             .task(id:communityID) {
                 guard env.isLiveVKSession else { return }
@@ -371,6 +425,121 @@ struct CommunityView: View {
                 } catch { wallError = error.localizedDescription }
             }
         }
+    }
+
+    private func header(_ community: Community) -> some View {
+        let isMember = memberOverride ?? community.isMember
+        return VStack(spacing: 0) {
+            VKCoverBackground(url: community.coverURL, seed: community.name)
+                .frame(height: 150)
+                .clipShape(RoundedRectangle(cornerRadius: VKStyle.Radius.card, style: .continuous))
+                .padding(.horizontal, VKStyle.Spacing.xs)
+
+            VStack(alignment: .leading, spacing: VKStyle.Spacing.sm) {
+                HStack(alignment: .center, spacing: VKStyle.Spacing.sm) {
+                    VKAvatar(initials: community.initials, url: community.avatarURL, size: 72)
+                        .padding(3)
+                        .background(VKStyle.cell, in: Circle())
+                    VStack(alignment: .leading, spacing: 3) {
+                        HStack(spacing: 4) {
+                            Text(community.name)
+                                .font(.title3.weight(.bold))
+                                .lineLimit(2)
+                            if community.isVerified {
+                                Image(systemName: "checkmark.seal.fill")
+                                    .foregroundStyle(VKStyle.accent)
+                                    .accessibilityLabel("Подтверждённое сообщество")
+                            }
+                        }
+                        if let activity = community.activity {
+                            Text(activity).font(.subheadline).foregroundStyle(.secondary).lineLimit(1)
+                        }
+                        Text(VKFormat.plural(community.membersCount, "участник", "участника", "участников"))
+                            .font(.subheadline)
+                            .foregroundStyle(.secondary)
+                    }
+                }
+                if !community.description.isEmpty {
+                    Text(community.description)
+                        .font(.subheadline)
+                        .foregroundStyle(.primary)
+                        .lineLimit(4)
+                }
+                HStack(spacing: VKStyle.Spacing.xs) {
+                    if isMember {
+                        NavigationLink {
+                            CommunityManagementView(communityID: communityID)
+                        } label: {
+                            Label("Вы подписаны", systemImage: "checkmark")
+                                .font(.subheadline.weight(.semibold))
+                                .foregroundStyle(VKStyle.accent)
+                                .frame(maxWidth: .infinity, minHeight: 44)
+                                .background(VKStyle.accentWash, in: RoundedRectangle(cornerRadius: 12, style: .continuous))
+                        }
+                        .buttonStyle(.plain)
+                    } else {
+                        Button {
+                            Task { await join() }
+                        } label: {
+                            Text(joining ? "Подписка…" : "Подписаться")
+                                .font(.subheadline.weight(.semibold))
+                                .foregroundStyle(.white)
+                                .frame(maxWidth: .infinity, minHeight: 44)
+                                .background(VKStyle.accent, in: RoundedRectangle(cornerRadius: 12, style: .continuous))
+                        }
+                        .buttonStyle(.plain)
+                        .disabled(joining)
+                    }
+                    if env.isLiveVKSession, let url = URL(string: "https://vk.com/club\(communityID)") {
+                        ShareLink(item: url) {
+                            Image(systemName: "square.and.arrow.up")
+                                .font(.body.weight(.semibold))
+                                .foregroundStyle(VKStyle.accent)
+                                .frame(width: 44, height: 44)
+                                .background(VKStyle.accentWash, in: RoundedRectangle(cornerRadius: 12, style: .continuous))
+                        }
+                        .accessibilityLabel("Поделиться сообществом")
+                    }
+                }
+            }
+            .padding(VKStyle.Size.contentMargin)
+            .frame(maxWidth: .infinity, alignment: .leading)
+            .vkCard(radius: VKStyle.Radius.card)
+            .padding(.horizontal, VKStyle.Spacing.xs)
+            .padding(.top, -VKStyle.Spacing.xl)
+        }
+        .padding(.top, VKStyle.Spacing.xs)
+    }
+
+    private func actions(_ community: Community) -> some View {
+        HStack(spacing: VKStyle.Spacing.xs) {
+            NavigationLink(value: AppRoute.communityMembers(community.id)) {
+                VKActionTile(symbol: "person.2", title: "Участники")
+            }
+            NavigationLink(value: AppRoute.photos) {
+                VKActionTile(symbol: "photo", title: "Фото")
+            }
+            NavigationLink {
+                CommunityManagementView(communityID: communityID)
+            } label: {
+                VKActionTile(symbol: "slider.horizontal.3", title: "Управление")
+            }
+            Button {
+                Task { if env.isLiveVKSession { _ = await env.catalog.perform("fave.addPage",["group_id":String(communityID)]) } }
+            } label: {
+                VKActionTile(symbol: "bookmark", title: "Сохранить")
+            }
+            .disabled(!env.isLiveVKSession)
+        }
+        .buttonStyle(.plain)
+    }
+
+    private func join() async {
+        guard !joining else { return }
+        guard env.isLiveVKSession else { env.catalog.notice = "Деморежим: подписка не отправлена в VK."; return }
+        joining = true
+        defer { joining = false }
+        if await env.catalog.perform("groups.join", ["group_id": String(communityID)]) { memberOverride = true }
     }
 }
 
@@ -392,14 +561,20 @@ struct CommunitiesListView: View {
         ) { items in
             List(items.filter { query.isEmpty || $0.name.localizedCaseInsensitiveContains(query) }) { community in
                 NavigationLink(value: AppRoute.community(community.id)) {
-                    HStack(spacing: 12) {
-                        VKAvatar(initials: community.initials, size: 44, tint: .mint)
-                        VStack(alignment: .leading) {
-                            Text(community.name)
-                            Text("\(community.membersCount.formatted()) · \(community.isMember ? "Вы участник" : "Не подписаны")")
-                                .font(.caption).foregroundStyle(.secondary)
+                    HStack(spacing: VKStyle.Spacing.sm) {
+                        VKAvatar(initials: community.initials, url: community.avatarURL, size: VKStyle.Size.avatarRow)
+                        VStack(alignment: .leading, spacing: 2) {
+                            HStack(spacing: 4) {
+                                Text(community.name).font(.body.weight(.semibold)).lineLimit(1)
+                                if community.isVerified {
+                                    Image(systemName: "checkmark.seal.fill").font(.caption).foregroundStyle(VKStyle.accent)
+                                }
+                            }
+                            Text("\(community.activity ?? "Сообщество") · \(VKFormat.compact(community.membersCount))")
+                                .font(.subheadline).foregroundStyle(.secondary).lineLimit(1)
                         }
                     }
+                    .padding(.vertical, 2)
                 }
             }
             .searchable(text: $query)

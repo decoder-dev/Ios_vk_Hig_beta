@@ -8,7 +8,9 @@ final class InboxViewModel {
 
     var state: LoadState<[Conversation]> = .idle
     var searchText = ""
-    var unreadOnly = false
+    var filter: Filter = .all
+
+    enum Filter: Hashable { case all, unread, personal, chats, communities }
     var isLoadingMore = false
     var reachedEnd = false
     var pageError: String?
@@ -24,8 +26,15 @@ final class InboxViewModel {
             let matchesText = searchText.isEmpty
                 || item.displayName.localizedCaseInsensitiveContains(searchText)
                 || item.lastMessagePreview.localizedCaseInsensitiveContains(searchText)
-            let matchesUnread = !unreadOnly || item.unreadCount > 0
-            return matchesText && matchesUnread
+            let matchesFilter: Bool
+            switch filter {
+            case .all: matchesFilter = true
+            case .unread: matchesFilter = item.unreadCount > 0
+            case .personal: matchesFilter = item.kind == .user
+            case .chats: matchesFilter = item.kind == .chat
+            case .communities: matchesFilter = item.kind == .community
+            }
+            return matchesText && matchesFilter
         }
     }
 

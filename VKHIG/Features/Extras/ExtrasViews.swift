@@ -111,6 +111,7 @@ struct VKStory:Identifiable,Equatable {
     let videoURL:URL?
     let link:URL?
     let expiresAt:Date?
+    var authorAvatar:URL? = nil
     var url:URL {URL(string:"https://vk.com/story\(ownerID)_\(nativeID)")!}
     var available:Bool {expiresAt.map {$0>Date()} ?? true}
 }
@@ -124,6 +125,9 @@ extension VKCatalogService {
     static func mapStories(_ response:VKJSON) -> [VKStory] {
         var authors=Dictionary(response["profiles"].items.map {($0["id"].int,Self.name($0))},uniquingKeysWith:{a,_ in a})
         for group in response["groups"].items {authors[-group["id"].int]=group["name"].string}
+        var avatars:[Int64:URL]=[:]
+        for p in response["profiles"].items {if let url=Self.avatarURL(p) {avatars[p["id"].int]=url}}
+        for g in response["groups"].items {if let url=Self.avatarURL(g) {avatars[-g["id"].int]=url}}
         func flatten(_ items:[VKJSON],depth:Int) -> [VKJSON] {
             guard depth<8 else {return []}
             return items.flatMap {item -> [VKJSON] in
@@ -144,7 +148,7 @@ extension VKCatalogService {
             let expiration=j["expires_at"].int>0 ? Date(timeIntervalSince1970:Double(j["expires_at"].int)) : nil
             if let expiration,expiration<=Date() {return nil}
             let video=j["video"]["files"]
-            return VKStory(id:encoded.partialValue,ownerID:owner,nativeID:nativeID,author:authors[owner] ?? "VK",photoURL:Self.mediaPhotoURL(j["photo"]),videoURL:video["hls"].url ?? video["mp4_720"].url ?? video["mp4_480"].url,link:j["link"]["url"].url,expiresAt:expiration)
+            return VKStory(id:encoded.partialValue,ownerID:owner,nativeID:nativeID,author:authors[owner] ?? "VK",photoURL:Self.mediaPhotoURL(j["photo"]),videoURL:video["hls"].url ?? video["mp4_720"].url ?? video["mp4_480"].url,link:j["link"]["url"].url,expiresAt:expiration,authorAvatar:avatars[owner])
         }
     }
     func story(_ id:Int64) async throws -> VKStory {
@@ -184,14 +188,14 @@ struct LiveStoriesStrip:View {
     @State private var model=StoriesModel()
     var body:some View {
         VStack(alignment:.leading) {
-            ScrollView(.horizontal) {
-                HStack {
+            ScrollView(.horizontal,showsIndicators:false) {
+                HStack(spacing:VKStyle.Spacing.sm) {
                     ForEach(model.items) {story in
                         NavigationLink(value:AppRoute.story(story.id)) {
-                            VStack {VKAvatar(initials:VKCatalogService.initials(story.author),size:56,tint:.purple);Text(story.author).font(.caption).lineLimit(1).frame(width:72)}
-                        }
+                            VKStoryBubble(title:story.author,initials:VKCatalogService.initials(story.author),url:story.authorAvatar)
+                        }.buttonStyle(.plain)
                     }
-                }.padding(.horizontal)
+                }.padding(.horizontal,VKStyle.Size.contentMargin)
             }
             if let error=model.error {Text(error).font(.caption).foregroundStyle(.secondary);Button("Повторить истории") {Task {await model.load()}}}
         }.task {await model.load()}

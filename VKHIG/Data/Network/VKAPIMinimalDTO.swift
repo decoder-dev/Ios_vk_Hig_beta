@@ -150,18 +150,36 @@ final class VKCatalogService {
         do { _ = try await request(method, parameters); notice = "Готово"; return true }
         catch { notice = error.localizedDescription; return false }
     }
-    static func initials(_ name: String) -> String { name.split(separator: " ").prefix(2).compactMap(\.first).map(String.init).joined() }
-    static func name(_ j: VKJSON) -> String { [j["first_name"].string, j["last_name"].string].filter { !$0.isEmpty }.joined(separator: " ") }
-    static func friend(_ j: VKJSON) -> Friend {
+    nonisolated static func initials(_ name: String) -> String { name.split(separator: " ").prefix(2).compactMap(\.first).map(String.init).joined() }
+    nonisolated static func name(_ j: VKJSON) -> String { [j["first_name"].string, j["last_name"].string].filter { !$0.isEmpty }.joined(separator: " ") }
+    nonisolated static func friend(_ j: VKJSON) -> Friend {
         let name = name(j)
-        return Friend(id: j["id"].int, displayName: name, initials: initials(name), isOnline: j["online"].flag, city: j["city"]["title"].string.isEmpty ? nil : j["city"]["title"].string)
+        return Friend(id: j["id"].int, displayName: name, initials: initials(name), isOnline: j["online"].flag, city: j["city"]["title"].string.isEmpty ? nil : j["city"]["title"].string,
+                      avatarURL: avatarURL(j), lastSeen: lastSeen(j))
     }
-    static func date(_ j: VKJSON) -> String { Date(timeIntervalSince1970: Double(j.int)).formatted(date: .abbreviated, time: .shortened) }
+    /// Largest square avatar VK returned for a user or group.
+    nonisolated static func avatarURL(_ j: VKJSON) -> URL? { j["photo_200"].url ?? j["photo_100"].url ?? j["photo_50"].url }
+    nonisolated static func lastSeen(_ j: VKJSON) -> String? {
+        if j["online"].flag { return "Онлайн" }
+        let time = j["last_seen"]["time"].int
+        guard time > 0 else { return nil }
+        let relative = Date(timeIntervalSince1970: Double(time)).formatted(.relative(presentation: .named))
+        return (j["sex"].int == 1 ? "Была в сети " : "Был в сети ") + relative
+    }
+    nonisolated static func community(_ j: VKJSON) -> Community {
+        let cover = j["cover"]["enabled"].flag ? j["cover"]["images"].items.max { $0["width"].int < $1["width"].int }?["url"].url : nil
+        return Community(id:j["id"].int, name:j["name"].string, initials:Self.initials(j["name"].string), membersCount:Int(j["members_count"].int), description:j["description"].string, isMember:j["is_member"].flag,
+                         avatarURL:avatarURL(j), coverURL:cover, activity:j["activity"].string.isEmpty ? nil : j["activity"].string, isVerified:j["verified"].flag)
+    }
+    nonisolated static func date(_ j: VKJSON) -> String { Date(timeIntervalSince1970: Double(j.int)).formatted(date: .abbreviated, time: .shortened) }
     nonisolated static func mediaPhotoURL(_ j:VKJSON) -> URL? {j["sizes"].items.max {$0["width"].int < $1["width"].int}?["url"].url}
-    static func photoURL(_ j: VKJSON) -> URL? { j["sizes"].items.max { $0["width"].int < $1["width"].int }?["url"].url }
+    nonisolated static func photoURL(_ j: VKJSON) -> URL? { j["sizes"].items.max { $0["width"].int < $1["width"].int }?["url"].url }
     func mapPosts(_ response: VKJSON) -> [FeedPost] {
         let profiles = Dictionary(response["profiles"].items.map { ($0["id"].int, Self.name($0)) }, uniquingKeysWith: { a,_ in a })
         let groups = Dictionary(response["groups"].items.map { (-$0["id"].int, $0["name"].string) }, uniquingKeysWith: { a,_ in a })
+        var avatars: [Int64: URL] = [:]
+        for p in response["profiles"].items { if let url = Self.avatarURL(p) { avatars[p["id"].int] = url } }
+        for g in response["groups"].items { if let url = Self.avatarURL(g) { avatars[-g["id"].int] = url } }
         return response.list.compactMap { j in
             let nativeID = j["post_id"].int == 0 ? j["id"].int : j["post_id"].int
             guard nativeID != 0 else { return nil }
@@ -170,7 +188,8 @@ final class VKCatalogService {
             let author = profiles[ownerID] ?? groups[ownerID] ?? "VK \(ownerID)"
             let media = j["attachments"].items.compactMap { Self.photoURL($0["photo"]) }.first
             let post = FeedPost(id:key, authorName:author, authorInitials:Self.initials(author), dateLabel:Self.date(j["date"]), text:j["text"].string,
-                hasMedia:media != nil, reactionCount:Int(j["likes"]["count"].int), commentCount:Int(j["comments"]["count"].int), ownerID:ownerID, nativeID:nativeID, mediaURL:media, attachments:j["attachments"].chatAttachments)
+                hasMedia:media != nil, reactionCount:Int(j["likes"]["count"].int), commentCount:Int(j["comments"]["count"].int), ownerID:ownerID, nativeID:nativeID, mediaURL:media, attachments:j["attachments"].chatAttachments,
+                avatarURL:avatars[ownerID], repostCount:Int(j["reposts"]["count"].int), viewCount:j["views"]["count"].int > 0 ? Int(j["views"]["count"].int) : nil)
             posts[key] = post
             return post
         }
@@ -208,14 +227,14 @@ final class VKCatalogService {
             result = response.list.map { j in ChatMessage(id:UUID(),serverID:j["id"].int,peerID:PeerID(raw:resourceID ?? 0),text:j["text"].string,timestamp:Date(timeIntervalSince1970:Double(j["date"].int)),isOutgoing:j["out"].flag,state:.received,randomID:nil,attachments:j["attachments"].chatAttachments,quotes:j.messageQuotes) }
         case "S11":
             let response = try await request("messages.getConversationsById",["peer_ids":"\(resourceID ?? 0)"])
-            let members = try await request("messages.getConversationMembers",["peer_id":"\(resourceID ?? 0)","extended":"1","fields":"online,city","count":"200"])
+            let members = try await request("messages.getConversationMembers",["peer_id":"\(resourceID ?? 0)","extended":"1","fields":"online,city,photo_100","count":"200"])
             result = ChatDetails(peerID:resourceID ?? 0,title:response.list.first?["chat_settings"]["title"].string ?? "Диалог",members:members["profiles"].items.map(Self.friend))
         case "S15":
-            let response = try await request("users.get", ["user_ids":"\(resourceID ?? 0)", "fields":"city,online,status"])
+            let response = try await request("users.get", ["user_ids":"\(resourceID ?? 0)", "fields":"city,online,status,photo_200,last_seen,sex"])
             guard let j = response.items.first else { throw AppError.network("Пользователь не найден.") }
             let person = Self.friend(j); people[person.id] = person; result = person
         case "S18", "S22":
-            var parameters=["fields":"city,online","count":"100","offset":"\(offset)"]
+            var parameters=["fields":"city,online,photo_100,last_seen,sex","count":"100","offset":"\(offset)"]
             let method:String
             if screen == "S18" {
                 let text=query.trimmingCharacters(in:.whitespacesAndNewlines)
@@ -239,15 +258,15 @@ final class VKCatalogService {
             result = incomingIDs.map { id in FriendRequest(id:id,user:people[id] ?? Friend(id:id,displayName:"VK \(id)",initials:"VK",isOnline:false,city:nil),direction:.incoming,subtitle:"Входящая заявка") }
                 + outgoingIDs.map { id in FriendRequest(id:id,user:people[id] ?? Friend(id:id,displayName:"VK \(id)",initials:"VK",isOnline:false,city:nil),direction:.outgoing,subtitle:"Исходящая заявка") }
         case "S20", "S21":
-            let response = try await request(screen == "S20" ? "groups.getById" : "groups.get", screen == "S20" ? ["group_ids":"\(resourceID ?? 0)", "fields":"description,members_count,is_member"] : ["extended":"1", "fields":"description,members_count,is_member", "count":"100","offset":"\(offset)"])
-            let list = (screen == "S20" && !response["groups"].items.isEmpty ? response["groups"].items : response.list).map { j in Community(id:j["id"].int, name:j["name"].string, initials:Self.initials(j["name"].string), membersCount:Int(j["members_count"].int), description:j["description"].string, isMember:j["is_member"].flag) }
+            let response = try await request(screen == "S20" ? "groups.getById" : "groups.get", screen == "S20" ? ["group_ids":"\(resourceID ?? 0)", "fields":"description,members_count,is_member,activity,verified,cover"] : ["extended":"1", "fields":"description,members_count,is_member,activity,verified", "count":"100","offset":"\(offset)"])
+            let list = (screen == "S20" && !response["groups"].items.isEmpty ? response["groups"].items : response.list).map(Self.community)
             if screen == "S20" { guard let first = list.first else { throw AppError.network("Сообщество не найдено.") }; result = first } else { result = list }
         case "S23":
             guard !query.trimmingCharacters(in: .whitespacesAndNewlines).isEmpty else { result = [SearchHit](); break }
-            async let users = request("users.search", ["q":query, "count":"50"])
+            async let users = request("users.search", ["q":query, "count":"50", "fields":"photo_100,city"])
             async let groups = request("groups.search", ["q":query, "count":"50"])
             let (u,g) = try await (users, groups)
-            result = u.list.map { j in SearchHit(id:"u\(j["id"].int)", kind:.person, title:Self.name(j), subtitle:"", initials:Self.initials(Self.name(j))) } + g.list.map { j in SearchHit(id:"g\(j["id"].int)", kind:.community, title:j["name"].string, subtitle:"", initials:Self.initials(j["name"].string)) }
+            result = u.list.map { j in SearchHit(id:"u\(j["id"].int)", kind:.person, title:Self.name(j), subtitle:j["city"]["title"].string, initials:Self.initials(Self.name(j)), avatarURL:Self.avatarURL(j)) } + g.list.map { j in SearchHit(id:"g\(j["id"].int)", kind:.community, title:j["name"].string, subtitle:"Сообщество", initials:Self.initials(j["name"].string), avatarURL:Self.avatarURL(j)) }
         case "S24":
             var parameters=["count":"100"]
             if append,let cursor=pageCursors[key] {parameters["start_from"]=cursor}
@@ -258,18 +277,21 @@ final class VKCatalogService {
                 let labels=["like_post":"Отметка «Нравится»","comment_post":"Новый комментарий","reply_comment":"Ответ на комментарий","follow":"Новый подписчик","friend_accepted":"Заявка принята"]
                 let owner=parent["owner_id"].int == 0 ? parent["to_id"].int : parent["owner_id"].int
                 let target:URL?=(type.contains("post") || type.contains("comment")) && owner != 0 && parent["id"].int != 0 ? URL(string:"https://vk.com/wall\(owner)_\(parent["id"].int)") : URL(string:"https://vk.com/feed?section=notifications")
-                return NotificationItem(id:j["date"].int &* 1000 &+ Int64(offset+i),title:labels[type] ?? "Уведомление VK",body:j["feedback"]["text"].string,dateLabel:Self.date(j["date"]),symbol:"bell",isUnread:j["date"].int > response["last_viewed"].int,targetURL:target)
+                let category:NotificationItem.Category=type.hasPrefix("like") ? .reactions : (type.contains("comment") || type.hasPrefix("reply")) ? .comments : .other
+                let symbol=category == .reactions ? "heart.fill" : category == .comments ? "bubble.left.fill" : type.hasPrefix("follow") || type.hasPrefix("friend") ? "person.fill" : "bell.fill"
+                return NotificationItem(id:j["date"].int &* 1000 &+ Int64(offset+i),title:labels[type] ?? "Уведомление VK",body:j["feedback"]["text"].string,dateLabel:Self.date(j["date"]),symbol:symbol,isUnread:j["date"].int > response["last_viewed"].int,targetURL:target,category:category)
             }
         case "S26":
-            let response = try await request("photos.getAlbums", ["need_system":"1","offset":"\(offset)","count":"100"])
-            result = response.list.map { PhotoAlbum(id:$0["id"].int, title:$0["title"].string, count:Int($0["size"].int)) }
+            let response = try await request("photos.getAlbums", ["need_system":"1","need_covers":"1","photo_sizes":"1","offset":"\(offset)","count":"100"])
+            result = response.list.map { PhotoAlbum(id:$0["id"].int, title:$0["title"].string, count:Int($0["size"].int), coverURL:Self.photoURL($0) ?? $0["thumb_src"].url) }
         case "S27":
             let response = try await request(resourceID == nil ? "photos.getAll" : "photos.get", resourceID.map { ["album_id":"\($0)", "count":"100", "photo_sizes":"1","offset":"\(offset)"] } ?? ["count":"100", "photo_sizes":"1","offset":"\(offset)"])
             let list = response.list.map { j in PhotoItem(id:j["id"].int, albumID:j["album_id"].int, caption:j["text"].string, url:Self.photoURL(j), ownerID:j["owner_id"].int) }
             for photo in list { photos[photo.id] = photo }; result = list
         case "S29":
             let response = try await request("video.get", ["count":"100","offset":"\(offset)"])
-            let list = response.list.map { j in VideoItem(id:j["id"].int, title:j["title"].string, durationLabel:"\(j["duration"].int / 60):\(String(format:"%02lld",j["duration"].int % 60))", author:"VK", streamURL:j["files"]["mp4_720"].url ?? j["files"]["mp4_480"].url, playerURL:j["player"].url, ownerID:j["owner_id"].int) }
+            let list = response.list.map { j in VideoItem(id:j["id"].int, title:j["title"].string, durationLabel:"\(j["duration"].int / 60):\(String(format:"%02lld",j["duration"].int % 60))", author:"VK", streamURL:j["files"]["mp4_720"].url ?? j["files"]["mp4_480"].url, playerURL:j["player"].url, ownerID:j["owner_id"].int,
+                previewURL:j["image"].items.max { $0["width"].int < $1["width"].int }?["url"].url, views:j["views"].int > 0 ? Int(j["views"].int) : nil, dateLabel:j["date"].int > 0 ? Self.date(j["date"]) : nil) }
             for video in list { videos[video.id] = video }; result = list
         case "S40":
             let response = try await request("fave.get", ["count":"100","offset":"\(offset)"])

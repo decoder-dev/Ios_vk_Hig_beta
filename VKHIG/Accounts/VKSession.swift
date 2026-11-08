@@ -64,7 +64,7 @@ enum VKSession {
         if let a = activeAccount {
             let name = a.displayName
             return UserProfile(id: a.userId, displayName: name, initials: VKCatalogService.initials(name),
-                               city: nil, statusText: nil)
+                               city: nil, statusText: nil, avatarURL: a.avatarUrl.flatMap(URL.init(string:)))
         }
         return try await VKIDAuthCoordinator.shared.fetchIdentity()
     }

@@ -2,10 +2,12 @@ import Foundation
 
 enum CatalogFixtures {
     static let friends: [Friend] = [
-        .init(id: 201, displayName: "Анастасия Смирнова", initials: "АС", isOnline: true, city: "Москва"),
-        .init(id: 202, displayName: "Дмитрий Орлов", initials: "ДО", isOnline: false, city: "Казань"),
-        .init(id: 203, displayName: "Мария Волкова", initials: "МВ", isOnline: true, city: "СПб"),
-        .init(id: 204, displayName: "Игорь Петров", initials: "ИП", isOnline: false, city: nil)
+        .init(id: 201, displayName: "Анастасия Смирнова", initials: "АС", isOnline: true, city: "Москва", lastSeen: "Онлайн"),
+        .init(id: 202, displayName: "Дмитрий Орлов", initials: "ДО", isOnline: false, city: "Казань", lastSeen: "Был в сети 15 минут назад"),
+        .init(id: 203, displayName: "Мария Волкова", initials: "МВ", isOnline: true, city: "Санкт-Петербург", lastSeen: "Онлайн"),
+        .init(id: 204, displayName: "Илья Назаров", initials: "ИН", isOnline: false, city: "Мурманск", lastSeen: "Был в сети 27 минут назад"),
+        .init(id: 205, displayName: "Елена Соколова", initials: "ЕС", isOnline: false, city: "Москва", lastSeen: "Была в сети сегодня в 07:29"),
+        .init(id: 206, displayName: "Сергей Беляев", initials: "СБ", isOnline: false, city: nil, lastSeen: "Был в сети вчера в 23:41")
     ]
 
     static let friendRequests: [FriendRequest] = [
@@ -14,12 +16,15 @@ enum CatalogFixtures {
     ]
 
     static let communities: [Community] = [
-        .init(id: 501, name: "Путешествия по России", initials: "ПР", membersCount: 124_000,
-              description: "Маршруты, фото и советы.", isMember: true),
+        .init(id: 501, name: "Путешествия по России", initials: "ПР", membersCount: 211_842,
+              description: "Маршруты, фото и советы для поездок по стране.", isMember: true,
+              activity: "Туризм · Путешествия · Природа", isVerified: true),
         .init(id: 502, name: "SwiftUI HIG", initials: "SH", membersCount: 8_420,
-              description: "Обсуждение нативных паттернов.", isMember: false),
+              description: "Обсуждение нативных паттернов.", isMember: false, activity: "Программирование"),
         .init(id: 503, name: "Фотография", initials: "ФО", membersCount: 56_001,
-              description: "Галереи и критика.", isMember: true)
+              description: "Галереи и критика.", isMember: true, activity: "Фотография"),
+        .init(id: 504, name: "Горы и походы", initials: "ГП", membersCount: 486_120,
+              description: "Походы, снаряжение и маршруты.", isMember: false, activity: "Активный отдых", isVerified: true)
     ]
 
     static let comments: [CommentItem] = [
@@ -29,15 +34,19 @@ enum CatalogFixtures {
     ]
 
     static let notifications: [NotificationItem] = [
-        .init(id: 1, title: "Новый комментарий", body: "Елена ответила к записи", dateLabel: "5 мин", symbol: "bubble.left", isUnread: true),
-        .init(id: 2, title: "Заявка в друзья", body: "Анастасия хочет добавить вас", dateLabel: "1 ч", symbol: "person.badge.plus", isUnread: true),
-        .init(id: 3, title: "Сообщество", body: "Новый пост в «Путешествия по России»", dateLabel: "Вчера", symbol: "person.3", isUnread: false)
+        .init(id: 1, title: "Дмитрий Орлов оценил вашу запись", body: "Осенний Алтай", dateLabel: "3 мин назад", symbol: "heart.fill", isUnread: true, category: .reactions),
+        .init(id: 2, title: "Мария Волкова прокомментировала фотографию", body: "«Невероятно! 🔥»", dateLabel: "12 мин назад", symbol: "bubble.left.fill", isUnread: true, category: .comments),
+        .init(id: 3, title: "Илья Назаров подписался на вас", body: "", dateLabel: "24 мин назад", symbol: "person.fill", isUnread: false),
+        .init(id: 4, title: "Сообщество «Горы и походы» опубликовало новую запись", body: "", dateLabel: "Вчера в 21:37", symbol: "bell.fill", isUnread: false),
+        .init(id: 5, title: "У вас 2 новые заявки в друзья", body: "", dateLabel: "Вчера в 17:22", symbol: "person.2.fill", isUnread: false)
     ]
 
     static let searchHits: [SearchHit] = [
         .init(id: "u201", kind: .person, title: "Анастасия Смирнова", subtitle: "Москва", initials: "АС"),
-        .init(id: "g501", kind: .community, title: "Путешествия по России", subtitle: "124K участников", initials: "ПР"),
-        .init(id: "p700", kind: .post, title: "Осенние пейзажи Алтая", subtitle: "Запись", initials: "ЗА")
+        .init(id: "u204", kind: .person, title: "Илья Назаров", subtitle: "Мурманск", initials: "ИН"),
+        .init(id: "g501", kind: .community, title: "Путешествия по России", subtitle: "Сообщество · 211 тыс. участников", initials: "ПР"),
+        .init(id: "g504", kind: .community, title: "Горы и походы", subtitle: "Сообщество · 486 тыс. участников", initials: "ГП"),
+        .init(id: "p700", kind: .post, title: "Осенние пейзажи Алтая", subtitle: "Путешествия по России", initials: "ПР")
     ]
 
     static let albums: [PhotoAlbum] = [
@@ -51,9 +60,9 @@ enum CatalogFixtures {
     }
 
     static let videos: [VideoItem] = [
-        .init(id: 1, title: "Горный трейл", durationLabel: "12:04", author: "Путешествия"),
-        .init(id: 2, title: "WWDC notes", durationLabel: "08:19", author: "SwiftUI HIG"),
-        .init(id: 3, title: "City walk", durationLabel: "04:55", author: "Фотография")
+        .init(id: 1, title: "Мурманск. Край северного ветра", durationLabel: "14:27", author: "Путешествия по России", views: 327_000, dateLabel: "2 дня назад"),
+        .init(id: 2, title: "Поход в Хибины | Зимний маршрут", durationLabel: "7:18", author: "Горы и походы", views: 89_000, dateLabel: "5 дней назад"),
+        .init(id: 3, title: "Прогулка по городу", durationLabel: "4:55", author: "Фотография", views: 12_400, dateLabel: "неделю назад")
     ]
 
     static let tracks: [TrackItem] = [

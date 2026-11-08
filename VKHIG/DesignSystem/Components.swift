@@ -1,17 +1,55 @@
 import SwiftUI
 
+/// Avatar from the boards: real VK photo when the API returned one, otherwise initials on a stable tint.
 struct VKAvatar: View {
     let initials: String
+    var url: URL? = nil
     var size: CGFloat = VKStyle.Size.avatarList
-    var tint: Color = .indigo
+    var tint: Color? = nil
+    var isOnline = false
 
     var body: some View {
+        ZStack(alignment: .bottomTrailing) {
+            Group {
+                if let url {
+                    AsyncImage(url: url) { phase in
+                        if let image = phase.image {
+                            image.resizable().scaledToFill()
+                        } else {
+                            fallback
+                        }
+                    }
+                } else {
+                    fallback
+                }
+            }
+            .frame(width: size, height: size)
+            .clipShape(Circle())
+            if isOnline {
+                Circle()
+                    .fill(VKStyle.online)
+                    .frame(width: max(10, size * 0.24), height: max(10, size * 0.24))
+                    .overlay(Circle().stroke(VKStyle.canvas, lineWidth: max(2, size * 0.04)))
+                    .accessibilityHidden(true)
+            }
+        }
+        .accessibilityElement(children: .ignore)
+        .accessibilityLabel(isOnline ? "Аватар, в сети" : "Аватар")
+    }
+
+    private var fallback: some View {
         Text(initials)
-            .font(.system(size: size * 0.34, weight: .semibold, design: .rounded))
+            .font(.system(size: size * 0.36, weight: .semibold, design: .rounded))
             .foregroundStyle(.white)
             .frame(width: size, height: size)
-            .background(tint.gradient, in: Circle())
-            .accessibilityLabel("Аватар")
+            .background((tint ?? Self.tint(for: initials)).gradient, in: Circle())
+    }
+
+    /// Deterministic palette so the same person keeps the same colour across launches.
+    static func tint(for seed: String) -> Color {
+        let palette: [Color] = [.blue, .indigo, .teal, .orange, .pink, .purple, .mint, .cyan]
+        let sum = seed.unicodeScalars.reduce(0) { ($0 &* 31 &+ Int($1.value)) & 0xFFFF }
+        return palette[sum % palette.count]
     }
 }
 

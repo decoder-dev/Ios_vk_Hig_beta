@@ -13,6 +13,11 @@ enum VKStyle {
     static let secondaryText = Color(uiColor: .secondaryLabel)
     static let separator = Color(uiColor: .separator)
     static let error = Color(uiColor: .systemRed)
+    /// Unselected chip / search-field fill from the boards (systemFill family adapts to dark mode).
+    static let chipFill = Color(uiColor: .tertiarySystemFill)
+    static let online = Color(uiColor: .systemGreen)
+    /// Soft accent wash used behind secondary actions ("Редактировать", stat tiles).
+    static let accentWash = Color(red: 0.086, green: 0.463, blue: 0.949).opacity(0.12)
 
     enum Spacing {
         static let xxs: CGFloat = 4
@@ -30,6 +35,8 @@ enum VKStyle {
         static let card: CGFloat = 20
         static let bubble: CGFloat = 20
         static let large: CGFloat = 24
+        static let tile: CGFloat = 16
+        static let thumbnail: CGFloat = 6
     }
 
     enum Size {
@@ -38,5 +45,8 @@ enum VKStyle {
         static let avatarListLarge: CGFloat = 56
         static let tapTargetMin: CGFloat = 44
         static let contentMargin: CGFloat = 16
+        static let avatarRow: CGFloat = 52
+        static let avatarStory: CGFloat = 60
+        static let avatarProfile: CGFloat = 104
     }
 }

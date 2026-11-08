@@ -6,6 +6,9 @@ struct Friend: Identifiable, Hashable, Sendable {
     let initials: String
     let isOnline: Bool
     let city: String?
+    var avatarURL: URL? = nil
+    /// "Был в сети 15 минут назад" when VK returned last_seen.
+    var lastSeen: String? = nil
 }
 
 struct FriendRequest: Identifiable, Hashable, Sendable {
@@ -23,6 +26,10 @@ struct Community: Identifiable, Hashable, Sendable {
     let membersCount: Int
     let description: String
     let isMember: Bool
+    var avatarURL: URL? = nil
+    var coverURL: URL? = nil
+    var activity: String? = nil
+    var isVerified = false
 }
 
 struct CommentItem: Identifiable, Hashable, Sendable {
@@ -45,6 +52,9 @@ struct NotificationItem: Identifiable, Hashable, Sendable {
     let symbol: String
     let isUnread: Bool
     var targetURL: URL? = nil
+    var category: Category = .other
+
+    enum Category: String, Hashable, Sendable { case reactions, comments, other }
 }
 
 struct SearchHit: Identifiable, Hashable, Sendable {
@@ -54,12 +64,14 @@ struct SearchHit: Identifiable, Hashable, Sendable {
     let title: String
     let subtitle: String
     let initials: String
+    var avatarURL: URL? = nil
 }
 
 struct PhotoAlbum: Identifiable, Hashable, Sendable {
     let id: Int64
     let title: String
     let count: Int
+    var coverURL: URL? = nil
 }
 
 struct PhotoItem: Identifiable, Hashable, Sendable {
@@ -78,6 +90,9 @@ struct VideoItem: Identifiable, Hashable, Sendable {
     var streamURL: URL? = nil
     var playerURL: URL? = nil
     var ownerID: Int64 = 0
+    var previewURL: URL? = nil
+    var views: Int? = nil
+    var dateLabel: String? = nil
 }
 
 struct TrackItem: Identifiable, Hashable, Sendable {
