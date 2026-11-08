@@ -43,3 +43,12 @@ Added `VKHIG/Accounts` + `Features/Auth/MultiAccount`: Keychain multi-account st
 password grant (2FA/captcha), WKWebView flow, token paste, QR scanner, `AccountManager`, `VKSession` bridge, account switcher in
 Settings. Wired into `AppEnvironment`/`SessionStore`/token provider. Build, unit tests (`VKAccountsTests`) and live VK checks: NOT RUN
 (no Swift toolchain in authoring environment).
+
+## Password-grant hardening (validation pending)
+`AuthModels.swift` (full `VKLoginResponseDTO`, `VKAccountType` x5, ecosystem OTP DTOs), `VKDeviceIdentity`/
+`TrustedHashStore` (device_id + trusted_hash, survives sign-out), `sig` MD5 signing in `VKAPISession.call`,
+transparent error 14/17 retry via `VKChallengeResolving` (not wired to any UI yet), `VKQRLoginService`
+(auth.processAuthCode confirm flow) + `QRConfirmLoginView`. `VKAccount.accountType` now drives both
+User-Agent and `sig` for every call made with that account, fixing Kate/Android/iOS/VK Me/VK Admin tokens
+being treated as a generic "official" session after login. Build, tests, device/live-VK checks: NOT RUN.
+Declined: WebView captcha bypass with CoreMotion sensor spoofing (bot-detection evasion).

@@ -1,30 +1,29 @@
 import Foundation
 
-/// Known OAuth client identities for the password grant.
-/// Kept in one file on purpose (documented exception to the "no hardcoded secrets" rule in AGENTS.md).
+/// Login-screen-facing OAuth client identity for the password grant. Built from `VKAccountType`
+/// (the single source of truth for id/secret/User-Agent) so the two never drift apart.
 struct VKClientPreset: Identifiable, Hashable, Sendable {
     let id: String
     let title: String
     let clientId: String
     let clientSecret: String
     let userAgent: String
+    let accountType: VKAccountType
 
-    static let kate = VKClientPreset(
-        id: "kate", title: "Kate Mobile", clientId: "2685278",
-        clientSecret: "lxhD8OD7dMsqO7PRjSos", userAgent: "KateMobile/56 lite")
-    static let officialAndroid = VKClientPreset(
-        id: "android", title: "Официальный Android", clientId: "2274003",
-        clientSecret: "hHbZxrka2uZ6jB1inYsH", userAgent: "VK/6.35")
-    static let officialIPhone = VKClientPreset(
-        id: "iphone", title: "Официальный iPhone", clientId: "3140623",
-        clientSecret: "VeWdmVclDCtn6ihuP1nt", userAgent: "VK/6.35")
+    init(_ accountType: VKAccountType) {
+        self.accountType = accountType
+        self.id = "type-\(accountType.rawValue)"
+        self.title = accountType.title
+        self.clientId = accountType.clientId
+        self.clientSecret = accountType.clientSecret
+        self.userAgent = accountType.userAgent
+    }
 
-    static let vkMe = VKClientPreset(
-        id: "vkme", title: "VK Me", clientId: "6146827",
-        clientSecret: "qVxWRF1CwHERuIrKBnqe", userAgent: "VK/6.35")
-    static let vkAdmin = VKClientPreset(
-        id: "vkadmin", title: "VK Admin", clientId: "5776857",
-        clientSecret: "wpeEslv1VnJgE0mkeL04", userAgent: "VK/6.35")
+    static let kate = VKClientPreset(.kateMobile)
+    static let officialAndroid = VKClientPreset(.vkAndroid)
+    static let officialIPhone = VKClientPreset(.vkIos)
+    static let vkMe = VKClientPreset(.vkMe)
+    static let vkAdmin = VKClientPreset(.vkAdmin)
 
-    static let all: [VKClientPreset] = [.kate, .officialAndroid, .officialIPhone, .vkMe, .vkAdmin]
+    static let all: [VKClientPreset] = VKAccountType.allCases.map(VKClientPreset.init)
 }

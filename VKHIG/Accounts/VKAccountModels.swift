@@ -12,6 +12,9 @@ struct VKAccount: Codable, Identifiable, Hashable, Sendable {
     let token: String
     let secret: String?
     let tokenType: TokenType
+    /// Which VK client this token was issued to (password-grant logins only). Picks the matching
+    /// `User-Agent` and lets `sig` signing use the right `client_secret`-derived session secret.
+    var accountType: VKAccountType?
     let refreshToken: String?
     var firstName: String
     var lastName: String
@@ -22,7 +25,36 @@ struct VKAccount: Codable, Identifiable, Hashable, Sendable {
 
     // Never print tokens.
     private enum CodingKeys: String, CodingKey {
-        case userId, token, secret, tokenType, refreshToken, firstName, lastName, avatarUrl, isActive
+        case userId, token, secret, tokenType, accountType, refreshToken, firstName, lastName, avatarUrl, isActive
+    }
+
+    init(userId: Int64, token: String, secret: String?, tokenType: TokenType, accountType: VKAccountType? = nil,
+         refreshToken: String?, firstName: String, lastName: String, avatarUrl: String?, isActive: Bool) {
+        self.userId = userId
+        self.token = token
+        self.secret = secret
+        self.tokenType = tokenType
+        self.accountType = accountType
+        self.refreshToken = refreshToken
+        self.firstName = firstName
+        self.lastName = lastName
+        self.avatarUrl = avatarUrl
+        self.isActive = isActive
+    }
+
+    /// Accounts saved before `accountType` existed decode it as `nil`.
+    init(from decoder: Decoder) throws {
+        let c = try decoder.container(keyedBy: CodingKeys.self)
+        userId = try c.decode(Int64.self, forKey: .userId)
+        token = try c.decode(String.self, forKey: .token)
+        secret = try c.decodeIfPresent(String.self, forKey: .secret)
+        tokenType = try c.decode(TokenType.self, forKey: .tokenType)
+        accountType = try c.decodeIfPresent(VKAccountType.self, forKey: .accountType)
+        refreshToken = try c.decodeIfPresent(String.self, forKey: .refreshToken)
+        firstName = try c.decode(String.self, forKey: .firstName)
+        lastName = try c.decode(String.self, forKey: .lastName)
+        avatarUrl = try c.decodeIfPresent(String.self, forKey: .avatarUrl)
+        isActive = try c.decode(Bool.self, forKey: .isActive)
     }
 }
 
@@ -58,7 +90,7 @@ struct VKScopes: OptionSet, Sendable {
 
 enum VKAuthError: Error {
     case invalidCredentials
-    case needValidation(validationType: String, phoneMask: String?, redirectUri: String?)
+    case needValidation(validationType: String, phoneMask: String?, redirectUri: String?, validationSid: String?)
     case needCaptcha(sid: String, imgUrl: String)
     case needVKIdCaptcha(captchaUrl: String)
     case tokenRevoked

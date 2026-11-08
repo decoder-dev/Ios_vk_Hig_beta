@@ -60,3 +60,8 @@ Run: https://github.com/decoder-dev/Ios_vk_Hig_beta/actions/runs/41541746765
 ## Multi-account auth
 `VKHIGTests/VKAccountsTests.swift` (token parser, adapter, auth-challenge parsing, scopes): NOT RUN. Camera QR, WKWebView flow,
 password grant against VK, account switching on device: NOT RUN.
+
+## Password-grant hardening
+`VKAccountsTests` extended: DTO parsing (secret/trusted_hash/validation_sid), account-type presets, MD5 `sig`
+determinism, device_id stability, QR auth_hash extraction. NOT RUN (no Swift toolchain here). 2FA SMS fallback,
+sig-signed live calls, QR login confirm against a real VK account: NOT RUN.

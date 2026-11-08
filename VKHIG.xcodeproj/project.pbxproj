@@ -7,10 +7,14 @@
 
 /* Begin PBXBuildFile section */
 		506BA2833D6995168C41D87B /* AccountManager.swift in Sources */ = {isa = PBXBuildFile; fileRef = 429B9686E3A3B4F1B14D167E /* AccountManager.swift */; };
+		4467A13AF53987946706EAD1 /* AuthModels.swift in Sources */ = {isa = PBXBuildFile; fileRef = AC0BAEE9FF1F4F150FE0671F /* AuthModels.swift */; };
 		68AB689A08949DF5322600C8 /* KeychainAccountStorage.swift in Sources */ = {isa = PBXBuildFile; fileRef = F47790D5001B6B448A83D6C6 /* KeychainAccountStorage.swift */; };
 		8F70312829238F27CE3732D1 /* VKAccountModels.swift in Sources */ = {isa = PBXBuildFile; fileRef = 06FB320E1385DD5334F8DD0B /* VKAccountModels.swift */; };
 		DE48ED4658893D63699AE382 /* VKClientPresets.swift in Sources */ = {isa = PBXBuildFile; fileRef = 95D352B3AAD62C6A2B782A5B /* VKClientPresets.swift */; };
+		2C69F0D93DC63E5DDDBBDF6F /* VKDeviceIdentity.swift in Sources */ = {isa = PBXBuildFile; fileRef = DFBF8D7D3496272E25059FE7 /* VKDeviceIdentity.swift */; };
 		61B92E1D50985C9028B4418A /* VKDirectAuthService.swift in Sources */ = {isa = PBXBuildFile; fileRef = 6F5461E24B30048B82E5763A /* VKDirectAuthService.swift */; };
+		803B2DA84DDCAB5462A83772 /* VKMD5.swift in Sources */ = {isa = PBXBuildFile; fileRef = 6519C09B041161322797F2CB /* VKMD5.swift */; };
+		DF4DC51CC7DBDF62810CFCA5 /* VKQRLoginService.swift in Sources */ = {isa = PBXBuildFile; fileRef = F784C9B45C7EFD935BB6E212 /* VKQRLoginService.swift */; };
 		AFB505F44B7DEA84EFCE7262 /* VKRequestAdapter.swift in Sources */ = {isa = PBXBuildFile; fileRef = E012F69006BDE42998B63605 /* VKRequestAdapter.swift */; };
 		51D707A1B072701437CB1211 /* VKSession.swift in Sources */ = {isa = PBXBuildFile; fileRef = 08FD9B7FFEC5E2A117409DDB /* VKSession.swift */; };
 		65CD4414EA8371094F196833 /* VKTokenParser.swift in Sources */ = {isa = PBXBuildFile; fileRef = 5AD68707A9EAF738410F43F1 /* VKTokenParser.swift */; };
@@ -36,6 +40,7 @@
 		998E89F9600A366DF34E6F97 /* Models.swift in Sources */ = {isa = PBXBuildFile; fileRef = 9AB24B54EBFB873156F6F9C2 /* Models.swift */; };
 		4A778F8029A355FE9BDAC832 /* AuthStubView.swift in Sources */ = {isa = PBXBuildFile; fileRef = 72E479918D0B9857793E0879 /* AuthStubView.swift */; };
 		E1D85F1D9A5D050180CDECA1 /* DirectAuthView.swift in Sources */ = {isa = PBXBuildFile; fileRef = FFD278B01FB3D8FFB60E96FA /* DirectAuthView.swift */; };
+		5E411FA300DADD1B2A02D80B /* QRConfirmLoginView.swift in Sources */ = {isa = PBXBuildFile; fileRef = 53EC9BC55C0651C6DF7C91F1 /* QRConfirmLoginView.swift */; };
 		C337AD45D742C4BF42AFB61F /* QRScannerViewController.swift in Sources */ = {isa = PBXBuildFile; fileRef = 159E77F6FB5C1B1955A98CF0 /* QRScannerViewController.swift */; };
 		886E6B2B5C2548CC449CA361 /* TokenLoginViews.swift in Sources */ = {isa = PBXBuildFile; fileRef = 2752611B0367E25CEA8417A0 /* TokenLoginViews.swift */; };
 		EEE4FDDDBEA05E4854E2D603 /* VKWebAuthViewController.swift in Sources */ = {isa = PBXBuildFile; fileRef = D0E3DB42A784C5E22979B7E2 /* VKWebAuthViewController.swift */; };
@@ -81,10 +86,14 @@
 		8E42256A89ABABDDA8DEA8F9 /* VK HIG.app */ = {isa = PBXFileReference; explicitFileType = wrapper.application; includeInIndex = 0; path = "VK HIG.app"; sourceTree = BUILT_PRODUCTS_DIR; };
 		789695E3F2B97A651F49D58C /* VKHIGTests.xctest */ = {isa = PBXFileReference; explicitFileType = wrapper.cfbundle; includeInIndex = 0; path = VKHIGTests.xctest; sourceTree = BUILT_PRODUCTS_DIR; };
 		429B9686E3A3B4F1B14D167E /* AccountManager.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = AccountManager.swift; sourceTree = "<group>"; };
+		AC0BAEE9FF1F4F150FE0671F /* AuthModels.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = AuthModels.swift; sourceTree = "<group>"; };
 		F47790D5001B6B448A83D6C6 /* KeychainAccountStorage.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = KeychainAccountStorage.swift; sourceTree = "<group>"; };
 		06FB320E1385DD5334F8DD0B /* VKAccountModels.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = VKAccountModels.swift; sourceTree = "<group>"; };
 		95D352B3AAD62C6A2B782A5B /* VKClientPresets.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = VKClientPresets.swift; sourceTree = "<group>"; };
+		DFBF8D7D3496272E25059FE7 /* VKDeviceIdentity.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = VKDeviceIdentity.swift; sourceTree = "<group>"; };
 		6F5461E24B30048B82E5763A /* VKDirectAuthService.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = VKDirectAuthService.swift; sourceTree = "<group>"; };
+		6519C09B041161322797F2CB /* VKMD5.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = VKMD5.swift; sourceTree = "<group>"; };
+		F784C9B45C7EFD935BB6E212 /* VKQRLoginService.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = VKQRLoginService.swift; sourceTree = "<group>"; };
 		E012F69006BDE42998B63605 /* VKRequestAdapter.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = VKRequestAdapter.swift; sourceTree = "<group>"; };
 		08FD9B7FFEC5E2A117409DDB /* VKSession.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = VKSession.swift; sourceTree = "<group>"; };
 		5AD68707A9EAF738410F43F1 /* VKTokenParser.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = VKTokenParser.swift; sourceTree = "<group>"; };
@@ -110,6 +119,7 @@
 		9AB24B54EBFB873156F6F9C2 /* Models.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = Models.swift; sourceTree = "<group>"; };
 		72E479918D0B9857793E0879 /* AuthStubView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = AuthStubView.swift; sourceTree = "<group>"; };
 		FFD278B01FB3D8FFB60E96FA /* DirectAuthView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = DirectAuthView.swift; sourceTree = "<group>"; };
+		53EC9BC55C0651C6DF7C91F1 /* QRConfirmLoginView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = QRConfirmLoginView.swift; sourceTree = "<group>"; };
 		159E77F6FB5C1B1955A98CF0 /* QRScannerViewController.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = QRScannerViewController.swift; sourceTree = "<group>"; };
 		2752611B0367E25CEA8417A0 /* TokenLoginViews.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = TokenLoginViews.swift; sourceTree = "<group>"; };
 		D0E3DB42A784C5E22979B7E2 /* VKWebAuthViewController.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = VKWebAuthViewController.swift; sourceTree = "<group>"; };
@@ -195,10 +205,14 @@
 				08FD9B7FFEC5E2A117409DDB /* VKSession.swift */,
 				429B9686E3A3B4F1B14D167E /* AccountManager.swift */,
 				5AD68707A9EAF738410F43F1 /* VKTokenParser.swift */,
+				6519C09B041161322797F2CB /* VKMD5.swift */,
 				6F5461E24B30048B82E5763A /* VKDirectAuthService.swift */,
 				95D352B3AAD62C6A2B782A5B /* VKClientPresets.swift */,
+				AC0BAEE9FF1F4F150FE0671F /* AuthModels.swift */,
+				DFBF8D7D3496272E25059FE7 /* VKDeviceIdentity.swift */,
 				E012F69006BDE42998B63605 /* VKRequestAdapter.swift */,
 				F47790D5001B6B448A83D6C6 /* KeychainAccountStorage.swift */,
+				F784C9B45C7EFD935BB6E212 /* VKQRLoginService.swift */,
 			);
 			path = Accounts;
 			sourceTree = "<group>";
@@ -316,6 +330,7 @@
 			children = (
 				159E77F6FB5C1B1955A98CF0 /* QRScannerViewController.swift */,
 				2752611B0367E25CEA8417A0 /* TokenLoginViews.swift */,
+				53EC9BC55C0651C6DF7C91F1 /* QRConfirmLoginView.swift */,
 				D0E3DB42A784C5E22979B7E2 /* VKWebAuthViewController.swift */,
 				FFD278B01FB3D8FFB60E96FA /* DirectAuthView.swift */,
 			);
@@ -488,10 +503,14 @@
 			buildActionMask = 2147483647;
 			files = (
 				506BA2833D6995168C41D87B /* AccountManager.swift in Sources */,
+				4467A13AF53987946706EAD1 /* AuthModels.swift in Sources */,
 				68AB689A08949DF5322600C8 /* KeychainAccountStorage.swift in Sources */,
 				8F70312829238F27CE3732D1 /* VKAccountModels.swift in Sources */,
 				DE48ED4658893D63699AE382 /* VKClientPresets.swift in Sources */,
+				2C69F0D93DC63E5DDDBBDF6F /* VKDeviceIdentity.swift in Sources */,
 				61B92E1D50985C9028B4418A /* VKDirectAuthService.swift in Sources */,
+				803B2DA84DDCAB5462A83772 /* VKMD5.swift in Sources */,
+				DF4DC51CC7DBDF62810CFCA5 /* VKQRLoginService.swift in Sources */,
 				AFB505F44B7DEA84EFCE7262 /* VKRequestAdapter.swift in Sources */,
 				51D707A1B072701437CB1211 /* VKSession.swift in Sources */,
 				65CD4414EA8371094F196833 /* VKTokenParser.swift in Sources */,
@@ -517,6 +536,7 @@
 				998E89F9600A366DF34E6F97 /* Models.swift in Sources */,
 				4A778F8029A355FE9BDAC832 /* AuthStubView.swift in Sources */,
 				E1D85F1D9A5D050180CDECA1 /* DirectAuthView.swift in Sources */,
+				5E411FA300DADD1B2A02D80B /* QRConfirmLoginView.swift in Sources */,
 				C337AD45D742C4BF42AFB61F /* QRScannerViewController.swift in Sources */,
 				886E6B2B5C2548CC449CA361 /* TokenLoginViews.swift in Sources */,
 				EEE4FDDDBEA05E4854E2D603 /* VKWebAuthViewController.swift in Sources */,

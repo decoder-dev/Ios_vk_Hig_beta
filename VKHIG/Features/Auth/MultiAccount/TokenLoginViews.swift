@@ -7,7 +7,7 @@ enum TokenImporter {
         guard let parsed = VKTokenParser.parse(raw) else { throw VKAuthError.parsingError }
         // addAccount runs users.get with this token and rejects it (error 5 -> tokenRevoked) before saving.
         try await accounts.addAccount(token: parsed.token, userId: parsed.userId, secret: nil,
-                                      tokenType: .custom, refreshToken: nil)
+                                      tokenType: .custom, accountType: nil, refreshToken: nil)
     }
 }
 
@@ -116,6 +116,7 @@ struct AddAccountHubView: View {
                 NavigationLink("Веб-форма VK (OAuth)") { WebLoginScreen(onDone: onDone) }
                 NavigationLink("Вставить токен") { TokenEntryView(onDone: onDone) }
                 NavigationLink("Сканировать QR") { QRTokenLoginView(onDone: onDone) }
+                NavigationLink("Подтвердить вход на другом устройстве") { QRConfirmLoginView() }
             }
             .navigationTitle("Добавить аккаунт")
             .navigationBarTitleDisplayMode(.inline)

@@ -53,7 +53,8 @@ enum VKSession {
     /// Loads real scopes for the active account. Unknown (request failed) = empty = features stay gated.
     static func refreshAccountGrants() async {
         guard let account = activeAccount else { accountGrants = []; return }
-        let creds = VKCredentials(token: account.token, tokenType: account.tokenType)
+        let creds = VKCredentials(token: account.token, tokenType: account.tokenType,
+                                  secret: account.secret, accountType: account.accountType)
         let scopes = try? await VKAPISession.shared.fetchGrantedScopes(userId: account.userId, credentials: creds)
         guard activeAccount?.userId == account.userId else { return } // switched meanwhile
         accountGrants = (scopes?.names ?? []).union(scopes == nil ? [] : ["vkid.personal_info"])

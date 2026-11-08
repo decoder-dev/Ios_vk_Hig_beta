@@ -26,6 +26,7 @@ final class DirectAuthViewModel {
     private let service: VKDirectAuthService
     private let accounts: any AccountManagerProtocol
     private var captchaSid: String?
+    private var validationSid: String?
     private var onDone: () -> Void
 
     init(service: VKDirectAuthService = .init(), accounts: any AccountManagerProtocol = AccountManager.shared,
@@ -46,6 +47,14 @@ final class DirectAuthViewModel {
         await perform(.init(code: code))
     }
 
+    /// Re-asks VK for the same validation by SMS instead of push/app (user tapped "Отправить SMS").
+    func requestSms() async {
+        guard case .code(let type, _) = challenge, let sid = validationSid else { return }
+        if type != "2fa_sms" { await service.requestSmsIfNeeded(validationSid: sid, preset: preset) }
+        challenge = nil
+        await perform(.init(forceSms: true))
+    }
+
     func submitCaptcha() async {
         let key = captchaInput.trimmingCharacters(in: .whitespaces)
         guard !key.isEmpty, let sid = captchaSid else { return }
@@ -59,7 +68,7 @@ final class DirectAuthViewModel {
         do {
             let grant = try await service.login(username: login, password: password, preset: preset, answer: answer)
             try await accounts.addAccount(token: grant.accessToken, userId: grant.userId, secret: grant.secret,
-                                          tokenType: .official, refreshToken: nil)
+                                          tokenType: .official, accountType: preset.accountType, refreshToken: nil)
             password = ""
             onDone()
         } catch let e as VKAuthError {
@@ -71,8 +80,9 @@ final class DirectAuthViewModel {
 
     private func handle(_ e: VKAuthError) {
         switch e {
-        case .needValidation(let type, let mask, _):
+        case .needValidation(let type, let mask, _, let sid):
             codeInput = ""
+            validationSid = sid
             challenge = .code(type: type, phoneMask: mask)
         case .needCaptcha(let sid, let img):
             captchaSid = sid; captchaInput = ""
@@ -119,7 +129,9 @@ struct DirectAuthView: View {
         .sheet(item: $model.challenge) { challenge in
             switch challenge {
             case .code(let type, let mask):
-                ValidateCodeView(type: type, phoneMask: mask, code: $model.codeInput) { Task { await model.submitCode() } }
+                ValidateCodeView(type: type, phoneMask: mask, code: $model.codeInput,
+                                 onSubmit: { Task { await model.submitCode() } },
+                                 onRequestSms: type == "2fa_sms" ? nil : { Task { await model.requestSms() } })
             case .captcha(_, let url):
                 CaptchaView(imageUrl: url, text: $model.captchaInput) { Task { await model.submitCaptcha() } }
             }
@@ -132,6 +144,7 @@ struct ValidateCodeView: View {
     let phoneMask: String?
     @Binding var code: String
     var onSubmit: () -> Void
+    var onRequestSms: (() -> Void)?
 
     var body: some View {
         NavigationStack {
@@ -143,6 +156,9 @@ struct ValidateCodeView: View {
                                               : "Введите код из приложения-аутентификатора или Code Generator VK.")
                 }
                 Section { Button("Подтвердить", action: onSubmit).disabled(code.isEmpty) }
+                if let onRequestSms {
+                    Section { Button("Отправить код по SMS", action: onRequestSms) }
+                }
             }
             .navigationTitle("Подтверждение входа")
             .navigationBarTitleDisplayMode(.inline)

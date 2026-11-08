@@ -9,7 +9,7 @@ protocol AccountManagerProtocol: AnyObject {
     /// Fetches the profile (users.get), stores the account and makes it active.
     @discardableResult
     func addAccount(token: String, userId: Int64?, secret: String?, tokenType: TokenType,
-                    refreshToken: String?) async throws -> VKAccount
+                    accountType: VKAccountType?, refreshToken: String?) async throws -> VKAccount
     func switchAccount(to userId: Int64)
     func removeAccount(userId: Int64)
     func updateProfileInfo(for userId: Int64) async
@@ -46,13 +46,14 @@ final class AccountManager: AccountManagerProtocol {
 
     @discardableResult
     func addAccount(token: String, userId: Int64?, secret: String?, tokenType: TokenType,
-                    refreshToken: String? = nil) async throws -> VKAccount {
+                    accountType: VKAccountType? = nil, refreshToken: String? = nil) async throws -> VKAccount {
         // Validate the token and load the profile before touching the Keychain.
-        let profile = try await api.fetchProfile(credentials: VKCredentials(token: token, tokenType: tokenType))
+        let creds = VKCredentials(token: token, tokenType: tokenType, secret: secret, accountType: accountType)
+        let profile = try await api.fetchProfile(credentials: creds)
         if let userId, userId != profile.id { throw VKAuthError.invalidCredentials }
 
         let account = VKAccount(
-            userId: profile.id, token: token, secret: secret, tokenType: tokenType,
+            userId: profile.id, token: token, secret: secret, tokenType: tokenType, accountType: accountType,
             refreshToken: refreshToken, firstName: profile.firstName, lastName: profile.lastName,
             avatarUrl: profile.avatarUrl, isActive: true)
         try storage.save(account)
@@ -81,7 +82,8 @@ final class AccountManager: AccountManagerProtocol {
     func updateProfileInfo(for userId: Int64) async {
         guard var account = accounts.value.first(where: { $0.userId == userId }),
               let profile = try? await api.fetchProfile(
-                credentials: VKCredentials(token: account.token, tokenType: account.tokenType)) else { return }
+                credentials: VKCredentials(token: account.token, tokenType: account.tokenType,
+                                           secret: account.secret, accountType: account.accountType)) else { return }
         account.firstName = profile.firstName
         account.lastName = profile.lastName
         account.avatarUrl = profile.avatarUrl
@@ -99,7 +101,9 @@ final class AccountManager: AccountManagerProtocol {
     }
 
     private func applyToAdapter(_ account: VKAccount?) {
-        api.adapter.setCredentials(account.map { VKCredentials(token: $0.token, tokenType: $0.tokenType) })
+        api.adapter.setCredentials(account.map {
+            VKCredentials(token: $0.token, tokenType: $0.tokenType, secret: $0.secret, accountType: $0.accountType)
+        })
     }
 
     private func didChangeActive() {

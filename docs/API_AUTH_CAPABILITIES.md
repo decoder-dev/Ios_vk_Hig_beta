@@ -57,3 +57,31 @@
 Помимо VK ID (OAuth 2.1 + PKCE) поддержаны: password grant (`oauth.vk.com/token`, пресеты Kate/Android/iPhone с 2FA и капчей), implicit-flow в `WKWebView`, ручной токен и QR. Токены хранятся в Keychain (`KeychainAccountStorage`), токен валидируется `users.get` до сохранения, ошибка 5 снимает аккаунт.
 
 **Исключение из правил репозитория:** по решению владельца `VKClientPresets.swift` содержит публичные client_id/client_secret сторонних клиентов (запрет на hardcoded secrets из AGENTS.md на этот файл не распространяется). Пароль и токены не логируются. Реальное поведение VK для этих клиентов (в т. ч. «VK ID капча») не проверялось: NOT RUN.
+
+## Password grant: полные DTO, device_id, trusted_hash, sig
+
+`VKHIG/Accounts/AuthModels.swift` типизирует весь ответ `POST /token` (`VKLoginResponseDTO`) и даёт пять клиентов
+(`VKAccountType`: VK Android, Kate Mobile, VK Me, VK iOS, VK Admin) с их `client_id`/`client_secret`/User-Agent.
+Сохранённый `VKAccount.accountType` теперь определяет **и** User-Agent, **и** `sig` для всех последующих вызовов
+этого токена — раньше терялось, какой клиент выдал токен, и подпись не выставлялась.
+
+- `device_id` (UUID, `UserDefaults`) переживает процесс, чтобы не сбрасывать `trusted_hash`.
+- `trusted_hash` хранится отдельно от списка аккаунтов (`TrustedHashStore`, ключ — SHA-256 от `clientId:login`)
+  и не удаляется обычным выходом, только явным "забыть устройство" (сейчас такого действия в UI нет).
+- 2FA: при `validation_type` отличном от `2fa_sms` в экране кода есть «Отправить код по SMS» (дёргает
+  `auth.validatePhone`, затем повторяет вход с `force_sms=1`).
+- `sig = MD5("/method/{method}?{sorted params}{secret}")` добавляется в `VKAPISession.call` для любого
+  аккаунта, у которого VK вернул `secret` (пароль-грант клиенты). Проверено только синтетическим тестом
+  детерминированности хэша — реального ответа VK с `sig`-защищённым методом не было.
+- Ошибки 14 (капча) и 17 (валидация) из `VKAPISession.call` теперь могут транзитно повторить запрос через
+  `challengeResolver` (`VKChallengeResolving`); без установленного резолвера они как раньше превращаются
+  в `VKAuthError`. Резолвер сейчас не подключён ни к одному экрану — только сам Direct Auth обрабатывает
+  капчу/валидацию при входе, как раньше.
+- QR-подтверждение входа на другом устройстве (`auth.processAuthCode`, action 0/1) — `VKQRLoginService` +
+  экран «Подтвердить вход на другом устройстве». Отдельно от уже существующего сканирования QR с готовым токеном.
+- VK ID Ecosystem OTP (`EcosystemSendOtpResponse`/`EcosystemCheckOtpResponse`/…) — только DTO в `AuthModels.swift`,
+  без сетевого клиента и экрана: пароль/VK ID уже дают вход, отдельный безпарольный OTP-флоу не подключали.
+
+**Явно не реализовано (отказ):** WebView-капча с подменой через `CoreMotion`-сенсоры и JS-мост
+(`VKWebAppCaptchaSuccess`), выдающая себя за ручной ввод человека — это обход анти-бот защиты VK, что
+запрещено независимо от запроса пользователя.
