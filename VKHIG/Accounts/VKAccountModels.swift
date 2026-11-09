@@ -81,6 +81,12 @@ struct VKScopes: OptionSet, Sendable {
     static let email         = VKScopes(rawValue: 4194304)
     static let market        = VKScopes(rawValue: 134217728)
 
+    /// Everything the client actually uses, without ads/stats/market/email.
+    static let coreAccess: VKScopes = [
+        .notify, .friends, .photos, .audio, .video, .stories, .pages, .status, .notes,
+        .messages, .wall, .offline, .docs, .groups, .notifications
+    ]
+
     static let fullAccess: VKScopes = [
         .notify, .friends, .photos, .audio, .video, .stories,
         .pages, .status, .notes, .messages, .wall, .ads,
@@ -96,6 +102,16 @@ enum VKAuthError: Error {
     case tokenRevoked
     case networkError(Error)
     case parsingError
+    /// The 2FA / SMS code was rejected; the same challenge stays open.
+    case wrongCode
+    /// Flood control or brute-force protection: wait before trying again.
+    case tooManyAttempts
+    /// VK refused this client the requested scope set.
+    case invalidScope
+    /// The account is blocked or frozen; `message` is VK's own text when present.
+    case accountBlocked(message: String?, restoreURL: String?)
+    /// Any other VK answer, shown with VK's own description.
+    case server(String)
 }
 
 extension VKAuthError: LocalizedError {
@@ -107,6 +123,11 @@ extension VKAuthError: LocalizedError {
         case .tokenRevoked: "Сессия недействительна. Войдите снова"
         case .networkError(let e): "Ошибка сети: \(e.localizedDescription)"
         case .parsingError: "Не удалось разобрать ответ VK"
+        case .wrongCode: "Неверный код подтверждения. Проверьте код и попробуйте ещё раз"
+        case .tooManyAttempts: "Слишком много попыток. Подождите несколько минут и попробуйте снова"
+        case .invalidScope: "VK не выдал этому клиенту запрошенные права"
+        case .accountBlocked(let message, _): message.map { "Аккаунт заблокирован: \($0)" } ?? "Аккаунт заблокирован или заморожен"
+        case .server(let text): text
         }
     }
 }
@@ -115,4 +136,6 @@ extension Notification.Name {
     /// Posted on the main thread after the active account changed (or became nil).
     /// Repositories / LongPoll owners observe it to drop caches and restart.
     static let vkActiveAccountDidChange = Notification.Name("vkActiveAccountDidChange")
+    /// Posted when VK confirmed the active token is revoked; `object` is the account's display name.
+    static let vkSessionDidExpire = Notification.Name("vkSessionDidExpire")
 }

@@ -22,6 +22,8 @@ final class AppEnvironment {
 
     let catalog = VKCatalogService.shared
     var pendingRoute: AppRoute?
+    /// Why the user is back on the sign-in screen (confirmed expired session), shown there once.
+    var sessionNotice: String?
 
     let session: SessionStore
     let conversationRepository: ConversationRepository
@@ -31,6 +33,7 @@ final class AppEnvironment {
     let tokenProvider: KeychainVKTokenProvider
     let liveAPIGate: LiveAPIGate
     @ObservationIgnored private var accountObserver: AnyCancellable?
+    @ObservationIgnored private var expiryObserver: AnyCancellable?
 
     init(
         session: SessionStore? = nil,
@@ -62,6 +65,13 @@ final class AppEnvironment {
         accountObserver = NotificationCenter.default.publisher(for: .vkActiveAccountDidChange)
             .receive(on: DispatchQueue.main)
             .sink { [weak self] _ in self?.activeAccountDidChange() }
+        expiryObserver = NotificationCenter.default.publisher(for: .vkSessionDidExpire)
+            .receive(on: DispatchQueue.main)
+            .sink { [weak self] note in
+                let name = (note.object as? String).map { "«\($0)» " } ?? ""
+                self?.sessionNotice = "Сессия аккаунта \(name)закончилась: VK отозвал токен. Войдите снова."
+            }
+        VKAPISession.shared.challengeResolver = VKChallengeCenter.shared
     }
 
     /// Account added / switched / removed / expired: drop per-account caches and rebuild capabilities.

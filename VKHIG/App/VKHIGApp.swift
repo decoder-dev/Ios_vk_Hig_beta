@@ -16,6 +16,7 @@ struct VKHIGApp: App {
                 }
             }
             .environment(environment)
+            .modifier(VKChallengeSheetModifier(center: VKChallengeCenter.shared))
             .onOpenURL { url in
                 guard url.scheme == "vkhig", let host = url.host else { return }
                 let id = url.pathComponents.compactMap(Int64.init).first

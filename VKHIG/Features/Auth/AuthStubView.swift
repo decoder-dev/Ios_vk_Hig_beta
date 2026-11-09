@@ -60,6 +60,14 @@ struct AuthStubView: View {
                 Button("Другие способы входа") { showOtherMethods = true }
                     .frame(minHeight: VKStyle.Size.tapTargetMin)
 
+                if let notice = env.sessionNotice, authError == nil {
+                    Label(notice, systemImage: "exclamationmark.circle")
+                        .font(.footnote)
+                        .foregroundStyle(VKStyle.secondaryText)
+                        .multilineTextAlignment(.center)
+                        .padding(.horizontal, VKStyle.Spacing.md)
+                }
+
                 if let authError {
                     Text(authError)
                         .font(.footnote)
@@ -85,7 +93,7 @@ struct AuthStubView: View {
             .withAppRoutes()
         }
         .sheet(isPresented: $showOtherMethods) {
-            AddAccountHubView { showOtherMethods = false }
+            AddAccountHubView { showOtherMethods = false; env.sessionNotice = nil }
         }
     }
 

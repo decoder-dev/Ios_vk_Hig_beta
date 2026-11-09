@@ -62,6 +62,8 @@ enum VKApiConstants {
     static let blankRedirectURI = "https://oauth.vk.com/blank.html"
     /// Bitmask for every scope in `VKScopes.fullAccess`.
     static let fullScopeBitmask = VKScopes.fullAccess.rawValue
+    /// Retried once when VK answers `invalid_scope` to the full set (some clients may not request ads/stats/market).
+    static let conservativeScopeBitmask = VKScopes.coreAccess.rawValue
 }
 
 /// Full shape of a `POST /token` response: success fields and every documented challenge field
@@ -91,6 +93,13 @@ struct VKLoginResponseDTO: Decodable, Sendable {
     let captchaAttempt: Int?
     let isRefreshEnabled: Bool?
     let redirectUrl: String?
+    let banInfo: BanInfo?
+
+    struct BanInfo: Decodable, Sendable {
+        let message: String?
+        let restoreURL: String?
+        enum CodingKeys: String, CodingKey { case message, restoreURL = "restore_url" }
+    }
 
     enum CodingKeys: String, CodingKey {
         case accessToken = "access_token"
@@ -114,6 +123,7 @@ struct VKLoginResponseDTO: Decodable, Sendable {
         case captchaAttempt = "captcha_attempt"
         case isRefreshEnabled = "is_refresh_enabled"
         case redirectUrl = "redirect_url"
+        case banInfo = "ban_info"
     }
 
     /// Tolerates `user_id` arriving as a JSON number or a numeric string.
@@ -123,7 +133,7 @@ struct VKLoginResponseDTO: Decodable, Sendable {
         if let n = try? c.decode(Int64.self, forKey: .userId) { userId = n }
         else if let s = try? c.decode(String.self, forKey: .userId) { userId = Int64(s) }
         else { userId = nil }
-        expiresIn = try c.decodeIfPresent(Int.self, forKey: .expiresIn)
+        expiresIn = try? c.decodeIfPresent(Int.self, forKey: .expiresIn)
         secret = try c.decodeIfPresent(String.self, forKey: .secret)
         trustedHash = try c.decodeIfPresent(String.self, forKey: .trustedHash)
         webviewRefreshToken = try c.decodeIfPresent(String.self, forKey: .webviewRefreshToken)
@@ -136,12 +146,15 @@ struct VKLoginResponseDTO: Decodable, Sendable {
         phoneMask = try c.decodeIfPresent(String.self, forKey: .phoneMask)
         redirectUri = try c.decodeIfPresent(String.self, forKey: .redirectUri)
         restoreSessionId = try c.decodeIfPresent(String.self, forKey: .restoreSessionId)
-        captchaSid = try c.decodeIfPresent(String.self, forKey: .captchaSid)
+        if let text = try? c.decode(String.self, forKey: .captchaSid) { captchaSid = text }
+        else if let number = try? c.decode(Int64.self, forKey: .captchaSid) { captchaSid = String(number) }
+        else { captchaSid = nil }
         captchaImg = try c.decodeIfPresent(String.self, forKey: .captchaImg)
-        captchaTs = try c.decodeIfPresent(Double.self, forKey: .captchaTs)
-        captchaAttempt = try c.decodeIfPresent(Int.self, forKey: .captchaAttempt)
-        isRefreshEnabled = try c.decodeIfPresent(Bool.self, forKey: .isRefreshEnabled)
+        captchaTs = try? c.decodeIfPresent(Double.self, forKey: .captchaTs)
+        captchaAttempt = try? c.decodeIfPresent(Int.self, forKey: .captchaAttempt)
+        isRefreshEnabled = try? c.decodeIfPresent(Bool.self, forKey: .isRefreshEnabled)
         redirectUrl = try c.decodeIfPresent(String.self, forKey: .redirectUrl)
+        banInfo = try? c.decodeIfPresent(BanInfo.self, forKey: .banInfo)
     }
 }
 

@@ -62,7 +62,7 @@ final class VKAPISession: @unchecked Sendable {
 
     /// - Parameter credentials: explicit token (e.g. validating a not-yet-saved one). `nil` = active account.
     func call(method: String, params: [String: String] = [:], credentials: VKCredentials? = nil,
-              allowChallengeRetry: Bool = true) async throws -> Data {
+              allowChallengeRetry: Bool = true, signed: Bool = true) async throws -> Data {
         guard method.range(of: #"^[A-Za-z]+\.[A-Za-z][A-Za-z0-9]*$"#, options: .regularExpression) != nil else {
             throw VKAPITransportError.invalidMethod
         }
@@ -71,7 +71,8 @@ final class VKAPISession: @unchecked Sendable {
         var fields = params
         fields["access_token"] = used.token
         fields["v"] = VKRequestAdapter.apiVersion
-        if let secret = used.secret, !secret.isEmpty {
+        let addsSignature = signed && !(used.secret ?? "").isEmpty
+        if addsSignature, let secret = used.secret {
             fields["sig"] = Self.signature(method: method, params: fields, secret: secret)
         }
         guard var comps = URLComponents(string: "https://api.vk.com/method/\(method)") else {
@@ -95,6 +96,10 @@ final class VKAPISession: @unchecked Sendable {
             return data
         }
         switch err.error_code {
+        case 4 where addsSignature:
+            // "Incorrect signature": HTTPS calls do not need `sig`, so retry once unsigned instead of failing login.
+            return try await call(method: method, params: params, credentials: credentials,
+                                  allowChallengeRetry: allowChallengeRetry, signed: false)
         case 5:
             if credentials == nil { onSessionExpired.send(used.token) }
             throw VKAuthError.tokenRevoked
@@ -147,7 +152,7 @@ struct VKUserProfile: Sendable {
 }
 
 extension VKAPISession {
-    func fetchProfile(credentials: VKCredentials? = nil) async throws -> VKUserProfile {
+    func fetchProfile(credentials: VKCredentials? = nil, allowChallengeRetry: Bool = true) async throws -> VKUserProfile {
         struct Envelope: Decodable {
             struct User: Decodable {
                 let id: Int64
@@ -157,7 +162,8 @@ extension VKAPISession {
             }
             let response: [User]?
         }
-        let data = try await call(method: "users.get", params: ["fields": "photo_100"], credentials: credentials)
+        let data = try await call(method: "users.get", params: ["fields": "photo_100"], credentials: credentials,
+                                  allowChallengeRetry: allowChallengeRetry)
         guard let u = (try? JSONDecoder().decode(Envelope.self, from: data))?.response?.first else {
             throw VKAuthError.parsingError
         }

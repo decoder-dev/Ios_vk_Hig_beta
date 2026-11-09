@@ -50,14 +50,32 @@ enum VKSession {
         return await VKIDAuthCoordinator.shared.freshAccessToken()
     }
 
-    /// Loads real scopes for the active account. Unknown (request failed) = empty = features stay gated.
+    /// Loads real scopes for the active account (`account.getAppPermissions`). One retry, then the last
+    /// answer VK gave for this account; never a guessed set. Nothing known yet = empty = features stay gated.
     static func refreshAccountGrants() async {
         guard let account = activeAccount else { accountGrants = []; return }
         let creds = VKCredentials(token: account.token, tokenType: account.tokenType,
                                   secret: account.secret, accountType: account.accountType)
-        let scopes = try? await VKAPISession.shared.fetchGrantedScopes(userId: account.userId, credentials: creds)
+        var scopes = try? await VKAPISession.shared.fetchGrantedScopes(userId: account.userId, credentials: creds)
+        if scopes == nil {
+            try? await Task.sleep(for: .seconds(2))
+            guard activeAccount?.userId == account.userId else { return }
+            scopes = try? await VKAPISession.shared.fetchGrantedScopes(userId: account.userId, credentials: creds)
+        }
         guard activeAccount?.userId == account.userId else { return } // switched meanwhile
-        accountGrants = (scopes?.names ?? []).union(scopes == nil ? [] : ["vkid.personal_info"])
+        if let scopes {
+            let names = scopes.names.union(["vkid.personal_info"])
+            accountGrants = names
+            UserDefaults.standard.set(Array(names).sorted(), forKey: grantsKey(account.userId))
+        } else {
+            accountGrants = Set(UserDefaults.standard.stringArray(forKey: grantsKey(account.userId)) ?? [])
+        }
+    }
+
+    private static func grantsKey(_ userId: Int64) -> String { "vkhig.grants.\(userId)" }
+
+    static func forgetCachedGrants(userId: Int64) {
+        UserDefaults.standard.removeObject(forKey: grantsKey(userId))
     }
 
     static func fetchIdentity() async throws -> UserProfile {

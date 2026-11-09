@@ -29,6 +29,7 @@ final class AccountManager: AccountManagerProtocol {
     private let storage: AccountStoring
     private let api: VKAPISession
     private var bag = Set<AnyCancellable>()
+    private var verifyingExpiredToken: String?
 
     init(storage: AccountStoring = KeychainAccountStorage(), api: VKAPISession = .shared) {
         self.storage = storage
@@ -49,16 +50,31 @@ final class AccountManager: AccountManagerProtocol {
                     accountType: VKAccountType? = nil, refreshToken: String? = nil) async throws -> VKAccount {
         // Validate the token and load the profile before touching the Keychain.
         let creds = VKCredentials(token: token, tokenType: tokenType, secret: secret, accountType: accountType)
-        let profile = try await api.fetchProfile(credentials: creds)
-        if let userId, userId != profile.id { throw VKAuthError.invalidCredentials }
+        let profile: VKUserProfile?
+        do {
+            // No captcha sheet here: sign-in already runs inside its own sheet, a second one could not appear.
+            profile = try await api.fetchProfile(credentials: creds, allowChallengeRetry: false)
+        } catch VKAuthError.tokenRevoked {
+            throw VKAuthError.tokenRevoked
+        } catch {
+            // A fresh grant already names its user; a network blip or captcha on users.get must not throw the
+            // token away (the user would have to repeat password + 2FA). Pasted tokens without a user id still
+            // have to validate.
+            guard userId != nil else { throw error }
+            profile = nil
+        }
+        if let userId, let profile, userId != profile.id { throw VKAuthError.invalidCredentials }
+        guard let resolvedID = profile?.id ?? userId else { throw VKAuthError.parsingError }
 
         let account = VKAccount(
-            userId: profile.id, token: token, secret: secret, tokenType: tokenType, accountType: accountType,
-            refreshToken: refreshToken, firstName: profile.firstName, lastName: profile.lastName,
-            avatarUrl: profile.avatarUrl, isActive: true)
+            userId: resolvedID, token: token, secret: secret, tokenType: tokenType, accountType: accountType,
+            refreshToken: refreshToken, firstName: profile?.firstName ?? "Аккаунт",
+            lastName: profile?.lastName ?? "VK \(resolvedID)",
+            avatarUrl: profile?.avatarUrl, isActive: true)
         try storage.save(account)
         reloadFromStorage()
         didChangeActive()
+        if profile == nil { Task { await updateProfileInfo(for: resolvedID) } }
         return account
     }
 
@@ -70,6 +86,7 @@ final class AccountManager: AccountManagerProtocol {
     }
 
     func removeAccount(userId: Int64) {
+        VKSession.forgetCachedGrants(userId: userId)
         let wasActive = activeAccount.value?.userId == userId
         try? storage.remove(userId: userId)
         if wasActive, let next = (try? storage.accounts())?.first {
@@ -112,9 +129,25 @@ final class AccountManager: AccountManagerProtocol {
         NotificationCenter.default.post(name: .vkActiveAccountDidChange, object: activeAccount.value?.userId)
     }
 
-    /// error 5 on the active token: drop that account and fall back to the next one (if any).
+    /// error 5 on the active token. One method answering 5 is not proof the session is gone, so the token is
+    /// re-checked with users.get first; only a confirmed revocation removes the account (network errors keep it).
     private func handleSessionExpired(token: String) {
-        guard let expired = activeAccount.value, expired.token == token else { return }
-        removeAccount(userId: expired.userId)
+        guard let expired = activeAccount.value, expired.token == token, verifyingExpiredToken != token else { return }
+        verifyingExpiredToken = token
+        let creds = VKCredentials(token: expired.token, tokenType: expired.tokenType,
+                                  secret: expired.secret, accountType: expired.accountType)
+        Task { [weak self] in
+            guard let self else { return }
+            defer { self.verifyingExpiredToken = nil }
+            do {
+                _ = try await self.api.fetchProfile(credentials: creds)
+            } catch VKAuthError.tokenRevoked {
+                guard self.activeAccount.value?.token == token else { return }
+                NotificationCenter.default.post(name: .vkSessionDidExpire, object: expired.displayName)
+                self.removeAccount(userId: expired.userId)
+            } catch {
+                // Offline or captcha: keep the account, the next request will tell.
+            }
+        }
     }
 }

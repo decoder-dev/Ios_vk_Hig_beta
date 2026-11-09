@@ -66,3 +66,21 @@ community (cover/verified/activity, subscribe via `groups.join`, action tiles, w
 Live mapping now reads `photo_100/200`, `last_seen`, `push_settings`, group `cover/activity/verified`, video previews/views,
 album covers and post reposts/views. Music screens and the player are not restyled yet.
 Build, unit/UI tests and screenshot review: NOT RUN (no Swift toolchain in authoring environment).
+
+## Sign-in hardening (validation pending)
+- Web form (OAuth implicit): the landing page is recognised on `oauth.vk.com` and `oauth.vk.ru`, from the
+  navigation policy, server redirects and committed URL; cancelled/interrupted navigations (-999, WebKit 102)
+  no longer latch a failure, so the token redirect after them still signs in. Web tokens carry the Kate UA.
+- Password grant: login trimmed / phone normalised; `invalid_scope` retried once with the core scope set;
+  wrong 2FA code keeps the code sheet open with an error; flood/brute-force, blocked account (`ban_info`,
+  restore link), security-check page (`need_validation` + `redirect_uri`) and unknown answers (VK's own text)
+  each get their own message; numeric `captcha_sid` accepted; SMS is requested via `auth.validatePhone` as soon
+  as VK asks for `2fa_sms`, with a resend countdown; call-reset/e-mail code hints; web-form fallback link.
+- A token VK issued is kept even if the follow-up `users.get` fails (network/captcha): the account is saved
+  under the granted user id and its profile refreshed later. `sig` failures (error 4) retry unsigned.
+- Error 5 from one method no longer deletes the account: the token is re-checked with `users.get` first and
+  only a confirmed revocation signs out, with a notice on the sign-in screen.
+- Data calls (`VKAPIClient`) send the account client's User-Agent and handle error 14 (captcha) / 17
+  (validation) through `VKChallengeCenter` sheets, retrying the call once.
+- Granted scopes: one retry, then the last answer VK gave for this account (never a guessed set).
+Unit tests added in `VKAccountsTests`. Build, tests and live VK sign-in: NOT RUN.

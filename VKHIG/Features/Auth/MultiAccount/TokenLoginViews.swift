@@ -89,7 +89,8 @@ struct WebLoginScreen: View {
                 case .success(let r):
                     do {
                         try await AccountManager.shared.addAccount(
-                            token: r.accessToken, userId: r.userId, secret: nil, tokenType: .web, refreshToken: nil)
+                            token: r.accessToken, userId: r.userId, secret: nil, tokenType: .web,
+                            accountType: .kateMobile, refreshToken: nil)
                         onDone()
                     } catch { self.error = (error as? LocalizedError)?.errorDescription ?? error.localizedDescription }
                 case .failure(let e): error = e.errorDescription
